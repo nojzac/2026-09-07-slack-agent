@@ -1,0 +1,28 @@
+# Secrets: ignore bare .env only, keep the 1Password reference file and non-secret config
+.env
+!.env.op
+!config.env
+op.env
+*.op.env
+
+# Big files and media (live on the Mini, see ASSETS.md)
+media/
+data/
+*.sqlite
+*.db
+*.zip
+*.mp3
+*.mp4
+*.mkv
+*.mov
+*.xlsx
+*.jsonl
+
+# Node / Vercel
+node_modules/
+.vercel/
+*.log
+
+# Local junk
+.DS_Store
+.venv*

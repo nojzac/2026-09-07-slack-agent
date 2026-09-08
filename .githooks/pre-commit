@@ -1,0 +1,78 @@
+#!/bin/sh
+# Pre-commit guard: reject oversized files, cookie-jar filenames, and
+# obvious secret material in staged content.
+#
+# Rules:
+#  (a) size  > 10 MB (10485760 bytes)                  -> reject
+#  (b) filename arm: basename matches *cookies*.txt     -> reject
+#  (c) content scan (text blobs only) for:
+#        ^# Netscape HTTP Cookie File   (line-start)
+#        ^#HttpOnly_                    (line-start)
+#        -----BEGIN [A-Z ]*PRIVATE KEY-----
+#        1Password service-account tokens: \bops_[A-Za-z0-9_-]{20,}
+#                                           \bop_[A-Za-z0-9_-]{30,}
+#        generic secret assignment: (api[_-]?key|secret|token|password)[=:] "..."
+#
+# The Netscape/HttpOnly patterns are anchored at line start on purpose:
+# cannery/auth.py legitimately defines
+#   NETSCAPE_HEADER = "# Netscape HTTP Cookie File"
+#   HTTPONLY_PREFIX = "#HttpOnly_"
+# mid-line, and tests/tools mention them in prose. Anchoring avoids
+# false-positiving on those.
+
+set -eu
+
+MAX_SIZE=10485760
+
+reject() {
+    file="$1"
+    rule="$2"
+    echo "pre-commit: REJECTED staged file: $file" >&2
+    echo "pre-commit: rule violated: $rule" >&2
+    exit 1
+}
+
+# No staged files -> nothing to check.
+if ! git diff --cached --name-only --diff-filter=ACMRT -z | head -c1 | grep -q . 2>/dev/null; then
+    exit 0
+fi
+
+git diff --cached --name-only --diff-filter=ACMRT -z | while IFS= read -r -d '' file; do
+    # (a) size check
+    size=$(git cat-file -s ":$file" 2>/dev/null || echo 0)
+    if [ "$size" -gt "$MAX_SIZE" ]; then
+        reject "$file" "size > 10MB ($size bytes)"
+    fi
+
+    # (b) filename arm
+    base=$(basename "$file")
+    case "$base" in
+        *cookies*.txt)
+            reject "$file" "filename matches *cookies*.txt"
+            ;;
+    esac
+
+    # (c) content scan — skip binary blobs
+    if git show ":$file" 2>/dev/null | grep -Iq . 2>/dev/null; then
+        content=$(git show ":$file" 2>/dev/null)
+
+        if printf '%s\n' "$content" | grep -qE '^# Netscape HTTP Cookie File'; then
+            reject "$file" "content matches ^# Netscape HTTP Cookie File"
+        fi
+        if printf '%s\n' "$content" | grep -qE '^#HttpOnly_'; then
+            reject "$file" "content matches ^#HttpOnly_"
+        fi
+        if printf '%s\n' "$content" | grep -qE -- '-----BEGIN [A-Z ]*PRIVATE KEY-----'; then
+            reject "$file" "content matches PEM private key header"
+        fi
+        if printf '%s\n' "$content" | grep -qE '\bops_[A-Za-z0-9_-]{20,}'; then
+            reject "$file" "content matches 1Password service-account token (ops_...)"
+        fi
+        if printf '%s\n' "$content" | grep -qE '\bop_[A-Za-z0-9_-]{30,}'; then
+            reject "$file" "content matches 1Password token (op_...)"
+        fi
+        if printf '%s\n' "$content" | grep -qEi '(api[_-]?key|secret|token|password)[[:space:]]*[=:][[:space:]]*["'"'"'][A-Za-z0-9_/+=-]{20,}["'"'"']'; then
+            reject "$file" "content matches generic secret assignment"
+        fi
+    fi
+done

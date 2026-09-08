@@ -1,0 +1,16 @@
+name: 2026-09-07-slack-agent
+type: code
+status: active
+created: 2026-09-07
+source_course: ray-amjad-slack-agents
+related:
+  - ~/projects/2026-09-04-ray-amjad-mcp        # research and lesson pages
+  - ~/projects/ray-amjad-slack-agent-course    # read-only reference clone
+secrets:
+  carrier: env.op
+  path: .env.op
+  vault: Projects
+  items: [2026-09-07-slack-agent, shared-anthropic, shared-e2b]
+runtime_state: []
+media:
+  status: none
