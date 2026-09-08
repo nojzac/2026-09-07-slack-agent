@@ -13,12 +13,15 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
 - No push to any remote without Noj's explicit go.
 - Never modify `~/projects/ray-amjad-slack-agent-course`. It is a read-only
   reference clone of Ray's code.
-- Do not put research or course notes here. They belong in
-  `~/projects/2026-09-04-ray-amjad-mcp`.
+- Course inputs live in `course/` (transcripts, downloads, lesson-page rules,
+  lesson 04 candidates). Lesson pages are MADE here, in `sops/`, one HTML file
+  per lesson. Broader research about agents in general stays in
+  `~/projects/2026-09-04-ray-amjad-mcp`; do not copy it here.
 
 ## How lessons are followed
-- Each lesson has a learning page in `sops/` (HTML, open in a browser). Follow
-  its Steps section. The verbatim prompts Ray pastes are in the page; paste them
+- Each lesson gets a learning page in `sops/` (HTML, open in a browser), built
+  from `course/transcripts/` following `course/LESSON-PAGE-RULES.md`. Build one,
+  show it, get a yes, then continue. Follow the page's Steps section when building. The verbatim prompts Ray pastes are in the page; paste them
   as written unless the page says otherwise.
 - Ray's lesson 04 has Claude create the git repo and Vercel project. Here the
   folder and git repo already exist; skip `git init`, keep the rest.
@@ -27,7 +30,7 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
   next one, and record any new credential location in README.md under Access.
 
 ## Reference
-- Course transcripts: `~/projects/2026-09-04-ray-amjad-mcp/autonomy/transcripts/slack-agents/`
+- Course transcripts: `course/transcripts/` (INDEX.md and DOWNLOADS.md there)
 - Ray's code at the end of any lesson: `git -C ~/projects/ray-amjad-slack-agent-course show lesson-NN-end:<path>`
   (tags run two behind video numbers).
-- What to build beyond the course: `~/projects/2026-09-04-ray-amjad-mcp/autonomy/05-beyond-ray.md`
+- What to build beyond the course: `course/beyond-the-course.md`

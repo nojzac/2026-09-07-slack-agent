@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2026-09-04-ray-amjad-mcp</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1e1e1e;--muted:#6b6b6b;--line:#e4e1da;--box:#f1eee8;--verb:#fff7e0;--verbline:#e6c56b;--code:#efeded;--step:#fff;--later:#7a6a3a}
+:root:not([data-theme="light"]){}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--fg:#e8e6e1;--muted:#a09d97;--line:#333;--box:#222;--verb:#2a2410;--verbline:#7a6420;--code:#2a2a2a;--step:#1d1d1d;--later:#d8c47a}}
+:root[data-theme="dark"]{--bg:#161616;--fg:#e8e6e1;--muted:#a09d97;--line:#333;--box:#222;--verb:#2a2410;--verbline:#7a6420;--code:#2a2a2a;--step:#1d1d1d;--later:#d8c47a}
+/* one fixed colour pair per section type. --c = section, --c2 = nested headings */
+.s-fits{--c:#5b2160;--c2:#8a6a00}.s-goal{--c:#0e6f68;--c2:#b8552d}.s-before{--c:#a85a0a;--c2:#1f5f8f}.s-why{--c:#a83a6e;--c2:#2f7a4a}
+.s-flow{--c:#0b6f8f;--c2:#b06a12}.s-steps{--c:#1e4fc2;--c2:#b3641a}.s-code{--c:#4a3fb5;--c2:#6a7d1a}.s-change{--c:#7a3aa8;--c2:#4f7a1f}
+.s-done{--c:#1f7a3a;--c2:#8c3a7a}.s-wrong{--c:#b33a3a;--c2:#0f6f7a}.s-settings{--c:#7a4a1a;--c2:#3f5f7a}.s-downloads{--c:#4b5563;--c2:#8a5a2a}.s-words{--c:#2f5f3a;--c2:#7a3a6a}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .s-fits{--c:#d39ad6;--c2:#f2cf5a}:root:not([data-theme="light"]) .s-goal{--c:#5fd3c9;--c2:#ff9c72}:root:not([data-theme="light"]) .s-before{--c:#f0a94f;--c2:#7fc4ff}:root:not([data-theme="light"]) .s-why{--c:#f29ac2;--c2:#8fe0a8}
+:root:not([data-theme="light"]) .s-flow{--c:#6fd0f0;--c2:#f7b26a}:root:not([data-theme="light"]) .s-steps{--c:#8fb0ff;--c2:#ffb36b}:root:not([data-theme="light"]) .s-code{--c:#b1a8ff;--c2:#cfe07a}:root:not([data-theme="light"]) .s-change{--c:#d3a0f0;--c2:#b6e07a}
+:root:not([data-theme="light"]) .s-done{--c:#7dd693;--c2:#e89ad8}:root:not([data-theme="light"]) .s-wrong{--c:#ff8f8f;--c2:#6fdde8}:root:not([data-theme="light"]) .s-settings{--c:#e0b48a;--c2:#9fc0e0}:root:not([data-theme="light"]) .s-downloads{--c:#b7bec9;--c2:#e0b48a}:root:not([data-theme="light"]) .s-words{--c:#9fd8ab;--c2:#e0a0d0}}
+:root[data-theme="dark"] .s-fits{--c:#d39ad6;--c2:#f2cf5a}:root[data-theme="dark"] .s-goal{--c:#5fd3c9;--c2:#ff9c72}:root[data-theme="dark"] .s-before{--c:#f0a94f;--c2:#7fc4ff}:root[data-theme="dark"] .s-why{--c:#f29ac2;--c2:#8fe0a8}
+:root[data-theme="dark"] .s-flow{--c:#6fd0f0;--c2:#f7b26a}:root[data-theme="dark"] .s-steps{--c:#8fb0ff;--c2:#ffb36b}:root[data-theme="dark"] .s-code{--c:#b1a8ff;--c2:#cfe07a}:root[data-theme="dark"] .s-change{--c:#d3a0f0;--c2:#b6e07a}
+:root[data-theme="dark"] .s-done{--c:#7dd693;--c2:#e89ad8}:root[data-theme="dark"] .s-wrong{--c:#ff8f8f;--c2:#6fdde8}:root[data-theme="dark"] .s-settings{--c:#e0b48a;--c2:#9fc0e0}:root[data-theme="dark"] .s-downloads{--c:#b7bec9;--c2:#e0b48a}:root[data-theme="dark"] .s-words{--c:#9fd8ab;--c2:#e0a0d0}
+
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,system-ui,sans-serif}
+.pwd{background:var(--box);border-bottom:1px solid var(--line);padding:8px 24px;font:13px ui-monospace,Menlo,monospace;color:var(--muted)}
+main{max-width:820px;margin:0 auto;padding:28px 24px 80px}
+h1{font-size:28px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 14px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;align-items:center}
+.ctl button{font:13px system-ui;padding:5px 11px;border:1px solid var(--line);background:var(--box);color:var(--fg);border-radius:6px;cursor:pointer}
+.ctl button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ctl .sep{color:var(--muted);font-size:13px;margin:0 4px}
+summary:focus-visible{outline:2px solid var(--c2);outline-offset:2px}
+/* section accordions */
+details.sec{border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;margin:12px 0;background:var(--step)}
+details.sec>summary{padding:12px 16px;font-size:18px;font-weight:650;color:var(--c);cursor:pointer;list-style:none;display:flex;gap:10px;align-items:baseline;background:color-mix(in srgb,var(--c) 7%,transparent);border-radius:0 8px 8px 0}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::before{content:"▸";font-size:15px;transition:transform .15s}
+details.sec[open]>summary::before{transform:rotate(90deg)}
+details.sec>summary .hint{font-weight:400;font-size:14px;color:var(--muted)}
+details.sec>.body{padding:6px 16px 14px 16px}
+/* phases */
+details.phase{border:1px solid color-mix(in srgb,var(--c) 35%,transparent);border-radius:8px;margin:10px 0;background:color-mix(in srgb,var(--c) 4%,transparent)}
+details.phase>summary{padding:9px 14px;font-weight:650;color:var(--c);cursor:pointer;list-style:none}
+details.phase>summary::-webkit-details-marker{display:none}
+details.phase>summary::before{content:"▸ "}details.phase[open]>summary::before{content:"▾ "}
+details.phase>summary .hint{font-weight:400;font-size:14px;color:var(--muted);margin-left:6px}
+details.phase>.body{padding:0 14px 8px 14px}
+/* nested points and steps: full-width clickable rows */
+details.pt,details.step{margin:6px 0;border-left:3px solid color-mix(in srgb,var(--c2) 45%,transparent);padding-left:12px}
+details.pt>summary,details.step>summary{cursor:pointer;list-style:none;font-weight:650;color:var(--c2);padding:4px 10px;margin:2px 0;border-radius:6px;background:color-mix(in srgb,var(--c2) 9%,transparent);display:block}
+details.pt>summary::-webkit-details-marker,details.step>summary::-webkit-details-marker{display:none}
+details.pt>summary::before,details.step>summary::before{content:"▸ "}
+details.pt[open]>summary::before,details.step[open]>summary::before{content:"▾ "}
+details.step>summary .n{display:inline-block;min-width:26px;color:var(--muted);font-weight:500}
+details.pt>ul,details.pt>.body{margin:2px 0 6px 0}details.step>.body{padding:2px 0 6px 26px}
+ul{padding-left:22px;margin:6px 0}li{margin:5px 0}li>ul{margin-top:3px}
+.k{color:var(--c);font-weight:600}
+.later{color:var(--later);font-weight:650;font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font:14px ui-monospace,Menlo,monospace}
+.verb{position:relative;background:var(--verb);border:1px solid var(--verbline);border-left:5px solid var(--verbline);border-radius:6px;padding:12px 84px 12px 14px;margin:8px 0;font:15px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
+.verb .copy{position:absolute;top:8px;right:8px;font:12px system-ui;padding:3px 8px;border:1px solid var(--verbline);background:var(--step);color:var(--fg);border-radius:5px;cursor:pointer}
+.lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 2px}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 12px;font-size:14px}
+.chain span{background:var(--box);border-radius:6px;padding:4px 9px}.chain .here{background:var(--c);color:#fff;font-weight:600}
+:root[data-theme="dark"] .chain .here{color:#111}@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .chain .here{color:#111}}
+.chain i{color:var(--muted);font-style:normal}
+.flow{display:grid;gap:8px;margin:8px 0 12px}
+.flow .row{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}
+.flow .num{width:28px;height:28px;border-radius:50%;background:var(--c2);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+:root[data-theme="dark"] .flow .num{color:#111}@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .flow .num{color:#111}}
+.flow .who{font-weight:650;color:var(--c)}
+.filebox{background:var(--code);border-radius:6px;padding:10px 12px;margin:8px 0;font:13px/1.5 ui-monospace,Menlo,monospace;white-space:pre;overflow-x:auto}
+a{color:#1e4fc2}:root[data-theme="dark"] a{color:#8fb0ff}@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) a{color:#8fb0ff}}
+.done{margin-top:32px;padding:14px 16px;border:2px dashed #5b2160;border-radius:8px}
+</style></head><body>
+<div class="pwd">/Users/nojz/projects/2026-09-04-ray-amjad-mcp &nbsp;·&nbsp; sample SOP for review (1 of 15 build lessons)</div>
+<main class="lesson" id="lesson-04">
+<h1>Lesson 04 · Get a dumb bot answering in Slack</h1>
+<p class="sub">Ray's title: "Setting Up Bot Foundations" · chapter "0 to 1" · video 4 of 21 · video is 4 min, doing it takes about 15 · <a href="https://www.agenticcoding.school/v/T3b_BNyN">lesson page</a></p>
+<div class="ctl">
+<button data-mode="read" aria-pressed="true">Reading</button><button data-mode="keys" aria-pressed="false">At the keyboard</button>
+<span class="sep">·</span>
+<button data-act="expand">Expand all</button><button data-act="collapse">Collapse all</button>
+</div>
+
+<details class="sec s-fits" id="l04-fits" data-read="open"><summary>Where this fits <span class="hint">what came before, what this lesson is, what it unlocks</span></summary><div class="body">
+<div class="chain"><span>03 Slack workspace</span><i>→</i><span class="here">04 Bot that replies with a random number</span><i>→</i><span>05 Claude Code answers instead</span><i>→</i><span>06 Test end to end</span><i>→</i><span>07 to 17 add features</span></div>
+<details class="pt" open><summary>The whole course in one line</summary><ul>
+  <li>You build your own version of <span class="k">Claude in Slack</span>.</li>
+  <li>It is an agent you <span class="k">@mention in a channel</span>. It reads the thread, does the work in a <span class="k">cloud sandbox</span>, and replies in the thread.</li>
+  <li>Lessons 03 to 17 <span class="k">build it</span>. Lessons 18 to 21 are about <span class="k">using it well</span>.</li>
+</ul></details>
+<details class="pt"><summary>What came before</summary><ul>
+  <li>Lesson 03 only made a <span class="k">throwaway Slack workspace</span> so you can experiment without touching your real one.</li>
+</ul></details>
+<details class="pt"><summary>What "bot foundations" means in plain words</summary><ul>
+  <li>Before any AI, you need the <span class="k">plumbing</span>.</li>
+  <li>A Slack app that is <span class="k">allowed to hear mentions</span> and <span class="k">post replies</span>.</li>
+  <li>A <span class="k">web address</span> that Slack calls when someone tags the bot. It lives on Vercel.</li>
+  <li>Two <span class="k">secrets</span> so Slack and your code trust each other.</li>
+  <li>This lesson builds that plumbing and proves it with the dumbest possible reply, a <span class="k">random number</span>.</li>
+</ul></details>
+<details class="pt"><summary>Why a random number</summary><ul>
+  <li>It separates two problems.</li>
+  <li>If the number shows up, <span class="k">Slack, Vercel and the secrets are all right</span>.</li>
+  <li>Any trouble later is then the <span class="k">AI part</span>, not the plumbing.</li>
+</ul></details>
+<details class="pt"><summary>What you can do after this</summary><ul>
+  <li>Tag the bot in any channel and get a reply in the thread.</li>
+  <li>You also have a <span class="k">project folder on GitHub</span> and a <span class="k">live Vercel deployment</span> that every later lesson edits in place.</li>
+</ul></details>
+<details class="pt"><summary>What comes next</summary><ul>
+  <li>Lesson 05 swaps the random number for <span class="k">Claude Code running in a cloud sandbox</span>, so the reply becomes a real answer.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-goal" id="l04-goal" data-read="open"><summary>Goal <span class="hint">what you will have at the end</span></summary><div class="body">
+<ul>
+<li>A Slack bot you can <span class="k">@mention</span> in a channel. It replies inside the thread with a random number.</li>
+<li>It runs on <span class="k">Vercel</span> as one serverless function, in a <span class="k">private GitHub repo</span> Claude created for you.</li>
+<li>No agent yet. That is lesson 05.</li>
+</ul>
+</div></details>
+
+<details class="sec s-before" id="l04-before" data-read="open" data-keys="open"><summary>Before you start <span class="hint">accounts, tools, and one name to choose. One item may send you away to install things.</span></summary><div class="body">
+<ul>
+<li>A <span class="k">test Slack workspace</span> (lesson 03). Ray's is called <code>joestar-test</code>.</li>
+<li><span class="k">Claude Code</span> installed and working in your terminal.</li>
+<li>Accounts on <span class="k">GitHub</span> and <span class="k">Vercel</span>.</li>
+<li>Assumed, not shown on camera: the <code>gh</code> and <code>vercel</code> CLIs installed and logged in, so Claude can create the private repo and the Vercel project.
+  <ul><li>If they are missing, Claude will stop and tell you. Install them, log in, then say "try again".</li></ul></li>
+<li>Pick your <span class="k">agent's name</span> now. Ray uses <b>Joestar</b>. Swap it in everywhere below.</li>
+</ul>
+</div></details>
+
+<details class="sec s-why" id="l04-why" data-read="open"><summary>Why it works this way <span class="hint">the reasons behind each part of the goal</span></summary><div class="body">
+<details class="pt" open><summary>Why the bot has to live on the internet at all</summary><ul>
+  <li>Slack does not run your code. When someone tags the bot, Slack sends a <span class="k">web request</span> to an address you give it, and waits for your reply.</li>
+  <li>Your laptop has no public address and is often asleep, so the code needs a <span class="k">home on the internet</span> that is always reachable.</li>
+</ul></details>
+<details class="pt" open><summary>Why Vercel</summary><ul>
+  <li>Vercel is a hosting service that gives your code a <span class="k">public HTTPS address</span> for free, which is exactly what Slack needs.</li>
+  <li>It deploys straight from GitHub: <span class="k">push code, it goes live</span>. No servers to set up, no uploads.</li>
+  <li>Claude Code knows Vercel well, so it can create the project and deploy without you learning the tool.</li>
+  <li>It is Ray's choice, not a rule. Any host with a public address would work, but every later lesson assumes Vercel.</li>
+  <li><span class="k">It persists.</span> This one Vercel project and one repo carry the whole course. Every later lesson pushes to the same repo and Vercel redeploys the same project. You never create a second one.</li>
+</ul></details>
+<details class="pt" open><summary>What a serverless function is, and why this is one</summary><ul>
+  <li>A serverless function is <span class="k">one piece of code that runs only when a request arrives</span>, then stops. There is still a server, but Vercel owns it and starts your code on demand.</li>
+  <li>Here it is a single file, <code>api/slack/events.js</code>. Slack calls it, it checks the secret, posts the random number, and exits.</li>
+  <li>Why it fits: the bot sits idle most of the day. A function <span class="k">costs nothing while idle</span> and needs no maintenance, unlike a server you keep running.</li>
+  <li><span class="later">Later</span> Slack expects an acknowledgement within <span class="k">three seconds</span>, and Vercel functions have a time limit. Lesson 05 handles both: the function answers Slack at once, keeps working in the background, and Ray raises its limit to about 13 minutes in <code>vercel.json</code>.</li>
+  <li><span class="later">Later</span> The cloud sandbox in lesson 05 is not a workaround for the time limit. It exists because Claude Code needs a <span class="k">real machine</span> with files and tools, which a function does not have.</li>
+</ul></details>
+<details class="pt" open><summary>Why a private GitHub repo, and what it does</summary><ul>
+  <li><span class="k">It is what Vercel deploys from.</span> Vercel watches the repo. Every push becomes a new live version. Without the repo there is no automatic deploy.</li>
+  <li><span class="k">It is your history and backup.</span> Each lesson adds a commit, so you can look back or roll back. Ray's own repo is tagged one checkpoint per lesson for exactly this reason.</li>
+  <li><span class="k">Private because it is your bot's guts.</span> The code, the manifest with the bot's name, and later the memory, skills and rules you write are yours. Secrets themselves never go in the repo, only in Vercel.</li>
+  <li><span class="later">Later</span> Not to be confused with lesson 08, "Connecting to GitHub". That lesson gives the <span class="k">agent</span> access to GitHub so it can work on your other repos. This repo is where the agent's own code lives.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-flow" id="l04-flow" data-read="open"><summary>How one message flows <span class="hint">what happens in the two seconds after you tag the bot</span></summary><div class="body">
+<div class="flow">
+<div class="row"><div class="num">1</div><div><span class="who">You, in Slack</span> post <code>@Joestar hello</code> in a channel.</div></div>
+<div class="row"><div class="num">2</div><div><span class="who">Slack</span> sees the mention, wraps it in a JSON message, signs it with your signing secret, and POSTs it to your endpoint on Vercel.</div></div>
+<div class="row"><div class="num">3</div><div><span class="who">Vercel</span> wakes up <code>api/slack/events.js</code> for this one request and hands it the environment variables.</div></div>
+<div class="row"><div class="num">4</div><div><span class="who">Your function</span> recomputes the signature. Mismatch means reply 401 and stop. Match means read the event.</div></div>
+<div class="row"><div class="num">5</div><div><span class="who">Your function</span> picks a random number and calls Slack's <code>chat.postMessage</code> API with the bot token, asking for the reply to go in the thread.</div></div>
+<div class="row"><div class="num">6</div><div><span class="who">Slack</span> posts the reply as Joestar. Your function answers Slack's original request with 200 and exits.</div></div>
+</div>
+<details class="pt" open><summary>Two things to notice</summary><ul>
+<li>Two separate conversations with Slack are happening: Slack calling <span class="k">you</span> (secured by the signing secret) and you calling <span class="k">Slack</span> (secured by the bot token). That is why there are two secrets.</li>
+<li><span class="later">Later</span> Slack gives you about <span class="k">three seconds</span> to answer step 2. If you are slow it resends. Fine for a random number, a problem once an AI is thinking. Lesson 05 changes the order: answer Slack first, then keep working.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-steps" id="l04-steps" data-keys="open"><summary>Steps <span class="hint">4 phases, 10 steps, about 15 minutes</span></summary><div class="body">
+
+<details class="phase" open><summary>Phase A · Write the bot <span class="hint">steps 1 to 2 · Claude Code does the coding</span></summary><div class="body">
+<details class="step"><summary><span class="n">1</span>Make the project folder and open Claude Code in it</summary><div class="body">
+<ul><li>Ray makes <code>~/Desktop/joestar-agent</code>, goes inside, runs <code>claude</code>.</li><li>This folder becomes the whole agent. Every later lesson edits it.</li></ul>
+</div></details>
+<details class="step"><summary><span class="n">2</span>Paste the build prompt and let Claude write the bot</summary><div class="body">
+<div class="lbl">Prompt (verbatim from the lesson page)</div>
+<div class="verb">Can we make a really simple Slack bot here that we will be deploying to the Vercel whereby when I tag it, then it will automatically reply to the message in the thread with a random number.</div>
+<ul><li>Let it run. Do Phase B while you wait.</li></ul>
+</div></details>
+</div></details>
+
+<details class="phase" open><summary>Phase B · Register the app with Slack <span class="hint">steps 3 to 4 · in the browser, while Claude works</span></summary><div class="body">
+<details class="step"><summary><span class="n">3</span>Start creating the Slack app from a manifest</summary><div class="body">
+<ul>
+<li>Open <a href="https://api.slack.com/apps">api.slack.com/apps</a> → <b>Create New App</b> → <b>From a manifest</b>.</li>
+<li>Choose your test workspace → <b>Next</b>. Leave this tab open, it now wants a manifest.</li>
+<li>A manifest is a small text file that tells Slack the bot's name, what it may read, and what it may post.</li>
+</ul>
+</div></details>
+<details class="step"><summary><span class="n">4</span>Ask Claude for the manifest and paste it into Slack</summary><div class="body">
+<div class="verb">Give me a manifest for the Slack API.</div>
+<ul>
+<li>It writes <code>slack-manifest.json</code> in the project. Open it, copy everything.</li>
+<li>Back in the Slack tab: paste into the manifest box → <b>Next</b>.</li>
+<li>The review screen shows two bot scopes: <code>app_mentions:read</code> and <code>chat:write</code>. Correct for now. Press <b>Create</b>.</li>
+<li>The manifest contains a guessed request URL. Slack accepts it anyway. You fix it in step 9.</li>
+</ul>
+</div></details>
+</div></details>
+
+<details class="phase" open><summary>Phase C · Deploy and hand over the secrets <span class="hint">steps 5 to 8 · GitHub, Vercel, two secrets</span></summary><div class="body">
+<details class="step"><summary><span class="n">5</span>Let Claude set up git, a private GitHub repo, and the Vercel project</summary><div class="body">
+<ul><li>When Claude finishes the code it asks whether to run git init and set up Vercel. Ray answers:</li></ul>
+<div class="verb">Yeah, set up git init and then push it to a private GitHub repo and then set up the Vercel project for me.</div>
+<ul><li>When it is done it lists the two environment variables Vercel needs: <code>SLACK_SIGNING_SECRET</code> and <code>SLACK_BOT_TOKEN</code>.</li></ul>
+</div></details>
+<details class="step"><summary><span class="n">6</span>Copy the signing secret from Slack into Vercel</summary><div class="body">
+<ul>
+<li>Slack app page → <b>Basic Information</b> → App Credentials → Signing Secret → <b>Show</b> → copy.</li>
+<li>Vercel → your project (<code>joestar-agent</code>) → <b>Settings</b> → <b>Environment Variables</b> → <b>Add</b>.</li>
+<li>Key <code>SLACK_SIGNING_SECRET</code>, paste the value, environment <b>Production</b> only → <b>Save</b>.</li>
+<li>This secret is how your code checks that a request really came from Slack.</li>
+</ul>
+</div></details>
+<details class="step"><summary><span class="n">7</span>Install the app to the workspace and copy the bot token into Vercel</summary><div class="body">
+<ul>
+<li>Slack app page → <b>Install App</b> → <b>Install to [workspace]</b> → allow.</li>
+<li>Copy the <b>Bot User OAuth Token</b>. It starts with <code>xoxb-</code>.</li>
+<li>Vercel → add a second variable: key <code>SLACK_BOT_TOKEN</code>, paste, <b>Production</b> only → <b>Save</b>.</li>
+<li>This token is how your code is allowed to post messages as the bot.</li>
+</ul>
+</div></details>
+<details class="step"><summary><span class="n">8</span>Tell Claude the secrets are set and get the endpoint URL</summary><div class="body">
+<div class="verb">Hey, so I also set the environment variables too.</div>
+<ul>
+<li>It redeploys and gives you the events endpoint. It looks like <code>https://joestar-agent.vercel.app/api/slack/events</code>.</li>
+<li>If it does not print the URL, ask for it.</li>
+</ul>
+</div></details>
+</div></details>
+
+<details class="phase" open><summary>Phase D · Connect Slack to the deployment and test <span class="hint">steps 9 to 10 · the moment it comes alive</span></summary><div class="body">
+<details class="step"><summary><span class="n">9</span>Point Slack's Event Subscriptions at that URL and wait for "Verified"</summary><div class="body">
+<ul>
+<li>Slack app page → left menu → <b>Event Subscriptions</b> (in Ray's video it sat just under "MCP Servers"; Slack moves menus, so search the sidebar if it is elsewhere) → paste the URL into <b>Request URL</b>.</li>
+<li>Wait for the green <b>Verified</b> tick → <b>Save Changes</b>.</li>
+<li>No tick means the deploy is not live yet or a secret is wrong. See "When it goes wrong".</li>
+</ul>
+</div></details>
+<details class="step"><summary><span class="n">10</span>Invite the bot to a channel and tag it</summary><div class="body">
+<ul>
+<li>In any channel: <code>/invite @Joestar</code>.</li>
+<li>Post <code>@Joestar hello</code>.</li>
+<li>It should reply in a thread within a couple of seconds.</li>
+</ul>
+</div></details>
+</div></details>
+
+</div></details>
+
+<details class="sec s-code" id="l04-code"><summary>What Claude wrote for you <span class="hint">the five files, and what the one that matters does</span></summary><div class="body">
+<details class="pt" open><summary>The five files</summary>
+<div class="filebox">api/slack/events.js     the whole bot, about 100 lines
+slack-manifest.json     what you pasted into Slack in step 4
+.env.example            names of the secrets, values left blank
+package.json            tells Vercel this is a Node project
+.gitignore              keeps .env and node_modules out of git</div>
+<ul><li>The path <code>api/slack/events.js</code> is not arbitrary. On Vercel, any file under <code>api/</code> becomes a serverless function at the matching URL. That is how the endpoint gets its address.</li></ul>
+</details>
+<details class="pt"><summary>events.js, top to bottom</summary><ul>
+<li><span class="k">Read the secrets</span> from environment variables. If either is missing, answer 500 and log it. This is the error you get if step 6 or 7 was skipped.</li>
+<li><span class="k">Read the raw body</span> exactly as Slack sent it. The signature covers the exact bytes, so the code must not parse and re-serialize first. Claude added a comment saying so.</li>
+<li><span class="k">Verify the signature.</span> Rebuild it from the timestamp plus body using the signing secret, compare in constant time, and reject anything older than five minutes so a captured request cannot be replayed.</li>
+<li><span class="k">Answer the URL verification challenge.</span> When you paste the endpoint in step 9, Slack sends a one-off message containing a challenge string and expects it echoed back. That echo is what turns the tick green.</li>
+<li><span class="k">Ignore retries.</span> If Slack's retry header is present, answer 200 and do nothing. Otherwise a slow first attempt would produce two numbers.</li>
+<li><span class="k">Handle the mention.</span> If the event is an app mention and not from a bot, pick a random number and post it. Reply goes to the existing thread if there is one, otherwise it starts a thread on the message.</li>
+<li><span class="k">Answer 200.</span> Slack is satisfied and stops.</li>
+</ul></details>
+<details class="pt"><summary>Why this matters for later lessons</summary><ul>
+<li>Every later version of the bot keeps this skeleton: <span class="k">verify, dedupe, handle, acknowledge</span>. New lessons add what happens inside "handle".</li>
+<li>When something breaks later, the first three checks are always the same: are the secrets set, is the signature passing, is Slack retrying. Knowing the file makes those checks fast.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-change" id="l04-change"><summary>Where you would change it <span class="hint">the seams, if you wanted to make it your own</span></summary><div class="body">
+<details class="pt" open><summary>Reply with something other than a number</summary><ul>
+<li>One place: the "handle the mention" branch in <code>events.js</code>. Everything before it (verify, dedupe) and after it (answer 200) stays.</li>
+<li>This is exactly the seam lesson 05 uses to swap in Claude Code.</li>
+</ul></details>
+<details class="pt"><summary>Change the number range</summary><ul>
+<li>No code change. Set <code>RANDOM_MIN</code> and <code>RANDOM_MAX</code> in Vercel's environment variables and redeploy.</li>
+</ul></details>
+<details class="pt"><summary>Respond to direct messages, not only @mentions</summary><ul>
+<li>Three places, all in step: the manifest needs the <code>im:history</code> scope and the <code>message.im</code> event, then re-upload it on the Slack app page.</li>
+<li>Re-install the app, because scopes changed. That gives a new bot token to paste into Vercel.</li>
+<li>In <code>events.js</code>, the check for <code>app_mention</code> has to also accept the direct-message event type.</li>
+<li>General rule: any new thing you want the bot to see or do is a manifest change plus a re-install plus a code change, in that order.</li>
+</ul></details>
+<details class="pt"><summary>Rename the bot</summary><ul>
+<li>Display name lives in the manifest. Edit and re-upload on the Slack app page. No code or redeploy needed.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-done" id="l04-done" data-keys="open"><summary>What "done" looks like <span class="hint">three checks</span></summary><div class="body">
+<ul>
+<li>You tag the bot and it replies in the thread with something like <code>🎲 42</code>.</li>
+<li>Tagging it again inside that thread replies in the same thread.</li>
+<li>Project on disk has five files: <code>api/slack/events.js</code>, <code>slack-manifest.json</code>, <code>.env.example</code>, <code>package.json</code>, <code>.gitignore</code>.</li>
+</ul>
+</div></details>
+
+<details class="sec s-wrong" id="l04-wrong"><summary>When it goes wrong <span class="hint">by symptom, then what happened to Ray</span></summary><div class="body">
+<details class="pt" open><summary>No green "Verified" tick in step 9</summary><ul>
+<li>The deploy is not live yet. Open the Vercel project and check the latest deployment finished.</li>
+<li>Or the signing secret is missing or wrong in Vercel. The function answers 500 if it is missing and 401 if it is wrong. Vercel's function logs show which.</li>
+<li>Retry the URL after fixing. Slack re-sends the challenge each time you paste.</li>
+</ul></details>
+<details class="pt"><summary>Green tick, but no reply in Slack</summary><ul>
+<li>The bot is not in the channel. Run <code>/invite @Joestar</code> first.</li>
+<li>The bot token is missing or from before a re-install. Copy it again from Install App and re-save in Vercel.</li>
+<li>Check Vercel's function logs for "chat.postMessage failed", which names Slack's reason.</li>
+</ul></details>
+<details class="pt"><summary>Two replies to one mention</summary><ul>
+<li>Slack retried because the first attempt was slow, and the retry was not ignored. Ray's code checks the retry header, so this only happens if that check was lost.</li>
+</ul></details>
+<details class="pt"><summary>An error about a missing value</summary><ul>
+<li>One of the two environment variables is not set for the environment that deployed. Both must be on Production.</li>
+</ul></details>
+<details class="pt"><summary>What happened to Ray</summary><ul>
+<li>He saved the bot token to <span class="k">all environments</span> by mistake, then re-saved it as Production only. Not fatal, just tidier.</li>
+<li>The manifest's request URL was a <span class="k">guess</span> because Vercel had not deployed yet. Slack let him create the app anyway and he set the real URL later in Event Subscriptions. Expect the same.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-settings" id="l04-settings"><summary>Settings and secrets <span class="hint">two required, two optional</span></summary><div class="body">
+<details class="pt"><summary>Vercel environment variables, Production only</summary><ul>
+  <li><code>SLACK_SIGNING_SECRET</code> from Slack → Basic Information → App Credentials.</li>
+  <li><code>SLACK_BOT_TOKEN</code> from Slack → Install App, starts with <code>xoxb-</code>.</li>
+  <li>Optional: <code>RANDOM_MIN</code> and <code>RANDOM_MAX</code>. Defaults 1 and 100.</li>
+</ul></details>
+<details class="pt"><summary>Slack app settings</summary><ul>
+  <li>Manifest from step 4.</li>
+  <li>Event Subscriptions request URL from step 9.</li>
+  <li>Bot event <code>app_mention</code>.</li>
+</ul></details>
+<details class="pt"><summary>Never commit the secrets</summary><ul>
+  <li>The repo ships a <code>.env.example</code> with empty values.</li>
+  <li>The <code>.gitignore</code> excludes <code>.env</code>, so a local copy with real values stays off GitHub.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-downloads" id="l04-downloads"><summary>Downloads <span class="hint">the finished code for this lesson, and a numbering trap</span></summary><div class="body">
+<details class="pt"><summary>Code at the end of this lesson</summary><ul>
+  <li><a href="https://github.com/ray-amjad/slack-agent-course/tree/lesson-02-end">github.com/ray-amjad/slack-agent-course, tag lesson-02-end</a>.</li>
+  <li>Local clone already on this machine: <code>~/projects/ray-amjad-slack-agent-course</code>. Run <code>git checkout lesson-02-end</code> to see this state.</li>
+</ul></details>
+<details class="pt"><summary>Numbering trap</summary><ul>
+  <li>Repo tags are numbered <span class="k">two behind the videos</span>. Video 04 = <code>lesson-02-end</code>, video 05 = <code>lesson-03-end</code>, and so on.</li>
+  <li>The site's Downloads tab for this video links <code>lesson-03-end</code>, which already includes lesson 05's sandbox code. Use <code>lesson-02-end</code> for exactly this lesson.</li>
+</ul></details>
+<details class="pt"><summary>Skip-ahead option</summary><ul>
+  <li>If your own build fights you, copy the five files from the tag over your project and redeploy.</li>
+</ul></details>
+</div></details>
+
+<details class="sec s-words" id="l04-words"><summary>Look up a word <span class="hint">eight terms this lesson introduces, for when one trips you</span></summary><div class="body">
+<details class="pt"><summary>Slack app</summary><ul><li>Slack's word for anything that plugs into a workspace. Your bot is one app.</li><li>It is registered on api.slack.com, separately from the workspace.</li></ul></details>
+<details class="pt"><summary>Manifest</summary><ul><li>A short text file describing the app: its name, what it may read (scopes), what events it wants, and where to send them.</li><li>Step 4. You can edit it later and re-upload.</li></ul></details>
+<details class="pt"><summary>Scope</summary><ul><li>A single permission. <code>app_mentions:read</code> means "may see messages that mention me". <code>chat:write</code> means "may post".</li><li>Each new feature in later lessons adds scopes.</li></ul></details>
+<details class="pt"><summary>Bot token</summary><ul><li>A long string starting <code>xoxb-</code> that proves to Slack "this request is from that bot". Your code sends it with every reply.</li><li>Step 7. Treat it like a password.</li></ul></details>
+<details class="pt"><summary>Signing secret</summary><ul><li>A different string Slack uses to sign every request it sends you. Your code recomputes the signature and rejects anything that does not match.</li><li>Step 6. Stops strangers from faking Slack.</li></ul></details>
+<details class="pt"><summary>Environment variable</summary><ul><li>A named value the hosting platform hands to your code at run time, so secrets never sit in the code or the repo.</li><li>Vercel calls the page Environment Variables. Steps 6 and 7.</li></ul></details>
+<details class="pt"><summary>Endpoint</summary><ul><li>The public address that receives Slack's requests. Here it is <code>/api/slack/events</code> on your Vercel domain.</li><li>Step 8.</li></ul></details>
+<details class="pt"><summary>Event Subscriptions</summary><ul><li>The Slack setting where you say "send me these events, to this endpoint".</li><li>Slack tests the endpoint first with a challenge, hence the Verified tick. Step 9.</li></ul></details>
+</div></details>
+
+<div class="done">
+<b>Review checkpoint.</b> Is this the shape you want for the other 14 build lessons (03 and 05 to 17)? Tell Claude <b>"yes, do the rest"</b>, or say what to change first.
+</div>
+</main>
+<script>
+(function(){
+  document.querySelectorAll('main.lesson').forEach(function(lesson){
+    var secs=lesson.querySelectorAll('details.sec');
+    function mode(m){
+      secs.forEach(function(d){ d.open = d.dataset[m]==='open'; });
+      lesson.querySelectorAll('[data-mode]').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.mode===m ? 'true':'false'); });
+    }
+    lesson.querySelectorAll('[data-mode]').forEach(function(b){ b.addEventListener('click',function(){ mode(b.dataset.mode); }); });
+    lesson.querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){
+      var open=b.dataset.act==='expand';
+      lesson.querySelectorAll('details').forEach(function(d){ d.open=open; });
+      lesson.querySelectorAll('[data-mode]').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+    }); });
+    mode('read');
+  });
+  // copy buttons on verbatim prompt boxes
+  document.querySelectorAll('.verb').forEach(function(v){
+    var b=document.createElement('button'); b.className='copy'; b.type='button'; b.textContent='Copy';
+    b.addEventListener('click',function(){
+      var t=v.textContent.replace(/Copy$|Copied$/,'').trim();
+      navigator.clipboard.writeText(t).then(function(){ b.textContent='Copied'; setTimeout(function(){ b.textContent='Copy'; },1200); });
+    });
+    v.appendChild(b);
+  });
+  // deep links: open every ancestor accordion of the target
+  function openHash(){
+    if(!location.hash) return;
+    var el=document.getElementById(location.hash.slice(1)); if(!el) return;
+    var p=el; while(p){ if(p.tagName==='DETAILS') p.open=true; p=p.parentElement; }
+    el.scrollIntoView({block:'start'});
+  }
+  window.addEventListener('hashchange',openHash); openHash();
+})();
+</script>
+</body></html>
