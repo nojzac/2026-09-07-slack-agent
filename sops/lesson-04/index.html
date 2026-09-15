@@ -8,79 +8,113 @@
   :root {
     color-scheme: light;
     --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
-    --slack:#4a154b; --vercel:#111; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
     --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --s-fit:#7a3d9c; --s-cast:#1a6ce7; --s-flow:#0b6b3a; --s-words:#8a5a00;
+    --s-before:#a32020; --s-build:#1f4fd8; --s-code:#15171c; --s-stuck:#a32020; --s-done:#0b6b3a;
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--body);
-         font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
   .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-         font-size:12.5px; padding:8px 16px; position:sticky; top:0; z-index:5; }
-  main { max-width:880px; margin:0 auto; padding:34px 20px 100px; }
-  h1 { font-size:34px; line-height:1.18; margin:26px 0 10px; color:var(--ink); letter-spacing:-0.02em; }
-  .standfirst { font-size:18px; color:var(--muted); margin:0 0 14px; }
+         font-size:12.5px; padding:8px 16px; position:sticky; top:0; z-index:9; }
+  main { max-width:880px; margin:0 auto; padding:34px 20px 110px; }
+
+  h1 { font-size:35px; line-height:1.16; margin:26px 0 12px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 16px; line-height:1.6; }
   .meta-row { font-size:14px; color:var(--muted); border-top:1px solid var(--line);
-              border-bottom:1px solid var(--line); padding:10px 0; margin:22px 0 34px; }
+              border-bottom:1px solid var(--line); padding:11px 0; margin:24px 0 16px; }
   .meta-row b { color:var(--ink); font-weight:600; }
+  .howto { font-size:14.5px; color:var(--muted); background:#f4f6f8; border-radius:9px;
+           padding:12px 15px; margin:0 0 30px; }
 
-  section { margin:44px 0; }
-  .snum { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
-          color:var(--accent); letter-spacing:.14em; display:block; margin-bottom:4px; }
-  h2 { font-size:24px; margin:0 0 10px; color:var(--ink); letter-spacing:-0.01em; }
-  h3 { font-size:17px; margin:26px 0 6px; color:var(--ink); }
-  h4 { font-size:15px; margin:18px 0 4px; color:var(--ink); }
+  /* ---- section = top-level accordion ---- */
+  details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px; }
+  details.sec[open] { padding-bottom:20px; box-shadow:0 1px 2px rgba(20,25,35,.04); }
+  details.sec > summary { cursor:pointer; padding:17px 0; list-style:none; display:flex;
+                          align-items:baseline; gap:12px; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary::before { content:"▸"; color:var(--sc,var(--accent)); font-size:15px;
+                                  transition:transform .15s; line-height:1.4; }
+  details.sec[open] > summary::before { transform:rotate(90deg); }
+  .sec-n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+           color:var(--sc,var(--accent)); letter-spacing:.1em; }
+  .sec-t { font-size:21px; font-weight:650; color:var(--ink); letter-spacing:-0.012em; line-height:1.3; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px;
+           letter-spacing:0; }
+
+  /* ---- nested accordion ---- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
   p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
 
-  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.5px;
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
          background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
   pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
-        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.6;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
         margin:12px 0; user-select:all; }
   pre .c { color:#8b949e; }
-  pre b { color:#7ee787; font-weight:400; }
 
-  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.7px; }
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
   th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { font-size:12.4px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
-  td.who { white-space:nowrap; font-weight:600; color:var(--ink); }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
 
-  details { border:1px solid var(--line); border-radius:9px; padding:0 15px; margin:12px 0; background:var(--card); }
-  details[open] { padding-bottom:10px; }
-  summary { cursor:pointer; padding:11px 0; font-weight:600; color:var(--ink); font-size:15px; list-style:none; }
-  summary::-webkit-details-marker { display:none; }
-  summary::before { content:"▸"; color:var(--accent); display:inline-block; width:18px; transition:transform .15s; }
-  details[open] > summary::before { transform:rotate(90deg); }
-  details > :last-child { margin-bottom:4px; }
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
 
-  .phase { border-left:3px solid var(--accent); padding:2px 0 2px 16px; margin:34px 0 18px; }
-  .phase h3 { margin:0; font-size:19px; }
-  .phase p { margin:4px 0 0; color:var(--muted); font-size:15px; }
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .phase { margin:30px 0 14px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
 
   ol.steps { padding-left:0; list-style:none; counter-reset:s; }
   ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
-  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:1px; width:25px; height:25px;
-        border-radius:50%; background:var(--ink); color:#fff; font-size:12.5px; font-weight:600;
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
         display:flex; align-items:center; justify-content:center; }
-  .where { font-size:13.5px; color:var(--muted); margin:2px 0 8px; }
-
-  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:14px 0; font-size:15px; border-radius:0 7px 7px 0; }
-  .danger  { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:14px 0; font-size:15px; border-radius:0 7px 7px 0; }
-  .win     { border-left:3px solid var(--ok);  background:#eefaf2; padding:12px 15px; margin:14px 0; font-size:15px; border-radius:0 7px 7px 0; }
-  .ray     { border-left:3px solid var(--muted); background:#f4f6f8; padding:12px 15px; margin:14px 0; font-size:14.7px; border-radius:0 7px 7px 0; }
-  .ray b { color:var(--ink); }
-
-  .flow { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:18px; margin:18px 0; overflow-x:auto; }
-  .flow svg { display:block; min-width:660px; width:100%; height:auto; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
 
   .check { list-style:none; padding:0; }
-  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
   .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
 
-  .gloss dt { font-weight:600; color:var(--ink); margin-top:13px; }
-  .gloss dd { margin:2px 0 0; color:var(--body); }
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
 
   a { color:var(--accent); }
-  footer { margin-top:60px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+  @media print { details { open:true; } }
 </style>
 </head>
 <body>
@@ -89,565 +123,1082 @@
 
 <h1>Make a bot answer in Slack —<br>and understand every part of the round trip</h1>
 <p class="standfirst">Lesson 04 of Ray Amjad's Slack-agents course, rewritten from a run that actually
-happened. You finish with a deployed bot that replies in-thread, and a working model of why five platforms
-are involved at all.</p>
+happened. You finish with a bot that replies in a thread, and a clear picture of why five different
+services are involved in something this small.</p>
 
 <div class="meta-row">
-  <b>Outcome:</b> mention the bot, get a random number in the thread &nbsp;·&nbsp;
-  <b>Video:</b> 4m14s &nbsp;·&nbsp; <b>Realistically:</b> 60–90 min first time &nbsp;·&nbsp;
-  <b>Ends with:</b> a live, tested deployment
+  <b>You end up with:</b> mention the bot, get a number back in the thread &nbsp;·&nbsp;
+  <b>Ray's video:</b> 4m14s &nbsp;·&nbsp; <b>Realistically:</b> 60–90 min the first time
 </div>
+<p class="howto">Every section below opens and closes. Collapsed, the page is a summary you can skim in a
+minute. Open a section to do the work; open the <b>+</b> boxes inside it when you want to know why something
+is the way it is. Nothing is hidden because it's unimportant — it's hidden so the page stays readable.</p>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">00 — WHERE THIS FITS</span>
-<h2>The random number is a placeholder. The wiring is the lesson.</h2>
+<!-- ══════════════════════════════════════ 00 ══ -->
+<details class="sec" open style="--sc:var(--s-fit); --sc2:var(--s-fit)">
+<summary><span><span class="sec-n">00</span> <span class="sec-t">The random number doesn't matter
+<span class="sec-s">What you're really building is a round trip. Everything after this lesson just changes what goes in the reply.</span></span></span></summary>
 
-<p>Nothing here cares about random numbers. What you are building is a <strong>round trip</strong>: Slack
-notices a mention, hands it to code you control, your code decides something, and pushes an answer back.
-Lesson 05 replaces the "decides something" step with Claude Code in a sandbox. Every lesson after that
-replaces it with something richer. The pipe you build now stays.</p>
+<p>Nobody needs a bot that picks numbers. What you're building is a <strong>round trip</strong>: Slack notices
+someone said your bot's name, hands that over to code you control, your code decides something, and pushes an
+answer back into the conversation.</p>
 
-<p>So the thing worth owning at the end of today is not the file. It is being able to answer: <em>when I type
-a mention, what happens, in what order, and what would break it?</em></p>
+<p>Lesson 05 swaps "decides something" for Claude Code running in a sandbox. Later lessons make it richer
+still. The pipe you build today doesn't change.</p>
+
+<div class="metaphor"><b>Think of it like a doorbell.</b> Today it rings and a light comes on. Later it rings
+and the house makes you coffee. Wiring the doorbell to <em>something</em> is the job — the coffee is a
+detail.</div>
+
+<p>So the thing worth walking away with isn't the file. It's being able to answer, without looking: <em>when I
+type a mention, what happens, in what order, and what would stop it?</em></p>
 
 <table>
-  <tr><th>Lesson</th><th>State</th></tr>
-  <tr><td class="who">03 — before</td><td>A throwaway Slack workspace, so nothing you break touches a real org.</td></tr>
-  <tr><td class="who">04 — here</td><td>Slack app, deployed endpoint, credentials, event subscription. Replies with a random number.</td></tr>
-  <tr><td class="who">05 — next</td><td>Identical wiring; the number is replaced by Claude Code running in a cloud sandbox.</td></tr>
+  <tr><th>Lesson</th><th>Where you are</th></tr>
+  <tr><td class="who" style="color:var(--muted)">03 — before</td><td>A throwaway Slack workspace, so nothing you break touches anything real.</td></tr>
+  <tr><td class="who" style="color:var(--s-fit)">04 — here</td><td>Slack app, deployed endpoint, two credentials, one event subscription. It replies with a number.</td></tr>
+  <tr><td class="who" style="color:var(--muted)">05 — next</td><td>Same wiring exactly. The number becomes Claude Code in a cloud sandbox.</td></tr>
 </table>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">01 — THE CAST</span>
-<h2>Five platforms, and why each one is there</h2>
+<!-- ══════════════════════════════════════ 01 ══ -->
+<details class="sec" style="--sc:var(--s-cast); --sc2:var(--s-cast)">
+<summary><span><span class="sec-n">01</span> <span class="sec-t">Five services, and why each one has to be there
+<span class="sec-s">The honest answer to "why does a bot that picks a number need five accounts?"</span></span></span></summary>
 
-<p>The most common reaction to this lesson is "why does a bot that picks a number need <em>five accounts</em>?"
-Fair. Each one exists because of a constraint that becomes obvious once you name it.</p>
+<p>It's a fair question, and each one is there because of a constraint that's obvious once someone says it out
+loud.</p>
 
 <table>
-  <tr><th>Platform</th><th>Its one job</th><th>The constraint that forces it</th></tr>
+  <tr><th>Service</th><th>Its one job</th><th>Why you can't skip it</th></tr>
   <tr>
     <td class="who" style="color:var(--slack)">Slack</td>
-    <td>Owns the conversation. Detects the mention, sends it to you, and displays your reply.</td>
-    <td>You cannot poll Slack for mentions. Slack <em>pushes</em> events to a URL — so something of yours must be reachable at a URL.</td>
+    <td>Owns the conversation. Spots the mention, sends it to you, shows your reply.</td>
+    <td>You can't sit and ask Slack "anything for me yet?" — Slack <em>pushes</em> events out to a web address. So you need a web address.</td>
   </tr>
   <tr>
     <td class="who" style="color:var(--vercel)">Vercel</td>
-    <td>Runs your code at a public HTTPS address, on demand, without a server you maintain.</td>
-    <td>Slack needs somewhere to POST. Your laptop is not it — the URL must be public, always up, and TLS.</td>
+    <td>Runs your code at a public address, on demand, with no server for you to look after.</td>
+    <td>Slack needs somewhere to send that push. Your laptop isn't it: the address has to be public, always answerable, and encrypted.</td>
   </tr>
   <tr>
     <td class="who" style="color:var(--github)">GitHub</td>
-    <td>Holds the source of truth for the code, privately, with history.</td>
-    <td>Vercel deploys <em>something</em>. Better that it deploys a reviewed commit than a folder on one laptop.</td>
+    <td>Holds the code, privately, with a history of every change.</td>
+    <td>Vercel has to deploy <em>something</em>. Better a recorded commit than whatever happens to be on one laptop.</td>
   </tr>
   <tr>
     <td class="who" style="color:var(--op)">1Password</td>
-    <td>Holds the two secrets, and hands them out to a command that asks.</td>
-    <td>A bot token lets anyone post as your bot. It must not live in a file, a repo, a screenshot or a chat log.</td>
+    <td>Holds the two secrets, and hands them to a command that asks for them.</td>
+    <td>One of those secrets lets anyone post as your bot. It must not sit in a file, a repo, a screenshot or a chat log.</td>
   </tr>
   <tr>
     <td class="who" style="color:var(--ci)">GitHub Actions</td>
-    <td>Runs the tests on every push, and only then deploys.</td>
-    <td>Once a push deploys automatically, "it compiles on my machine" is the only thing standing between a typo and production.</td>
+    <td>Runs your tests on every push, and only lets the deploy through if they pass.</td>
+    <td>Once pushing deploys automatically, the tests are the only thing standing between a typo and production.</td>
   </tr>
 </table>
 
-<details>
-<summary>Why serverless, rather than a small server somewhere?</summary>
-<p>A bot that answers mentions does nothing at all between mentions. A rented server would sit idle burning
-money and asking to be patched. A serverless function is a piece of code with a URL: the platform starts it
-when a request arrives and throws it away afterwards. You pay per request, you patch nothing, and there is no
-process that can quietly die at 3am.</p>
-<p>The cost is <em>cold starts</em> (the first request after a lull is slower) and statelessness — nothing
-you keep in memory survives to the next request. Both are irrelevant here and stay irrelevant for most of the
-course. When state matters, it goes in a database (lesson 12), not in a variable.</p>
+<div class="metaphor"><b>One way to hold it in your head:</b> Slack is the receptionist who pages you when
+someone says your name. Vercel is the phone that rings — it has to have a number, and it has to be
+answerable at 3am. GitHub is the filing cabinet. 1Password is the safe. GitHub Actions is the colleague who
+checks your work before it goes out.</div>
+
+<details class="sub">
+<summary>Why "serverless"? Why not just rent a small server?</summary>
+<p>Between mentions, this bot does nothing at all. A rented server would sit there anyway — costing money,
+needing security updates, and able to quietly die at 3am without telling you.</p>
+<p>A serverless function is just code with a web address. The platform starts it when a request arrives and
+throws it away afterwards. You pay per request, you patch nothing, and there's no process to keep alive.</p>
+<div class="metaphor"><b>It's a motion-sensor light.</b> No one's asking you to leave the lights on all night
+in case someone walks past.</div>
+<p>Two prices you pay. The first request after a quiet spell is a little slower ("cold start"). And nothing
+you keep in memory survives to the next request — each one starts fresh. Neither matters here, and when
+state does matter it goes in a database (lesson 12), not a variable.</p>
 </details>
 
-<details>
-<summary>Why not Socket Mode, which needs no public URL at all?</summary>
-<p>Slack offers Socket Mode: your bot opens an outbound websocket and receives events through it, no public
-endpoint needed. It is genuinely easier to start with — and it means your bot only runs while some process
-of yours is running. That is a laptop-shaped bot.</p>
-<p>The course deploys instead, so the bot is up when you are asleep. The price of that choice is exactly one
-thing: because your endpoint is publicly reachable, <em>anyone</em> can POST to it, so you must prove each
-request really came from Slack. That is the signing secret, and it is why it matters so much here and not at
-all in Socket Mode.</p>
+<details class="sub">
+<summary>Slack has a mode that needs no public address at all. Why not use it?</summary>
+<p>It's called Socket Mode: your bot opens an outgoing connection to Slack and events come down that pipe, no
+public endpoint needed. It's genuinely easier to start with.</p>
+<p>The catch is that your bot only exists while some process of yours is running. That's a laptop-shaped bot —
+close the lid and it's gone.</p>
+<p>The course deploys instead, so the bot is up while you sleep. That choice costs you exactly one thing:
+because your address is public, <em>anyone</em> can send things to it, so your code has to check that each
+request really came from Slack. That's the signing secret in section 02 — and it's why it matters here and
+not at all in Socket Mode.</p>
 </details>
 
-<details>
+<details class="sub">
 <summary>Why a private repo for a bot that picks numbers?</summary>
-<p>Today it is trivial. By lesson 15 this repo contains your prompts, your <code>CLAUDE.md</code>, the shape
-of your internal tooling, and the wiring of an agent with access to your systems. Repos rarely get made
-private later; make it private now and stop thinking about it.</p>
+<p>Today, it genuinely doesn't matter. By lesson 15 this repo holds your prompts, your instructions to Claude,
+the shape of your internal tooling, and the wiring of an agent that can reach your systems.</p>
+<p>Repos rarely get made private after the fact — someone has to notice and decide. Make it private now and
+never think about it again.</p>
 </details>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">02 — MECHANISM</span>
-<h2>How one message flows</h2>
+<!-- ══════════════════════════════════════ 02 ══ -->
+<details class="sec" style="--sc:var(--s-flow); --sc2:var(--s-flow)">
+<summary><span><span class="sec-n">02</span> <span class="sec-t">Follow one message all the way round
+<span class="sec-s">Mention → Slack pushes → your code checks, decides, posts → reply appears in the thread.</span></span></span></summary>
 
-<div class="flow">
-<svg viewBox="0 0 700 250" role="img" aria-label="Flow from a Slack mention to a threaded reply">
+<div class="fig">
+<svg viewBox="0 0 700 268" width="100%" height="auto" role="img">
+  <title>One mention travelling from Slack to a Vercel function and back into the thread</title>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <marker id="arrowRT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4fd8"/>
+    </marker>
+    <marker id="arrowRTg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
     </marker>
-    <style>
-      .bx{fill:#fff;stroke:#d7dde5;stroke-width:1.5;rx:9}
-      .tl{font:600 13px -apple-system,sans-serif;fill:#15171c}
-      .tx{font:11.5px -apple-system,sans-serif;fill:#616a77}
-      .ln{stroke:#616a77;stroke-width:1.5;fill:none;marker-end:url(#a)}
-      .lb{font:600 10.5px ui-monospace,monospace;fill:#1f4fd8}
-    </style>
   </defs>
 
-  <rect class="bx" x="8"   y="30" width="170" height="86"/>
-  <text class="tl" x="24" y="56">Slack</text>
-  <text class="tx" x="24" y="76">You type @joestar hi</text>
-  <text class="tx" x="24" y="94">in a channel it is in</text>
+  <rect x="10" y="44" width="176" height="96" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <rect x="10" y="44" width="176" height="26" rx="9" fill="#4a154b"/>
+  <rect x="10" y="60" width="176" height="10" fill="#4a154b"/>
+  <text x="26" y="62" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#ffffff">Slack</text>
+  <text x="26" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">You type</text>
+  <text x="26" y="110" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#2b3038">@joestar hi</text>
+  <text x="26" y="128" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">in a channel it is in</text>
 
-  <rect class="bx" x="262" y="18" width="186" height="112"/>
-  <text class="tl" x="278" y="44">Vercel function</text>
-  <text class="tx" x="278" y="64">1 · verify signature</text>
-  <text class="tx" x="278" y="82">2 · pick a number</text>
-  <text class="tx" x="278" y="100">3 · call chat.postMessage</text>
-  <text class="tx" x="278" y="118">4 · answer 200</text>
+  <rect x="262" y="26" width="190" height="132" rx="9" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/>
+  <rect x="262" y="26" width="190" height="26" rx="9" fill="#15171c"/>
+  <rect x="262" y="42" width="190" height="10" fill="#15171c"/>
+  <text x="278" y="44" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#ffffff">Your code on Vercel</text>
+  <text x="278" y="74" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">1 · is this really Slack?</text>
+  <text x="278" y="94" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">2 · pick a number</text>
+  <text x="278" y="114" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">3 · post the reply</text>
+  <text x="278" y="134" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">4 · say "got it"</text>
 
-  <rect class="bx" x="530" y="30" width="162" height="86"/>
-  <text class="tl" x="546" y="56">Thread</text>
-  <text class="tx" x="546" y="76">🎲 47</text>
-  <text class="tx" x="546" y="94">under your message</text>
+  <rect x="528" y="44" width="164" height="96" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <rect x="528" y="44" width="164" height="26" rx="9" fill="#4a154b"/>
+  <rect x="528" y="60" width="164" height="10" fill="#4a154b"/>
+  <text x="544" y="62" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#ffffff">The thread</text>
+  <text x="544" y="94" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" fill="#2b3038">🎲 47</text>
+  <text x="544" y="116" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">tucked under your</text>
+  <text x="544" y="132" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">original message</text>
 
-  <path class="ln" d="M178,62 L256,62"/>
-  <text class="lb" x="186" y="52">POST app_mention</text>
+  <path d="M188,78 L256,78" stroke="#1f4fd8" stroke-width="1.5" fill="none" marker-end="url(#arrowRT)"/>
+  <text x="192" y="70" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.5" font-weight="600" fill="#1f4fd8">app_mention</text>
 
-  <path class="ln" d="M448,62 L524,62"/>
-  <text class="lb" x="458" y="52">chat.postMessage</text>
+  <path d="M454,78 L522,78" stroke="#1f4fd8" stroke-width="1.5" fill="none" marker-end="url(#arrowRT)"/>
+  <text x="456" y="70" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.5" font-weight="600" fill="#1f4fd8">postMessage</text>
 
-  <path class="ln" d="M355,130 L355,168 L120,168 L120,124"/>
-  <text class="lb" x="150" y="186">200 OK — "got it", within 3 seconds</text>
+  <path d="M357,160 L357,190 L98,190 L98,142" stroke="#616a77" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrowRTg)"/>
+  <text x="112" y="206" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">"got it" — within 3 seconds, or Slack asks again</text>
 
-  <rect x="240" y="206" width="230" height="30" rx="7" fill="#f4f6f8" stroke="#d7dde5"/>
-  <text class="tx" x="256" y="225">signing secret proves inbound ·
-    <tspan fill="#616a77">bot token authorises outbound</tspan></text>
+  <rect x="152" y="224" width="400" height="30" rx="9" fill="#f6f8fc" stroke="#d7dde5" stroke-width="1"/>
+  <circle cx="176" cy="239" r="5" fill="#4a154b"/>
+  <text x="188" y="243" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">signing secret proves it came in</text>
+  <rect x="396" y="234" width="9" height="10" rx="2" fill="#15171c"/>
+  <text x="414" y="243" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">bot token lets it go out</text>
 </svg>
+<p class="cap">Slack holds no code of yours. It holds an address. Everything you set up today exists to make
+this one round trip legal and reachable.</p>
 </div>
 
-<p><strong>Read it in order.</strong> Slack holds no code of yours — it holds a URL. Everything you configure
-today exists to make that one round trip legal and reachable.</p>
-
-<details>
-<summary>The three-second rule, and why it shapes the code</summary>
-<p>Slack expects HTTP 200 within three seconds. Miss it and Slack assumes failure and <em>redelivers the same
-event</em>, up to three times. A handler that does slow work before answering therefore gets run repeatedly
-and posts duplicate replies.</p>
-<p>Two consequences you will meet later: every retry carries an <code>x-slack-retry-num</code> header, which
-is how you recognise and ignore duplicates; and from lesson 05, when the work takes far longer than three
-seconds, you must acknowledge first and do the work afterwards.</p>
+<details class="sub">
+<summary>Why your code has three seconds, and how that shapes everything</summary>
+<p>Slack expects a "got it" within three seconds. Miss it and Slack assumes you failed and
+<em>sends the same event again</em> — up to three times.</p>
+<div class="metaphor"><b>It's someone repeating themselves because you didn't nod.</b> You have to nod first,
+then do the thing.</div>
+<p>That has two consequences you'll meet. Every repeat carries a header saying it's a repeat
+(<code>x-slack-retry-num</code>), which is how you spot one and ignore it — otherwise the same number gets
+posted three times. And from lesson 05, when the real work takes far longer than three seconds, you'll nod
+first and work afterwards.</p>
 </details>
 
-<details>
-<summary>The two credentials, and why one is not enough</summary>
-<p>They point in opposite directions, which is the whole reason there are two.</p>
-<p><strong>Signing secret — inbound.</strong> Shared only between Slack and your function. Slack hashes the
-request body and timestamp with it and sends the result in a header; your code recomputes the same hash and
-compares. Mismatch means it wasn't Slack, and you answer 401 without doing anything. It exists because your
-URL is public and anyone can POST to it.</p>
-<p><strong>Bot token — outbound.</strong> A bearer token proving to Slack that you may post as this bot. It
-belongs to the app <em>installed into one workspace</em> — install elsewhere and you get a different token.
-Anything holding it can post as your bot, so treat it exactly like a password.</p>
-<p>Neither substitutes for the other: the signing secret cannot post, and the bot token cannot prove an
-inbound request was genuine.</p>
+<details class="sub">
+<summary>The two secrets, and why one wouldn't do</summary>
+<div class="fig">
+<svg viewBox="0 0 700 330" width="100%" height="auto" role="img">
+  <title>Two secrets pointing in opposite directions: the signing secret guards messages coming in from Slack, the bot token authorises messages going out to Slack.</title>
+  <defs>
+    <marker id="arrowA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4fd8"/>
+    </marker>
+  </defs>
+
+  <text x="350" y="26" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#2b3038">Two secrets, opposite directions</text>
+
+  <rect x="18" y="52" width="124" height="240" rx="9" fill="#4A154B"/>
+  <text x="80" y="166" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#ffffff">Slack</text>
+  <text x="80" y="186" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#e0d2e1">sends events</text>
+
+  <rect x="558" y="52" width="124" height="240" rx="9" fill="#15171c"/>
+  <text x="620" y="166" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#ffffff">your function</text>
+  <text x="620" y="186" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#b9bec7">/api/events</text>
+
+  <text x="350" y="84" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#4A154B">SIGNING SECRET</text>
+  <line x1="148" y1="110" x2="326" y2="110" stroke="#1f4fd8" stroke-width="1.5"/>
+  <line x1="374" y1="110" x2="550" y2="110" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowA)"/>
+  <circle cx="350" cy="110" r="17" fill="#4A154B"/>
+  <circle cx="350" cy="110" r="10.5" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <text x="155" y="103" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">inbound</text>
+  <text x="350" y="146" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">a wax seal you check: did this really come from Slack?</text>
+  <text x="350" y="166" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#a32020">wrong signature &#8594; 401, nothing happens</text>
+
+  <line x1="150" y1="186" x2="550" y2="186" stroke="#d7dde5" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <text x="350" y="206" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">BOT TOKEN</text>
+  <line x1="550" y1="238" x2="374" y2="238" stroke="#1f4fd8" stroke-width="1.5"/>
+  <line x1="326" y1="238" x2="150" y2="238" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowA)"/>
+  <rect x="330" y="220" width="40" height="36" rx="5" fill="#15171c"/>
+  <circle cx="350" cy="231" r="5" fill="#ffffff"/>
+  <rect x="339" y="240" width="22" height="3" rx="1.5" fill="#ffffff"/>
+  <rect x="343" y="246" width="14" height="3" rx="1.5" fill="#ffffff"/>
+  <text x="545" y="231" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">outbound</text>
+  <text x="350" y="276" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">a badge you show: may you post as this bot?</text>
+
+  <text x="350" y="316" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">Neither secret does the other's job. You need both.</text>
+</svg>
+</div>
+<p>They point in opposite directions. That's the whole reason there are two of them.</p>
+<h4>Signing secret — for things coming in</h4>
+<p>Known only to Slack and your code. Slack scrambles the message with it and sends the result along; your
+code scrambles the same message the same way and checks it matches. If it doesn't, the request didn't come
+from Slack, and you refuse it without doing anything.</p>
+<p>It exists purely because your address is public and anyone can send things to it.</p>
+<h4>Bot token — for things going out</h4>
+<p>Proof to Slack that you're allowed to post as this bot. It belongs to the app <em>installed in one
+workspace</em> — install it somewhere else and you get a different one. Anything holding it can post as your
+bot, so treat it exactly like a password.</p>
+<p>Neither does the other's job: the signing secret can't post, and the bot token can't prove an incoming
+request was genuine.</p>
 </details>
 
-<details>
+<details class="sub">
 <summary>Why the reply lands in a thread, and the one line that decides it</summary>
-<p>Slack threads by a timestamp. A message's own id is <code>ts</code>; a reply carries
-<code>thread_ts</code> pointing at the root. So:</p>
-<pre>thread_ts: event.thread_ts ?? event.ts</pre>
-<p>If the mention was already inside a thread, <code>thread_ts</code> exists and you reply in that same
-thread. If it was a top-level message, there is no <code>thread_ts</code> yet, so you use the message's own
-<code>ts</code> — which <em>creates</em> the thread. Get this backwards and your bot either starts a new
-thread every time or replies at top level and buries the channel.</p>
-</details>
-</section>
+<div class="fig">
+<svg viewBox="0 0 700 308" width="100%" height="auto" role="img">
+  <title>Why the reply lands in a thread: thread_ts ?? ts, shown for a top-level mention and a mention inside an existing thread</title>
+  <defs>
+    <marker id="arrowD" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#1f4fd8"/>
+    </marker>
+  </defs>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">03 — GLOSSARY</span>
-<h2>Terms this lesson assumes</h2>
+  <text x="12" y="18" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#2b3038">CASE A · top-level mention</text>
+  <text x="356" y="18" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#2b3038">CASE B · mention inside a thread</text>
+
+  <rect x="12" y="28" width="332" height="266" rx="9" fill="#fbfcfd" stroke="#d7dde5" stroke-width="1.5"/>
+  <rect x="356" y="28" width="332" height="266" rx="9" fill="#fbfcfd" stroke="#d7dde5" stroke-width="1.5"/>
+
+  <text x="28" y="44" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">#general</text>
+
+  <rect x="28" y="52" width="300" height="46" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="40" y="71" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#2b3038">@noj</text>
+  <text x="316" y="71" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">ts: 111.222 · no thread_ts</text>
+  <text x="40" y="88" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">@joestar what shipped today?</text>
+
+  <path d="M40,98 V139 H52" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowD)"/>
+
+  <rect x="56" y="116" width="272" height="46" rx="9" fill="#faf7fb" stroke="#4A154B" stroke-width="1.5"/>
+  <text x="68" y="135" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#4A154B">Joestar</text>
+  <text x="316" y="135" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">thread_ts: 111.222</text>
+  <text x="68" y="152" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Three PRs and a hotfix.</text>
+
+  <text x="28" y="184" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">No thread_ts on the mention, so the bot</text>
+  <text x="28" y="200" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">replies with its ts — creating the thread.</text>
+
+  <rect x="28" y="216" width="300" height="62" rx="9" fill="#f4f7fc" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="44" y="240" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#616a77">event.thread_ts ?? event.ts</text>
+  <text x="44" y="262" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12.5" fill="#1f4fd8">undefined ?? 111.222 → 111.222</text>
+
+  <text x="372" y="44" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">#general</text>
+
+  <rect x="372" y="52" width="300" height="46" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="384" y="71" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#2b3038">@sam</text>
+  <text x="660" y="71" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">ts: 555.000</text>
+  <text x="384" y="88" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Friday deploy notes</text>
+
+  <path d="M384,98 V181" fill="none" stroke="#1f4fd8" stroke-width="1.5"/>
+  <path d="M384,127 H396" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <path d="M384,181 H396" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowD)"/>
+
+  <rect x="400" y="104" width="272" height="46" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="412" y="123" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#2b3038">@noj</text>
+  <text x="660" y="123" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">ts: 666.111 · thread_ts: 555.000</text>
+  <text x="412" y="140" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">@joestar what changed?</text>
+
+  <rect x="400" y="158" width="272" height="46" rx="9" fill="#faf7fb" stroke="#4A154B" stroke-width="1.5"/>
+  <text x="412" y="177" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#4A154B">Joestar</text>
+  <text x="660" y="177" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">thread_ts: 555.000</text>
+  <text x="412" y="194" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Two config changes.</text>
+
+  <rect x="372" y="216" width="300" height="62" rx="9" fill="#f4f7fc" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="388" y="240" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#616a77">event.thread_ts ?? event.ts</text>
+  <text x="388" y="262" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12.5" fill="#1f4fd8">555.000 ?? 666.111 → 555.000</text>
+</svg>
+</div>
+<p>Slack identifies every message by a timestamp. A message's own id is <code>ts</code>. A reply carries
+<code>thread_ts</code>, pointing at the message it hangs under. So the whole behaviour comes down to:</p>
+<pre>thread_ts: event.thread_ts ?? event.ts</pre>
+<p>Read it as: "the thread it's already in, or failing that, this message itself."</p>
+<div class="metaphor"><b>Like stapling your reply to a receipt number.</b> If the customer already has a
+receipt, staple to that. If not, the message you're answering becomes the receipt.</div>
+<p>Get it backwards and your bot either starts a fresh thread every single time, or answers at top level and
+buries the channel.</p>
+</details>
+</details>
+
+<!-- ══════════════════════════════════════ 03 ══ -->
+<details class="sec" style="--sc:var(--s-words); --sc2:var(--s-words)">
+<summary><span><span class="sec-n">03</span> <span class="sec-t">Words this lesson assumes you know
+<span class="sec-s">Each one in plain English first.</span></span></span></summary>
 <dl class="gloss">
   <dt>Event subscription</dt>
-  <dd>Standing instruction telling Slack "when this happens, POST it to this URL". Yours is
-      <code>app_mention</code>. It is inert until you save it — see section 07.</dd>
+  <dd><span class="plain">A standing order: "whenever this happens, send it to this address."</span>
+      Yours is <code>app_mention</code> — someone said your bot's name. It does nothing until you save it.</dd>
   <dt>Scope</dt>
-  <dd>One named permission on the app. You need exactly two: <code>app_mentions:read</code> to receive the
-      mention, <code>chat:write</code> to post. That is the entire permission surface — your bot cannot read
-      channel history or see DMs.</dd>
+  <dd><span class="plain">One named permission.</span> You need two: <code>app_mentions:read</code> to hear
+      the mention, <code>chat:write</code> to speak. That's the bot's entire power — it can't read channel
+      history or see DMs.</dd>
   <dt>App manifest</dt>
-  <dd>Your Slack app's configuration as one YAML/JSON document: bot user, scopes, events, request URL.
-      Config as code — it can be pasted to create an app, and later diffed.</dd>
+  <dd><span class="plain">Your app's settings as a document instead of a screen full of switches.</span>
+      Paste it to create the app; keep it in the repo to see what changed.</dd>
   <dt>Request URL</dt>
-  <dd>Where Slack POSTs events. Your deployed function, ending <code>/api/slack/events</code>.</dd>
+  <dd><span class="plain">The address Slack sends events to.</span> Your deployed code, ending
+      <code>/api/slack/events</code>.</dd>
   <dt>URL verification challenge</dt>
-  <dd>A one-off POST Slack makes when you set the URL, carrying a random <code>challenge</code> string your
-      endpoint must echo back. Passing it turns the field green.</dd>
+  <dd><span class="plain">Slack ringing the number once to check someone picks up.</span> It sends a random
+      word and your endpoint has to say the same word back. Passing turns the field green.</dd>
   <dt>Serverless function</dt>
-  <dd>Code with a URL and no server. Started per request, discarded after. Keeps nothing in memory between
-      requests.</dd>
+  <dd><span class="plain">Code with an address and no server.</span> Started per request, discarded after,
+      remembers nothing in between.</dd>
   <dt>Environment variable</dt>
-  <dd>A value handed to your code by the platform at runtime rather than written in the code. How secrets
-      reach a deployment without entering the repo.</dd>
+  <dd><span class="plain">A value handed to your code when it runs, instead of written inside it.</span>
+      How a secret reaches a deployment without ever entering the repo.</dd>
   <dt>Service account (1Password)</dt>
-  <dd>A non-human identity with a token, granted access to specific vaults only. Lets a script read one vault
-      without unlocking your whole account.</dd>
+  <dd><span class="plain">A login for a script rather than a person</span>, allowed into specific vaults only.
+      Lets a command read one vault without unlocking your whole password manager.</dd>
 </dl>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">04 — BEFORE YOU START</span>
-<h2>Check the ground first — this is where the hours go</h2>
+<!-- ══════════════════════════════════════ 04 ══ -->
+<details class="sec" style="--sc:var(--s-before); --sc2:var(--s-before)">
+<summary><span><span class="sec-n">04</span> <span class="sec-t">Check the ground before you start
+<span class="sec-s">This is where the hours go. Not the hard steps — the box nobody ticked.</span></span></span></summary>
 
-<div class="danger"><strong>Read this even if you skip everything else.</strong> On the run this page is
-written from, most of the lost time was a prerequisite that was missing <em>and silent</em>. Not a bug.
-Not a hard step. A box that was never ticked, failing quietly hours later.</div>
+<div class="danger"><strong>If you read nothing else, read this section.</strong> On the run this page comes
+from, most of the lost time was a prerequisite that was missing <em>and silent</em>. Not a bug. Not a
+difficult step. A setting that had never been switched on, failing quietly, hours later, while we looked
+somewhere else entirely.</div>
 
-<h3>Accounts</h3>
+<div class="metaphor"><b>It's the keys-wallet-phone check at the front door.</b> Five seconds there saves you
+the walk back.</div>
+
+<h3>Accounts you need</h3>
 <ul>
-  <li>A throwaway Slack workspace (lesson 03) where you can install apps.</li>
-  <li>GitHub, and <code>gh</code> logged in.</li>
-  <li>Vercel — <strong>with GitHub connected as a login connection</strong>. See below.</li>
-  <li>1Password, if you are doing secrets properly. A Teams/Business account if you want a service account.</li>
-  <li>Claude Code, in a terminal. Node 20+.</li>
+  <li>A throwaway Slack workspace (lesson 03) where you're allowed to install apps.</li>
+  <li>GitHub, with the <code>gh</code> command logged in.</li>
+  <li>Vercel — <strong>with GitHub connected to it</strong>. This is the one. See below.</li>
+  <li>1Password, if you're handling secrets properly. A Teams or Business account if you want a service account.</li>
+  <li>Claude Code in a terminal, and Node 20 or newer.</li>
 </ul>
 
 <div class="danger">
-<h4 style="margin-top:0">Connect Vercel to GitHub <em>before</em> you start</h4>
-<p>If your Vercel account has no GitHub login connection, two things happen, neither obviously:</p>
+<h4 style="margin-top:0; color:var(--bad)">Connect Vercel to GitHub before you start anything</h4>
+<p>If your Vercel account has no GitHub connection, two things happen and neither says so plainly:</p>
 <ul>
-  <li><code>vercel link</code> refuses with <em>"You need to add a Login Connection to your GitHub account first."</em></li>
-  <li>Far worse: CLI deploys are <strong>blocked</strong>. They sit at status <code>UNKNOWN</code> forever —
-      no build logs, no CLI error, nothing. The reason appears only in a dashboard modal:
-      <em>"the commit email … could not be matched to a GitHub account."</em></li>
+  <li><code>vercel link</code> refuses: <em>"You need to add a Login Connection to your GitHub account first."</em></li>
+  <li>Much worse — deploys are <strong>blocked</strong>. They sit at <code>UNKNOWN</code> forever. No build
+      log, no error from the command, nothing. The reason exists in one place only: a dialog in the Vercel
+      dashboard saying <em>"the commit email … could not be matched to a GitHub account."</em></li>
 </ul>
-<p>That message sends you to the wrong fix. It suggests changing <code>git config user.email</code>. Check
-before you touch anything — if GitHub already attributes your commits to you, your email is fine:</p>
+<p>And that message points you at the wrong fix. It suggests changing your git email. Check before you touch
+anything — if GitHub already links your commits to you, your email is fine:</p>
 <pre>gh api repos/&lt;owner&gt;/&lt;repo&gt;/commits --jq '.[] | "\(.commit.author.email) \(.author.login)"'</pre>
-<p><code>author.login</code> showing your username means the email is verified and correct. The real fix is on
-Vercel: <b>account settings → Login Connections → Add Connection → GitHub</b>, namespace = your GitHub user,
-and scope repository access to this repo only.</p>
+<p>Seeing your username in the second column means the email is verified and correct. The real fix is on
+Vercel: <b>account settings → Login Connections → Add Connection → GitHub</b>, pick your GitHub username, and
+give it access to this repo only.</p>
 </div>
 
-<details>
-<summary>If you have this project's scripts, one command checks all of it</summary>
+<details class="sub">
+<summary>One command that checks all of it (if you have this project's scripts)</summary>
 <pre>bin/preflight</pre>
-<p>Fifteen read-only checks — Node, <code>gh</code>, the 1Password token and both secret references, the Slack
-token and its scopes, Vercel login, project link, production env vars, the live endpoint, and the last CI run.
-About twenty seconds, changes nothing. The CI check is the cheap proxy for "is Vercel still connected to
-GitHub", which has no command of its own.</p>
+<p>Fifteen checks, about twenty seconds, changes nothing: Node, <code>gh</code>, your 1Password token and both
+secrets, the Slack token and its permissions, Vercel login, the project link, the live endpoint, and the last
+CI run.</p>
+<p>That last check is doing something sneaky and useful. There's no command that asks "is Vercel still
+connected to GitHub?" — so a green deploy job stands in for it, because without the connection nothing
+deploys at all.</p>
 </details>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">05 — BUILD IT</span>
-<h2>Six phases</h2>
-<p>Phases A and B run in parallel — start Claude writing, then go and click in Slack while it works. That is
-what makes the video look fast.</p>
+<!-- ══════════════════════════════════════ 05 ══ -->
+<details class="sec" style="--sc:var(--s-build); --sc2:var(--s-build)">
+<summary><span><span class="sec-n">05</span> <span class="sec-t">Build it — six phases
+<span class="sec-s">A and B run at the same time. That parallelism is why the video looks so fast.</span></span></span></summary>
 
 <div class="phase"><h3>Phase A · The code</h3><p>Claude writes it. You read it in section 06.</p></div>
 <ol class="steps">
 <li>
-  <p><strong>Make a folder, launch Claude Code, paste the prompt.</strong></p>
+  <p><strong>Make a folder, start Claude Code, paste the prompt.</strong></p>
   <p class="where">Where: your terminal</p>
   <pre>Can we make a really simple Slack bot here that we will be deploying to
 the Vercel whereby when I tag it, then it will automatically reply to the
 message in the thread with a random number.</pre>
-  <p>Do not watch it work — go do Phase B.</p>
+  <p>Don't sit and watch it. Go and do Phase B while it works.</p>
   <div class="ray"><b>This workshop differs:</b> the folder and git repo already exist, so skip
   <code>git init</code>. Everything else stands.</div>
 </li>
 <li>
-  <p><strong>Ask for the manifest.</strong> While it is still working:</p>
+  <p><strong>Ask for the manifest</strong> while it's still going:</p>
   <pre>give me a manifest for the Slack API</pre>
-  <div class="danger"><strong>Before you paste that manifest anywhere</strong>, check it for a placeholder
-  request URL like <code>https://&lt;deployment&gt;/api/slack/events</code>. Nothing is deployed yet, so it
-  cannot contain a real one. Either delete the <code>event_subscriptions</code> block entirely and add the URL
-  by hand in Phase E, or leave it and expect Slack to reject it. Pasting the placeholder verbatim produces
-  <em>"Your URL didn't respond"</em> and five minutes of confusion.</div>
+  <div class="danger"><strong>Check it before pasting it anywhere.</strong> Nothing is deployed yet, so it
+  cannot contain a real address — and if it contains a fake one like
+  <code>https://&lt;deployment&gt;/api/slack/events</code>, pasting it gets you
+  <em>"Your URL didn't respond"</em> and a confused ten minutes. Either delete the event-subscriptions part
+  and add the address by hand in Phase E, or replace the placeholder once you have the real domain.</div>
 </li>
 </ol>
 
-<div class="phase"><h3>Phase B · The Slack app</h3><p>Create it from the manifest, install it, collect two secrets.</p></div>
+<div class="phase"><h3>Phase B · The Slack app</h3><p>Create it, install it, collect two secrets.</p></div>
 <ol class="steps">
 <li>
   <p><strong>Create the app from the manifest.</strong></p>
   <p class="where">Where: <a href="https://api.slack.com/apps">api.slack.com/apps</a> → Create New App → From a manifest</p>
-  <p>Pick your test workspace, paste the manifest, Next, Create. The two scopes shown should be exactly
+  <p>Choose your test workspace, paste, Next, Create. The permissions it lists should be exactly
   <code>app_mentions:read</code> and <code>chat:write</code>.</p>
 </li>
 <li>
   <p><strong>Install it into the workspace</strong> — sidebar → Install App → Install to &lt;workspace&gt;.</p>
-  <p>Slack now shows a <strong>Bot User OAuth Token</strong> starting <code>xoxb-</code>. That token exists
-  only because the app is installed; that is why it lives here and not with the other credential.</p>
+  <p>Slack now shows a <strong>Bot User OAuth Token</strong> starting <code>xoxb-</code>. It only exists
+  because you installed the app — which is why it lives on this page and not with the other credential.</p>
 </li>
 <li>
-  <p><strong>Collect the signing secret</strong> — sidebar → Basic Information → App Credentials → Signing
+  <p><strong>Copy the signing secret</strong> — sidebar → Basic Information → App Credentials → Signing
   Secret → Show.</p>
 </li>
 </ol>
 
-<div class="phase"><h3>Phase C · The secrets</h3><p>Into 1Password first, then to Vercel. Never into a file.</p></div>
+<div class="phase"><h3>Phase C · The secrets</h3><p>A vault of their own, an item inside it, then a read-only login for your agents. Every click below.</p></div>
+
+<div class="fig">
+<svg viewBox="0 0 700 352" width="100%" height="auto" role="img">
+  <title>A secret lives in 1Password as the source of truth and in Vercel's environment as the runtime copy, and never in a .env file, the git repo, or a screenshot.</title>
+  <defs>
+    <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4fd8"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="26" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#2b3038">Where the secret lives</text>
+  <text x="20" y="46" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#0b6b3a">Two places, on purpose</text>
+
+  <rect x="20" y="64" width="164" height="88" rx="9" fill="#1a6ce7"/>
+  <text x="102" y="96" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">1Password</text>
+  <text x="102" y="116" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#d6e6fd">source of truth</text>
+  <text x="102" y="136" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#d6e6fd">op://vault/item</text>
+
+  <line x1="190" y1="108" x2="262" y2="108" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowB)"/>
+  <text x="226" y="170" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">piped,</text>
+  <text x="226" y="185" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">never typed</text>
+
+  <rect x="268" y="64" width="164" height="88" rx="9" fill="#15171c"/>
+  <text x="350" y="96" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">Vercel</text>
+  <text x="350" y="116" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#b9bec7">environment variables</text>
+  <text x="350" y="136" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#b9bec7">the runtime copy</text>
+
+  <line x1="438" y1="108" x2="510" y2="108" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowB)"/>
+  <text x="474" y="170" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">injected at</text>
+  <text x="474" y="185" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">runtime</text>
+
+  <rect x="516" y="64" width="164" height="88" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="598" y="96" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#2b3038">running function</text>
+  <text x="598" y="117" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#2b3038">process.env</text>
+  <text x="598" y="137" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">reads it at runtime</text>
+
+  <text x="350" y="210" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">A serverless function cannot call 1Password &#8212; which is why the second copy exists.</text>
+
+  <rect x="20" y="228" width="660" height="112" rx="9" fill="#ffffff" stroke="#a32020" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="36" y="254" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#a32020">NEVER &#8212; not once, not temporarily</text>
+
+  <rect x="36" y="272" width="196" height="52" rx="9" fill="#ffffff" stroke="#e6c3c3" stroke-width="1.5"/>
+  <line x1="50" y1="291" x2="64" y2="305" stroke="#a32020" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="64" y1="291" x2="50" y2="305" stroke="#a32020" stroke-width="2.2" stroke-linecap="round"/>
+  <text x="76" y="303" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">.env on disk</text>
+  <line x1="74" y1="299" x2="157" y2="299" stroke="#a32020" stroke-width="1.5"/>
+
+  <rect x="252" y="272" width="196" height="52" rx="9" fill="#ffffff" stroke="#e6c3c3" stroke-width="1.5"/>
+  <line x1="266" y1="291" x2="280" y2="305" stroke="#a32020" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="280" y1="291" x2="266" y2="305" stroke="#a32020" stroke-width="2.2" stroke-linecap="round"/>
+  <text x="292" y="303" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">the git repo</text>
+  <line x1="290" y1="299" x2="371" y2="299" stroke="#a32020" stroke-width="1.5"/>
+
+  <rect x="468" y="272" width="196" height="52" rx="9" fill="#ffffff" stroke="#e6c3c3" stroke-width="1.5"/>
+  <line x1="482" y1="291" x2="496" y2="305" stroke="#a32020" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="496" y1="291" x2="482" y2="305" stroke="#a32020" stroke-width="2.2" stroke-linecap="round"/>
+  <text x="508" y="303" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">a screenshot or chat</text>
+  <line x1="506" y1="299" x2="640" y2="299" stroke="#a32020" stroke-width="1.5"/>
+</svg>
+</div>
+
+<div class="metaphor"><b>Three nested things, in order:</b> a <b>vault</b> is the room, an <b>item</b> is the
+box in it, and a <b>service account</b> is a key cut for one room only — the one you hand to a script.
+Make them in that order and none of it is confusing.</div>
+
 <ol class="steps">
 <li>
-  <p><strong>Create one 1Password item</strong> holding both values.</p>
-  <p class="where">Where: the 1Password app</p>
-  <p>Vault of your choice, title matching your project, two <em>password</em>-type fields:
-  <code>signing_secret</code> and <code>bot_token</code>. Use the app, not the CLI — a value passed as a
-  command argument lands in your shell history.</p>
+  <p><strong>Make a vault just for this project.</strong></p>
+  <p class="where">Where: the 1Password desktop app</p>
+  <p>In the sidebar, hover over <b>Vaults</b> and click the <b>+</b> that appears (or menu bar →
+  <b>File → New Vault</b>). Name it after the project — no spaces makes life easier later, e.g.
+  <code>SlackAgentOS</code>. Leave the icon and description as you like, then <b>Create Vault</b>.</p>
+  <div class="callout"><strong>If you have more than one 1Password account</strong> (a personal one and a
+  work one), the sidebar groups vaults under each. Create this vault in a <b>Teams or Business</b> account if
+  you have one — the read-only agent login in step 4 only exists there, and it can never be granted access to
+  a Personal or Private vault. Putting the vault in the wrong account is the single most annoying thing to
+  discover later.</div>
+  <details class="sub">
+  <summary>Why a whole vault for two little secrets?</summary>
+  <p>Because the vault is the unit of access. When you give a script permission, you give it permission to a
+  <em>vault</em> — not to an item, not to a field.</p>
+  <p>So if these two secrets live in your everyday personal vault, your only options are "the script can read
+  everything you own" or "the script can't read anything". A vault per project makes "read exactly these two
+  values and nothing else" a thing you can actually express.</p>
+  <div class="metaphor"><b>It's why hotels give cleaners a floor key, not a master key.</b></div>
+  </details>
 </li>
+
 <li>
-  <p><strong>Point the repo at them with references, not values.</strong> A committed <code>.env.op</code>:</p>
-  <pre>SLACK_SIGNING_SECRET=op://&lt;Vault&gt;/&lt;item&gt;/signing_secret
-SLACK_BOT_TOKEN=op://&lt;Vault&gt;/&lt;item&gt;/bot_token</pre>
-  <p>Then any command that needs them runs as
-  <code>op run --env-file=.env.op -- &lt;command&gt;</code>, and the values exist only inside that one
-  process.</p>
-  <div class="ray"><b>Ray does it differently:</b> he keeps a <code>.env.example</code> with blank values and
-  pastes the real ones into Vercel's dashboard by hand. Same end state; the difference is whether a secret
-  ever passes through your clipboard and a browser form.</div>
+  <p><strong>Create one item inside it, holding both values.</strong></p>
+  <p class="where">Where: the 1Password desktop app</p>
+  <ol>
+    <li>Select your new vault in the sidebar first, so the item lands in the right place.</li>
+    <li>Click <b>+ New Item</b> → choose <b>API Credential</b>. (Secure Note or Login work too — the category
+        only changes which fields it suggests.)</li>
+    <li><b>Title</b>: name it after the project, e.g. <code>2026-09-07-slack-agent</code>. Check the vault
+        selector at the top still says your new vault.</li>
+    <li>Scroll to the bottom of the item and click <b>add more</b> (1Password 8) or
+        <b>Add another field</b>. Choose type <b>Password</b>.</li>
+    <li>The field has two boxes: the <em>left</em> one is the label, the <em>right</em> one is the value.
+        Label it exactly <code>signing_secret</code> and paste the Slack signing secret in.</li>
+    <li><b>add more</b> again, another <b>Password</b> field, labelled exactly <code>bot_token</code>, and
+        paste the <code>xoxb-…</code> token.</li>
+    <li><b>Save</b>.</li>
+  </ol>
+  <div class="danger"><strong>The labels have to match exactly</strong> — lower case, underscores, no spaces.
+  They are half of the address your code uses to find the value. <code>Signing Secret</code> and
+  <code>signing_secret</code> are different fields as far as 1Password is concerned.</div>
+  <div class="callout"><strong>Use the app, not the command line, for this bit.</strong> A secret typed into
+  a terminal command gets written to your shell history file in plain text, and is briefly visible to anything
+  that can list running processes.</div>
+  <details class="sub">
+  <summary>Why "Password" type rather than a plain text field?</summary>
+  <p>Password fields are hidden until you click to reveal, excluded from 1Password's own previews, and get
+  a copy button instead of being selectable text. A plain text field shows the secret to anyone glancing at
+  your screen or watching you share it.</p>
+  </details>
 </li>
+
 <li>
-  <p><strong>Optional but recommended: scope the access.</strong> 1Password's desktop integration unlocks your
-  <em>whole account</em> to any command you run. A service account is narrower — read-only, one vault:</p>
-  <pre>security add-generic-password -U -a "$USER" -s op-&lt;name&gt; \
-  -w "$(op service-account create &lt;name&gt; --vault &lt;Vault&gt;:read_items --raw)"</pre>
-  <p>One command: create the token and put it straight in the Keychain, never on screen or in a file.</p>
-  <div class="danger"><strong>Do not paste that token into an interactive prompt.</strong>
-  <code>security add-generic-password -w</code> without a value prompts you — and truncates at 128
-  characters. Real tokens are ~830. The result is silent corruption that surfaces later, in a different tool,
-  as <em>"failed to DecodeSACredentials … unexpected end of JSON input"</em>.</div>
+  <p><strong>Write the address of each value into the repo — not the value.</strong></p>
+  <p>A committed <code>.env.op</code> file containing only signposts:</p>
+  <pre>SLACK_SIGNING_SECRET=op://SlackAgentOS/2026-09-07-slack-agent/signing_secret
+SLACK_BOT_TOKEN=op://SlackAgentOS/2026-09-07-slack-agent/bot_token</pre>
+  <p>Read the pattern as <code>op://&lt;vault&gt;/&lt;item title&gt;/&lt;field label&gt;</code> — the room,
+  the box, the thing in the box. Those three names are exactly what you typed in steps 1 and 2.</p>
+  <div class="metaphor"><b>The file is a luggage tag, not the luggage.</b> It says where the thing is kept.
+  It isn't the thing, so committing it is fine.</div>
+  <p>Anything needing the real values then runs as:</p>
+  <pre>op run --env-file=.env.op -- &lt;your command&gt;</pre>
+  <p>The values exist inside that one running command and nowhere else.</p>
+  <div class="ray"><b>Ray does this differently:</b> he keeps an example file with blank values and types the
+  real secrets into Vercel's dashboard by hand. Same destination — the difference is whether a secret ever
+  passes through your clipboard and a web form.</div>
 </li>
+
 <li>
-  <p><strong>Give Vercel its own copy</strong>, piped rather than typed:</p>
-  <pre>op read "op://&lt;Vault&gt;/&lt;item&gt;/signing_secret" \
+  <p><strong>Cut a key for your agents: a read-only service account.</strong></p>
+  <p class="where">Where: your terminal (needs a Teams or Business 1Password account)</p>
+  <p>Without this, the normal way a script reads 1Password is your desktop unlock — which opens your
+  <em>entire account</em> to any command that runs while it's unlocked. A service account is a separate login
+  that can read one vault, read-only, and nothing else.</p>
+  <p>One command creates it and stores it, so the token never appears on screen or in a file:</p>
+  <pre><span class="c"># macOS: create the account and put its token straight into the Keychain</span>
+security add-generic-password -U -a "$USER" -s op-slackagentos \
+  -w "$(op service-account create slack-agent --vault SlackAgentOS:read_items --raw)"</pre>
+  <p>Approve the Touch ID prompt when it appears. Reading it back is then one line, which is what wrapper
+  scripts like <code>bin/with-secrets</code> do for you:</p>
+  <pre>export OP_SERVICE_ACCOUNT_TOKEN="$(security find-generic-password -a "$USER" -s op-slackagentos -w)"</pre>
+  <div class="danger"><strong>Do not paste the token into a prompt.</strong> If you run
+  <code>security add-generic-password -w</code> with no value it asks you to type one — and silently cuts your
+  input off at <strong>128 characters</strong>. Real tokens are around 830. You get no warning at all; it
+  surfaces much later, in a different tool, as
+  <em>"failed to DecodeSACredentials … unexpected end of JSON input"</em>. The one-liner above avoids this
+  entirely because the token never passes through a prompt or your clipboard.</div>
+  <details class="sub">
+  <summary>Prove the key only opens the one room</summary>
+  <pre>export OP_SERVICE_ACCOUNT_TOKEN="$(security find-generic-password -a "$USER" -s op-slackagentos -w)"
+op vault list</pre>
+  <p>It should print your project vault and nothing else. That's the whole point of the exercise — don't take
+  it on trust, it costs one command to check.</p>
+  </details>
+  <details class="sub">
+  <summary>Things about service accounts that aren't obvious</summary>
+  <ul>
+    <li>They need a <b>Teams or Business</b> account. Personal and Families plans don't have them — in which
+        case skip this step and use the normal desktop unlock, knowing it's broader.</li>
+    <li>They can <b>never</b> be granted your Private or Personal vault. That's a feature, and another reason
+        step 1 made a dedicated vault.</li>
+    <li>The CLI can only <b>create</b> them. There's no <code>list</code> or <code>delete</code> — manage them
+        in the browser, under Developer Tools → Service Accounts, <em>on the account that owns the
+        vault</em>. If the list looks empty, you're probably signed into your other account.</li>
+    <li><code>op whoami</code> with the token set tells you which account it belongs to.</li>
+    <li>The token prints exactly once. Lost it? Just make another — they're free and revocable.</li>
+  </ul>
+  </details>
+</li>
+
+<li>
+  <p><strong>Check the whole chain before moving on.</strong> This prints the <em>length</em> of each secret,
+  never the value:</p>
+  <pre>op run --env-file=.env.op -- node -e \
+  'console.log("signing:", process.env.SLACK_SIGNING_SECRET?.length,
+               "token:", process.env.SLACK_BOT_TOKEN?.length)'</pre>
+  <p>Two numbers means vault, item, field labels and references all line up — the signing secret is 32
+  characters, the bot token is longer. An error naming an item or field means a typo in a name somewhere;
+  compare it against what you typed in steps 1 and 2.</p>
+</li>
+
+<li>
+  <p><strong>Give Vercel its own copy — piped, not typed.</strong></p>
+  <pre>op read "op://SlackAgentOS/2026-09-07-slack-agent/signing_secret" \
   | npx vercel@latest env add SLACK_SIGNING_SECRET production
 
-op read "op://&lt;Vault&gt;/&lt;item&gt;/bot_token" \
+op read "op://SlackAgentOS/2026-09-07-slack-agent/bot_token" \
   | npx vercel@latest env add SLACK_BOT_TOKEN production</pre>
-  <p>Production scope only — Vercel pre-ticks all three environments if you use the dashboard.</p>
-  <div class="callout"><strong>Never run <code>vercel env pull</code>.</strong> It writes a real
-  <code>.env.local</code> full of live secrets into your project — the exact thing this arrangement avoids.
-  Note that <code>vercel link</code> and <code>vercel dev</code> also create that file (with a harmless OIDC
-  token), so gitignore <code>.env*</code> as a backstop.</div>
-  <p class="where">Two copies now exist by design: 1Password is the source of truth, Vercel holds the runtime
-  copy. A serverless function cannot call <code>op</code>, so this split is unavoidable — the aim is only that
-  the value never rests anywhere else.</p>
+  <p>Production only. Vercel's dashboard pre-ticks all three environments, so set it deliberately.</p>
+  <p>Two copies now exist on purpose: 1Password is the master, Vercel holds the one your running code reads.
+  A serverless function can't call 1Password, so this split is unavoidable — the point is that the value rests
+  nowhere else.</p>
+  <details class="sub">
+  <summary>So is 1Password even used once Vercel has a copy?</summary>
+  <p>Not by the deployed bot, no. In production your code reads Vercel's copy — a serverless function has no
+  desktop app to unlock and no Touch ID to press, so it cannot call 1Password. That pipe was a one-time
+  <em>transfer</em>, not a live link.</p>
+  <p>1Password is still doing three jobs:</p>
+  <ul>
+    <li><b>It holds the readable master copy.</b> Vercel stores these as hidden Secrets — you cannot read them
+        back out. If you ever need to know what the value actually is, the vault is the only place that can
+        tell you.</li>
+    <li><b>Everything on your machine reads it live.</b> The smoke test, the preflight check, any script run
+        through a wrapper — those fetch from the vault every single time.</li>
+    <li><b>It's where a change starts.</b> Rotate in 1Password, then push the new value to Vercel.</li>
+  </ul>
+  <div class="danger"><strong>The copies can drift, and nothing tells you.</strong> Change the secret in
+  1Password alone and production carries on happily with the old one. 1Password is the source of truth by
+  <em>your discipline</em>, not because the system enforces it. When you rotate, do both.</div>
+  <div class="metaphor"><b>Like a spare key you had cut.</b> The original still lives on your keyring, but the
+  spare is what's in the neighbour's drawer — change the lock and you have to hand over a new spare too.</div>
+  </details>
+  <div class="callout"><strong>Never run <code>vercel env pull</code>.</strong> It writes your live secrets
+  into a <code>.env.local</code> file in your project — precisely what all of this avoids. Note that
+  <code>vercel link</code> and <code>vercel dev</code> also create that file (with a harmless token), so add
+  <code>.env*</code> to <code>.gitignore</code> as a backstop.</div>
 </li>
 </ol>
 
-<div class="phase"><h3>Phase D · Deploy</h3><p>Get a public URL with your code behind it.</p></div>
+<div class="phase"><h3>Phase D · Deploy</h3><p>Get a public address with your code behind it.</p></div>
 <ol class="steps">
 <li>
   <p><strong>Private repo, then link the project.</strong></p>
   <pre>gh repo create &lt;name&gt; --private --source=. --remote=origin --push
 npx vercel@latest link --yes</pre>
-  <div class="callout"><strong>If your app is in a subfolder of the repo</strong> (ours is
-  <code>joestar-agent/</code>), set the Vercel project's <b>Root Directory</b> to that folder: Settings →
-  Build &amp; Deployment → Root Directory. Otherwise a git-triggered build looks at the repo root, finds no
-  <code>api/</code>, and deploys an empty site over your working bot.</div>
+  <div class="callout"><strong>If your code sits in a subfolder of the repo</strong>, set the Vercel project's
+  <b>Root Directory</b> to that folder (Settings → Build &amp; Deployment). Otherwise a push-triggered build
+  looks at the top of the repo, finds no code, and cheerfully deploys an empty site over your working bot.</div>
 </li>
 <li>
-  <p><strong>Deploy to production.</strong></p>
+  <p><strong>Deploy.</strong></p>
   <pre>npx vercel@latest deploy --prod --yes</pre>
-  <p>Note the production domain it prints. A healthy deploy reaches Ready in seconds; one that sits at
-  <code>UNKNOWN</code> is blocked, not slow — go back to section 04.</p>
+  <p>Note the address it prints. A healthy deploy is Ready in seconds. One that sits at <code>UNKNOWN</code>
+  isn't slow — it's blocked. Go back to section 04.</p>
 </li>
 <li>
-  <p><strong>Prove it is alive before involving Slack.</strong></p>
+  <p><strong>Prove it's alive before you involve Slack.</strong></p>
   <pre>curl -i https://&lt;your-domain&gt;/api/slack/events</pre>
-  <p>Expect <code>405</code> (the endpoint accepts POST only) or <code>200</code> if your version answers GET.
-  A <code>404</code> means the route path is wrong — usually the Root Directory above. A redirect to
-  <code>vercel.com/sso-api</code> means Deployment Protection is on for that URL; use the plain production
-  alias, which is public.</p>
+  <p><code>405</code> is good (the endpoint takes POST only), as is <code>200</code> if your version answers
+  GET. <code>404</code> means the path is wrong — usually that Root Directory setting. A redirect to
+  <code>vercel.com/sso-api</code> means that particular address is protected; use the plain production one.</p>
 </li>
 </ol>
 
-<div class="phase"><h3>Phase E · Wire the event</h3><p>Two fields and one button. The button is the part everyone misses.</p></div>
+<div class="phase"><h3>Phase E · Wire the event</h3><p>Two fields and one button. The button is what everyone misses.</p></div>
+
+<div class="fig">
+<svg viewBox="0 0 700 328" width="100%" height="auto" role="img">
+  <title>Verified is not Saved: verifying proves Slack can reach your endpoint, saving makes Slack send events to it</title>
+  <defs>
+    <marker id="arrowF" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#1f4fd8"/>
+    </marker>
+  </defs>
+
+  <rect x="12" y="28" width="332" height="216" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <rect x="356" y="28" width="332" height="216" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+
+  <text x="28" y="54" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="600" fill="#0b6b3a">✓ Verified</text>
+  <text x="28" y="72" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">Event Subscriptions</text>
+
+  <rect x="28" y="88" width="96" height="46" rx="9" fill="#4A154B"/>
+  <text x="76" y="116" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#ffffff">Slack</text>
+
+  <path d="M124,111 H232" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowF)"/>
+
+  <rect x="232" y="88" width="96" height="46" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="280" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">your app</text>
+  <text x="280" y="123" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#2b3038">/api/events</text>
+
+  <text x="178" y="152" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#1f4fd8">one-off challenge</text>
+  <text x="28" y="176" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">proves Slack <tspan font-weight="700">CAN</tspan> reach you</text>
+
+  <rect x="28" y="194" width="132" height="34" rx="9" fill="#ffffff" stroke="#616a77" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="94" y="215" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#616a77">Save Changes</text>
+  <text x="172" y="215" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#8a5a00">← never clicked</text>
+
+  <text x="372" y="54" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="600" fill="#1f4fd8">Save Changes</text>
+  <text x="372" y="72" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">Event Subscriptions</text>
+
+  <rect x="372" y="88" width="96" height="46" rx="9" fill="#4A154B"/>
+  <text x="420" y="116" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#ffffff">Slack</text>
+
+  <path d="M468,99 H576" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowF)"/>
+  <path d="M468,111 H576" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowF)"/>
+  <path d="M468,123 H576" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowF)"/>
+
+  <rect x="576" y="88" width="96" height="46" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="624" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">your app</text>
+  <text x="624" y="123" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#2b3038">/api/events</text>
+
+  <text x="522" y="152" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#1f4fd8">every mention, from now on</text>
+  <text x="372" y="176" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">makes Slack <tspan font-weight="700">SEND</tspan> to you</text>
+
+  <rect x="372" y="194" width="132" height="34" rx="9" fill="#1f4fd8"/>
+  <text x="438" y="215" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#ffffff">Save Changes</text>
+  <text x="516" y="215" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#0b6b3a">← clicked</text>
+
+  <rect x="12" y="262" width="676" height="52" rx="9" fill="#fff8e8" stroke="#8a5a00" stroke-width="1.5"/>
+  <path d="M32,272 L42,290 L22,290 Z" fill="#8a5a00"/>
+  <text x="32" y="288" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff8e8">!</text>
+  <text x="54" y="282" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Verified but not saved = a healthy endpoint that never receives anything.</text>
+  <text x="54" y="301" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#8a5a00">No error, anywhere. Nothing in the logs, nothing in Slack.</text>
+</svg>
+</div>
+
 <ol class="steps">
 <li>
   <p><strong>Set the Request URL.</strong></p>
   <p class="where">Where: your Slack app → Features → Event Subscriptions → Enable Events (on)</p>
   <pre>https://&lt;your-domain&gt;/api/slack/events</pre>
-  <p>Click outside the box; within a second or two you get a green <strong>✓ Verified</strong>.</p>
+  <p>Click outside the box and you should get a green <strong>✓ Verified</strong> within a second or two.</p>
 </li>
 <li>
   <p><strong>Subscribe to the event.</strong> Expand <b>Subscribe to bot events</b> → Add Bot User Event →
   <code>app_mention</code>.</p>
 </li>
 <li>
-  <p><strong>Click Save Changes.</strong> The green bar at the very bottom of the page.</p>
-  <div class="danger"><strong>This is the trap.</strong> ✓ Verified means Slack could <em>reach</em> your
-  endpoint. Save Changes is what makes Slack <em>send</em> you events. They are different things, the save bar
-  sits below the fold, and the failure is completely silent: your endpoint is verified and provably healthy,
-  the bot is in the channel, the token works — and mentioning it does nothing at all, with no error
-  anywhere.</div>
+  <p><strong>Click Save Changes</strong> — the green bar at the very bottom of the page.</p>
+  <div class="danger"><strong>This is the trap that cost us an evening.</strong> ✓ Verified means Slack
+  <em>can reach</em> you. Save Changes is what makes Slack <em>start sending</em>. Different things. The save
+  bar sits below the fold, and the failure is completely silent: your endpoint is verified and provably
+  healthy, the bot is in the channel, the token works — and mentioning it does absolutely nothing, with no
+  error anywhere.</div>
+  <div class="metaphor"><b>It's a change-of-address form.</b> Verified is the post office confirming the new
+  address exists. Save is actually handing the form in. Skip it and your post keeps going to the old place,
+  and nobody writes to tell you.</div>
 </li>
 <li>
-  <p><strong>Reinstall if Slack asks.</strong> A yellow banner appears when scopes changed. If the scopes were
-  already right, no banner, nothing to do.</p>
+  <p><strong>Reinstall if Slack asks.</strong> A yellow banner appears if the permissions changed. If they
+  were already right, there's no banner and nothing to do.</p>
 </li>
 <li>
   <p><strong>Invite the bot, then mention it.</strong></p>
   <pre>/invite @yourbot
 @yourbot give me a number</pre>
-  <p>Installing granted permissions workspace-wide; it did not put the bot in any channel. A bot only receives
-  mentions for channels it belongs to — which is what makes a workspace-wide install safe.</p>
-  <div class="win"><strong>A threaded number is the whole deliverable.</strong> Everything after this point,
-  for the rest of the course, is changing what goes in the reply.</div>
+  <p>Installing gave it permissions across the workspace; it didn't put it in any channel. A bot only hears
+  mentions in channels it's actually in — which is what makes a workspace-wide install safe.</p>
+  <div class="win"><strong>A number in a thread is the whole deliverable.</strong> Everything else in this
+  course is changing what goes in that reply.</div>
 </li>
 </ol>
 
-<div class="phase"><h3>Phase F · Make it hold up</h3><p>Optional for the video. Not optional once pushes deploy themselves.</p></div>
+<div class="phase"><h3>Phase F · Make it hold up</h3><p>Optional for the video. Not optional once pushing deploys by itself.</p></div>
+
+<div class="fig">
+<svg viewBox="0 0 700 258" width="100%" height="auto" role="img">
+  <title>The deploy gate: a push reaches production only when the GitHub Actions test job passes</title>
+  <defs>
+    <marker id="arrowE" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#1f4fd8"/>
+    </marker>
+  </defs>
+
+  <rect x="12" y="98" width="104" height="60" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="64" y="122" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Your laptop</text>
+  <text x="64" y="141" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#616a77">git push</text>
+
+  <path d="M116,128 H140" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowE)"/>
+
+  <rect x="140" y="98" width="88" height="60" rx="9" fill="#24292f"/>
+  <text x="184" y="122" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#ffffff">GitHub</text>
+  <text x="184" y="141" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#c9d1d9">main</text>
+
+  <path d="M228,128 H252" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowE)"/>
+
+  <rect x="252" y="98" width="152" height="60" rx="9" fill="#0b6b3a"/>
+  <text x="328" y="122" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#ffffff">GitHub Actions</text>
+  <text x="328" y="141" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#d4e9dc">runs the test job</text>
+
+  <path d="M404,128 H424" fill="none" stroke="#1f4fd8" stroke-width="1.5"/>
+  <path d="M424,80 V176" fill="none" stroke="#1f4fd8" stroke-width="1.5"/>
+  <path d="M424,80 H524" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowE)"/>
+  <path d="M424,176 H452" fill="none" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrowE)"/>
+  <path d="M476,176 H520" fill="none" stroke="#d7dde5" stroke-width="1.5" stroke-dasharray="3 4"/>
+
+  <line x1="464" y1="44" x2="464" y2="66" stroke="#0b6b3a" stroke-width="5" stroke-linecap="round"/>
+  <line x1="464" y1="94" x2="464" y2="116" stroke="#0b6b3a" stroke-width="5" stroke-linecap="round"/>
+  <line x1="464" y1="140" x2="464" y2="212" stroke="#a32020" stroke-width="5" stroke-linecap="round"/>
+  <text x="464" y="228" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">the deploy gate</text>
+
+  <text x="524" y="42" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#0b6b3a">tests pass → gate opens</text>
+  <rect x="524" y="50" width="164" height="60" rx="9" fill="#15171c"/>
+  <text x="606" y="74" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#ffffff">Vercel production</text>
+  <text x="606" y="93" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#c9d1d9">new version live</text>
+
+  <text x="524" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#a32020">tests fail → gate shut</text>
+  <rect x="524" y="146" width="164" height="60" rx="9" fill="#ffffff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="606" y="170" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#0b6b3a">production unchanged</text>
+  <text x="606" y="189" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">old version still live</text>
+
+  <text x="12" y="244" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">Vercel's own git trigger is switched off, so this is the only path to production.</text>
+</svg>
+</div>
+
 <ol class="steps">
 <li>
-  <p><strong>Tests that need no network.</strong> Stub <code>fetch</code> and assert the handler's contract:
-  a forged signature gets 401, the challenge is echoed, the number lands in range, an existing thread is not
-  re-rooted, a retry posts nothing, a missing env var gives 500.</p>
+  <p><strong>Tests that need no network.</strong> Fake Slack's API and check the promises: a forged signature
+  is refused, the challenge is echoed, the number is in range, an existing thread isn't re-rooted, a repeat
+  posts nothing, a missing setting gives a clear 500.</p>
 </li>
 <li>
-  <p><strong>CI on every push</strong>, then deploy only if it passed. Turn off Vercel's own git trigger
-  (<code>vercel.json</code> → <code>git.deploymentEnabled.main: false</code>) so the workflow is the single
-  path to production.</p>
-  <div class="callout">Running <code>vercel deploy</code> in CI? Run it from the <em>repo root</em>. Vercel
-  applies the project's Root Directory on top of the working directory, so deploying from inside the subfolder
-  resolves to <code>app/app</code> and fails — while working fine on your machine.</div>
+  <p><strong>Run them on every push, and deploy only if they pass.</strong> Switch off Vercel's own
+  push-trigger so the workflow is the single way into production.</p>
+  <div class="callout">Deploying from CI? Run the command from the <em>top of the repo</em>. Vercel applies
+  your Root Directory setting on top of wherever the command runs, so deploying from inside the subfolder
+  looks for <code>app/app</code> and fails — while working perfectly on your machine.</div>
 </li>
 <li>
-  <p><strong>A smoke script</strong> that probes each link in the chain after any config change. See
-  section 07.</p>
+  <p><strong>A smoke script</strong> you run after any config change. Section 07.</p>
 </li>
 </ol>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">06 — THE CODE</span>
-<h2>What Claude wrote for you, in five jobs</h2>
-<p>One file does everything: <code>api/slack/events.js</code>. Read it in this order — it is the shape you
-will edit for the next fourteen lessons.</p>
+<!-- ══════════════════════════════════════ 06 ══ -->
+<details class="sec" style="--sc:var(--s-code); --sc2:var(--s-code)">
+<summary><span><span class="sec-n">06</span> <span class="sec-t">What Claude wrote for you, in five jobs
+<span class="sec-s">One file does everything. It's the shape you'll be editing for the next fourteen lessons.</span></span></span></summary>
 
-<details open>
-<summary>1 · Read the raw body, not a parsed object</summary>
-<p>The signature is a hash of the exact bytes Slack sent. Re-serialising a parsed JSON object produces
-different bytes — different whitespace, different key order — and every check fails. So the handler takes the
-body as text first and parses afterwards.</p>
-</details>
-<details>
-<summary>2 · Verify the request came from Slack</summary>
-<p>Rebuild Slack's signature as HMAC-SHA256 over <code>v0:&lt;timestamp&gt;:&lt;body&gt;</code> with the
-signing secret; reject timestamps older than five minutes (replay protection); compare with a timing-safe
-comparison. Anything failing gets 401 and nothing else happens.</p>
-<p>Two details worth understanding. <em>Timing-safe</em> compare: a normal string comparison returns faster
-when the first character differs, and that timing difference leaks the expected value to a patient attacker.
-And the order matters — because the check runs <em>before</em> the challenge branch, and Slack signs the
-challenge too, a wrong signing secret means the URL never verifies. Your green tick therefore proves the
-secret is right. If your generated file puts the challenge first, Verified tells you less.</p>
-</details>
-<details>
-<summary>3 · Answer the URL verification challenge</summary>
-<p>If <code>payload.type === 'url_verification'</code>, echo <code>challenge</code> straight back. One-off,
-and the reason the field turns green.</p>
-</details>
-<details>
-<summary>4 · Ignore retries, ignore itself</summary>
-<p>Any request carrying <code>x-slack-retry-num</code> gets an immediate 200 and no reply — otherwise one slow
-response becomes three identical numbers in the thread. Events carrying <code>bot_id</code> are skipped too,
-or a bot that mentions itself answers itself forever.</p>
-</details>
-<details>
-<summary>5 · Post the reply, and never fail loudly at Slack</summary>
-<p><code>chat.postMessage</code> with channel, text, and <code>thread_ts</code>. Two non-obvious bits:
-Slack returns HTTP 200 even when the call failed, so you must check <code>ok</code> in the body; and if the
-post fails you log it and still answer 200, because a 500 makes Slack retry an event that will fail the same
-way.</p>
-<p>One more distinction worth copying: a <em>missing environment variable</em> should return 500, not 401.
-Both mean "no reply", but 401 says "someone forged a request" and sends you hunting for an attacker when you
-actually mistyped a variable name.</p>
-</details>
-</section>
+<p>The file is <code>api/slack/events.js</code>. Read it in this order — each job exists for a reason, and the
+reasons are the interesting part.</p>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">07 — WHEN IT DOESN'T WORK</span>
-<h2>Test one link at a time</h2>
-<p>"Nothing happened" is not a diagnosis, and guessing is expensive. The chain has five testable links plus
-one you cannot test. Walk them in order; the first failure is your answer.</p>
+<details class="sub">
+<summary>1 · Take the message exactly as sent, don't tidy it first</summary>
+<p>The signature Slack sends is calculated from the exact characters in the request. If your code parses the
+message into an object and then rebuilds it — different spacing, different order — the calculation no longer
+matches, and every check fails.</p>
+<div class="metaphor"><b>Like checking a signature on a photocopy you retyped.</b> Same words, wrong
+document.</div>
+<p>So the handler reads the body as raw text first, checks it, and only then parses.</p>
+</details>
+
+<details class="sub">
+<summary>2 · Check the request really came from Slack</summary>
+<p>Scramble <code>v0:&lt;timestamp&gt;:&lt;body&gt;</code> with the signing secret, compare with what Slack
+sent, and refuse anything that doesn't match. Also refuse anything older than five minutes, so a captured
+request can't be replayed later.</p>
+<p>Two details worth understanding:</p>
+<p><strong>The comparison is deliberately slow and even.</strong> A normal text comparison stops as soon as it
+finds a difference, so it answers faster for a wrong guess that starts correctly. That timing difference
+leaks the answer, one character at a time, to someone patient. A timing-safe comparison always takes the same
+time.</p>
+<p><strong>The order of these checks is load-bearing.</strong> Because the signature is checked
+<em>before</em> the challenge is answered, and Slack signs the challenge too, a wrong signing secret means the
+URL never verifies. So your green tick is also proof the secret is right. If your generated file answers the
+challenge first, the tick proves less.</p>
+</details>
+
+<details class="sub">
+<summary>3 · Answer the one-off challenge</summary>
+<p>When Slack sends <code>url_verification</code>, send its <code>challenge</code> value straight back. That
+one exchange is what turns the field green, and it never happens again.</p>
+</details>
+
+<details class="sub">
+<summary>4 · Ignore repeats, and ignore itself</summary>
+<p>Anything arriving with a repeat header gets an immediate "got it" and no reply — otherwise one slow
+response becomes three identical numbers in the thread.</p>
+<p>Events from bots are skipped too. Without that, a bot that mentions itself answers itself, forever.</p>
+</details>
+
+<details class="sub">
+<summary>5 · Post the reply — and never fail loudly at Slack</summary>
+<p>Send the message with the channel, the text, and the thread id from section 02. Two non-obvious bits:</p>
+<p>Slack answers "200 OK" even when your call failed, with the real outcome inside the response body. So you
+have to look inside rather than trust the status.</p>
+<p>And if posting fails, log it but still tell Slack you're fine. Reporting an error makes Slack retry an
+event that's going to fail exactly the same way.</p>
+<div class="callout"><strong>One distinction worth copying:</strong> a <em>missing setting</em> should return
+500, not 401. Both mean "no reply appeared", but 401 says "someone forged a request" and sends you hunting for
+an attacker when you actually just mistyped a variable name.</div>
+</details>
+</details>
+
+<!-- ══════════════════════════════════════ 07 ══ -->
+<details class="sec" style="--sc:var(--s-stuck); --sc2:var(--s-stuck)">
+<summary><span><span class="sec-n">07</span> <span class="sec-t">When nothing happens
+<span class="sec-s">"Nothing happened" isn't a diagnosis. Test one link at a time and the first failure is your answer.</span></span></span></summary>
+
+<div class="fig">
+<svg viewBox="0 0 700 452" width="100%" height="auto" role="img">
+  <title>A six-link debugging ladder: endpoint alive, signature accepted, forgery rejected, bot can post, handler replies, and finally a human mention, which only a person can test.</title>
+  <defs>
+    <marker id="arrowC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c3ccd8"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#2b3038">Test one link at a time</text>
+  <text x="72" y="54" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#0b6b3a">A script can test these five &#8212; the first failure is your answer</text>
+
+  <rect x="14" y="76" width="6" height="248" rx="3" fill="#0b6b3a"/>
+
+  <line x1="44" y1="111" x2="44" y2="133" stroke="#c3ccd8" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <line x1="44" y1="163" x2="44" y2="185" stroke="#c3ccd8" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <line x1="44" y1="215" x2="44" y2="237" stroke="#c3ccd8" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <line x1="44" y1="267" x2="44" y2="289" stroke="#c3ccd8" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <line x1="44" y1="319" x2="44" y2="341" stroke="#a32020" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <circle cx="44" cy="96" r="15" fill="#ffffff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="44" y="101" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">1</text>
+  <rect x="72" y="76" width="548" height="40" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="90" y="101" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">endpoint alive</text>
+  <text x="604" y="101" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">deployment is reachable</text>
+  <circle cx="652" cy="96" r="12" fill="#0b6b3a"/>
+  <path d="M647,96 l3.5,3.5 l6.5,-7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="44" cy="148" r="15" fill="#ffffff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="44" y="153" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">2</text>
+  <rect x="72" y="128" width="548" height="40" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="90" y="153" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">signature accepted</text>
+  <text x="604" y="153" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">the secret matches</text>
+  <circle cx="652" cy="148" r="12" fill="#0b6b3a"/>
+  <path d="M647,148 l3.5,3.5 l6.5,-7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="44" cy="200" r="15" fill="#ffffff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="44" y="205" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">3</text>
+  <rect x="72" y="180" width="548" height="40" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="90" y="205" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">forgery rejected (401)</text>
+  <text x="604" y="205" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">the check is real</text>
+  <circle cx="652" cy="200" r="12" fill="#0b6b3a"/>
+  <path d="M647,200 l3.5,3.5 l6.5,-7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="44" cy="252" r="15" fill="#ffffff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="44" y="257" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">4</text>
+  <rect x="72" y="232" width="548" height="40" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="90" y="257" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">bot can post</text>
+  <text x="604" y="257" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">token works, bot in channel</text>
+  <circle cx="652" cy="252" r="12" fill="#0b6b3a"/>
+  <path d="M647,252 l3.5,3.5 l6.5,-7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="44" cy="304" r="15" fill="#ffffff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="44" y="309" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">5</text>
+  <rect x="72" y="284" width="548" height="40" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="90" y="309" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">handler replies</text>
+  <text x="604" y="309" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">your code works</text>
+  <circle cx="652" cy="304" r="12" fill="#0b6b3a"/>
+  <path d="M647,304 l3.5,3.5 l6.5,-7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="44" cy="356" r="15" fill="#ffffff" stroke="#a32020" stroke-width="1.5"/>
+  <text x="44" y="361" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">6</text>
+  <rect x="72" y="336" width="548" height="52" rx="9" fill="#ffffff" stroke="#a32020" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="90" y="357" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">a human mention</text>
+  <text x="604" y="357" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">Slack is dispatching</text>
+  <text x="90" y="376" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#a32020">only a human can test this</text>
+  <circle cx="652" cy="352" r="4.5" fill="#a32020"/>
+  <path d="M643,368 a9,9 0 0 1 18,0 z" fill="#a32020"/>
+
+  <rect x="20" y="404" width="660" height="34" rx="9" fill="#f4f7fb" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="350" y="425" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">1&#8211;5 pass but 6 fails &#8594; the fault is in Slack's settings, not your code.</text>
+</svg>
+</div>
+
+<p>Guessing is expensive — we lost an hour to two confident, wrong theories. The chain has five links you can
+test with a script, and one you can't.</p>
 
 <table>
-  <tr><th>#</th><th>Probe</th><th>Passing proves</th></tr>
-  <tr><td>1</td><td><code>curl</code> the endpoint</td><td>The deployment is alive and the route path is right.</td></tr>
-  <tr><td>2</td><td>Hand-signed <code>url_verification</code></td><td>The signing secret in the deployment matches the vault's.</td></tr>
-  <tr><td>3</td><td>Deliberately bad signature → 401</td><td>The check is real, not decorative.</td></tr>
-  <tr><td>4</td><td>Direct <code>chat.postMessage</code></td><td>Token valid, <code>chat:write</code> granted, bot is in the channel.</td></tr>
-  <tr><td>5</td><td>Hand-signed <code>app_mention</code> at production</td><td>The deployed handler works end to end.</td></tr>
-  <tr><td>—</td><td><em>A human typing a mention</em></td><td><strong>Not testable by script.</strong> See below.</td></tr>
+  <tr><th>#</th><th>Test</th><th>Passing proves</th></tr>
+  <tr><td>1</td><td>Fetch the endpoint</td><td>It's deployed and the path is right.</td></tr>
+  <tr><td>2</td><td>A properly signed challenge</td><td>The secret in the deployment matches the vault's.</td></tr>
+  <tr><td>3</td><td>A deliberately wrong signature → refused</td><td>The check is real, not decorative.</td></tr>
+  <tr><td>4</td><td>Post a message directly with the bot token</td><td>Token valid, permission granted, bot is in the channel.</td></tr>
+  <tr><td>5</td><td>A signed, fake mention sent to production</td><td>Your deployed code works end to end.</td></tr>
+  <tr><td style="color:var(--bad)">—</td><td><em>A human typing a real mention</em></td><td><strong>No script can do this.</strong> See below.</td></tr>
 </table>
 
-<div class="danger"><strong>If 1–5 pass and a real mention still does nothing</strong>, the fault is upstream
-in Slack's dispatch — and unsaved Event Subscriptions is the first thing to check, app-needs-reinstall the
-second. Nothing your code can do will surface this; only the ladder above tells you it is not your code.</div>
+<div class="danger"><strong>If 1–5 pass and a real mention still does nothing</strong>, the problem is upstream
+in Slack, not in your code. Check the Event Subscriptions settings were actually saved first, and whether the
+app needs reinstalling second.</div>
 
-<details>
-<summary>Why a script cannot close the last link</summary>
-<p>Your bot could post a message mentioning itself — but that event arrives carrying <code>bot_id</code>, and
-job 4 above deliberately ignores it. Faking a human mention needs a <em>user</em> token (<code>xoxp-</code>),
-which is a new scope and a new secret. Not worth it. Accept that one link is human-tested and make the other
-five automatic.</p>
+<details class="sub">
+<summary>Why a script can't test that last link</summary>
+<p>Your bot could post a message that mentions itself — but that event arrives marked as coming from a bot,
+and job 4 above ignores it deliberately. Faking a human mention needs a different kind of token with more
+access, which is more risk than the test is worth.</p>
+<p>Accept that one link is human-tested, and make the other five automatic. Their real value is telling you
+the fault <em>isn't</em> in your code.</p>
 </details>
 
-<details>
-<summary>Symptoms → causes, from the run this page documents</summary>
+<details class="sub">
+<summary>Symptoms and their causes, from the real run</summary>
 <table>
-  <tr><th>Symptom</th><th>Cause</th></tr>
-  <tr><td>"Your URL didn't respond"</td><td>Placeholder <code>&lt;deployment&gt;</code> still in the Request URL.</td></tr>
-  <tr><td>✓ Verified, endpoint healthy, mention does nothing</td><td>Save Changes never clicked.</td></tr>
-  <tr><td>Deploy sits at <code>UNKNOWN</code>, no logs</td><td>Vercel has no GitHub login connection.</td></tr>
-  <tr><td>Endpoint 404s after a git-triggered deploy</td><td>Root Directory unset; the repo root was deployed.</td></tr>
-  <tr><td><code>DecodeSACredentials … unexpected end of JSON</code></td><td>1Password token truncated to 128 chars by the Keychain prompt.</td></tr>
-  <tr><td>Redirect to <code>vercel.com/sso-api</code></td><td>Deployment Protection on a team-branded URL; use the production alias.</td></tr>
-  <tr><td>Same number posted three times</td><td>Retry header not being checked.</td></tr>
+  <tr><th>What you see</th><th>What it actually is</th></tr>
+  <tr><td>"Your URL didn't respond"</td><td>The placeholder address is still in the box.</td></tr>
+  <tr><td>Verified, healthy, mention does nothing</td><td>Save Changes was never clicked.</td></tr>
+  <tr><td>Deploy stuck at <code>UNKNOWN</code>, no logs</td><td>Vercel has no GitHub connection.</td></tr>
+  <tr><td>Endpoint 404s after a push-triggered deploy</td><td>Root Directory unset; the top of the repo got deployed.</td></tr>
+  <tr><td><code>DecodeSACredentials … unexpected end of JSON</code></td><td>1Password token cut to 128 characters by the Keychain prompt.</td></tr>
+  <tr><td>Redirect to <code>vercel.com/sso-api</code></td><td>Protection on that address; use the plain production one.</td></tr>
+  <tr><td>The same number posted three times</td><td>Repeat header isn't being checked.</td></tr>
 </table>
 </details>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">08 — DONE</span>
-<h2>You are finished when</h2>
+<!-- ══════════════════════════════════════ 08 ══ -->
+<details class="sec" open style="--sc:var(--s-done); --sc2:var(--s-done)">
+<summary><span><span class="sec-n">08</span> <span class="sec-t">You're done when
+<span class="sec-s">Four things work, and two things you can explain.</span></span></span></summary>
 <ul class="check">
-  <li>Mentioning the bot in a channel it belongs to produces a threaded number.</li>
-  <li>Mentioning it <em>inside an existing thread</em> replies in that thread, not a new one.</li>
-  <li><code>curl</code>ing the endpoint with no signature is refused.</li>
-  <li>No secret exists in any file, any commit, or any screenshot — only in 1Password and Vercel's environment.</li>
-  <li>You can say out loud what each of the five platforms does, and what breaks without it.</li>
-  <li>You can name what the signing secret protects, and what the bot token authorises.</li>
+  <li>Mentioning the bot in a channel it's in produces a number in a thread.</li>
+  <li>Mentioning it <em>inside an existing thread</em> replies there, not in a new one.</li>
+  <li>Poking the endpoint without a signature gets refused.</li>
+  <li>No secret sits in any file, any commit, or any screenshot — only in 1Password and Vercel's settings.</li>
+  <li>You can say what each of the five services does, and what breaks without it.</li>
+  <li>You can say what the signing secret protects, and what the bot token permits.</li>
 </ul>
 <div class="win"><strong>The last two matter more than the first four.</strong> Lesson 05 changes what goes in
-the reply and nothing else. If the round trip is a model in your head rather than a sequence of clicks you
+the reply and nothing else. If the round trip is a picture in your head rather than a sequence of clicks you
 performed, the rest of the course is editing one function.</div>
-</section>
+</details>
 
-<!-- ────────────────────────────────────────────────────────────── -->
-<section>
-<span class="snum">09 — REFERENCE</span>
-<h2>Where everything lives</h2>
+<!-- ══════════════════════════════════════ 09 ══ -->
+<details class="sec" style="--sc:var(--muted); --sc2:var(--muted)">
+<summary><span><span class="sec-n">09</span> <span class="sec-t">Where everything lives
+<span class="sec-s">Sources, the code, and how this page departs from the video.</span></span></span></summary>
 <table>
   <tr><th>Thing</th><th>Where</th></tr>
   <tr><td class="who">Ray's video</td><td><a href="https://www.agenticcoding.school/v/T3b_BNyN">agenticcoding.school</a> · transcript at <code>course/transcripts/04-0-to-1--setting-up-bot-foundations.md</code></td></tr>
@@ -659,19 +1210,21 @@ performed, the rest of the course is editing one function.</div>
   <tr><td class="who">Earlier drafts</td><td><code>archive/</code> — superseded by this page</td></tr>
 </table>
 
-<h3>How this page departs from the video</h3>
+<details class="sub">
+<summary>How this page departs from the video</summary>
 <table>
   <tr><th>Step</th><th>Video</th><th>Here</th></tr>
-  <tr><td class="who">Secrets</td><td>Pasted into Vercel's dashboard; <code>.env.example</code> in the repo</td><td>1Password is the source of truth; piped to Vercel; <code>.env.op</code> holds references</td></tr>
-  <tr><td class="who">Repo</td><td><code>git init</code> during the lesson</td><td>Repo already exists — skip it, keep the rest</td></tr>
-  <tr><td class="who">Deploys</td><td>CLI, straight to production</td><td>Tests gate production; pushes deploy themselves</td></tr>
-  <tr><td class="who">Verification</td><td>Mention it and see</td><td>Five scripted probes, then mention it</td></tr>
+  <tr><td class="who">Secrets</td><td>Typed into Vercel's dashboard; an example file in the repo</td><td>1Password is the master copy, piped to Vercel; the repo holds references only</td></tr>
+  <tr><td class="who">Repo</td><td><code>git init</code> during the lesson</td><td>Already exists — skip it, keep the rest</td></tr>
+  <tr><td class="who">Deploys</td><td>By hand, straight to production</td><td>Tests gate production; pushing deploys by itself</td></tr>
+  <tr><td class="who">Checking it works</td><td>Mention it and see</td><td>Five scripted tests, then mention it</td></tr>
 </table>
-</section>
+</details>
+</details>
 
 <footer>
-Written after doing lesson 04 rather than before. The traps in sections 04, 05 and 07 are the ones that
-actually cost time — they are not hypothetical.
+Written after doing lesson 04, not before. The traps in sections 04, 05 and 07 are the ones that actually cost
+time — none of them are hypothetical.
 </footer>
 
 </main>
