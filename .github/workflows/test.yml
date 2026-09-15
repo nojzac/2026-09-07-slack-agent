@@ -16,8 +16,10 @@ jobs:
           # Match the Node version Vercel runs the function on.
           node-version: 24.x
 
-      # No dependencies and no lockfile: the bot is stdlib-only, so there is
-      # nothing to install. Add a cache step here when that stops being true.
+      - name: Install dependencies
+        working-directory: joestar-agent
+        run: npm ci
+
       - name: Run tests
         working-directory: joestar-agent
         run: npm test

@@ -1,12 +1,16 @@
-import { randomInt } from 'node:crypto';
-import { verifySlackSignature, postMessage } from '../_lib/slack.js';
+import { waitUntil } from '@vercel/functions';
+import { verifySlackSignature, postMessage, updateMessage } from '../_lib/slack.js';
+import { runClaude } from '../_lib/claude.js';
 
-const MIN = Number(process.env.RANDOM_MIN ?? 1);
-const MAX = Number(process.env.RANDOM_MAX ?? 100);
+// Claude takes minutes, not milliseconds. The function must outlive the 200 we
+// send Slack, so ask for the longest window the plan allows.
+export const maxDuration = 300;
 
-function randomNumber() {
-  // randomInt is unbiased and needs no floor/range arithmetic to get right.
-  return randomInt(MIN, MAX + 1);
+const THINKING = '_thinking…_';
+
+/** Strip the leading <@U123> mention so Claude gets the question, not the ping. */
+export function promptFrom(text) {
+  return String(text ?? '').replace(/<@[A-Z0-9]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 // Only POST is exported, so anything else gets a 405 without reaching this code.
@@ -40,26 +44,55 @@ export async function POST(request) {
     return Response.json({ challenge: payload.challenge });
   }
 
-  // Slack retries anything it thinks failed; don't post the number twice.
+  // Slack retries anything it thinks failed; don't run Claude twice.
   if (request.headers.get('x-slack-retry-num')) {
     return new Response('ok', { status: 200 });
   }
 
   const event = payload.event;
   if (event?.type === 'app_mention' && !event.bot_id) {
-    try {
+    const token = process.env.SLACK_BOT_TOKEN;
+    const channel = event.channel;
+    // Reply in the thread; for a top-level message, ts starts the thread.
+    const thread_ts = event.thread_ts ?? event.ts;
+
+    const missing = ['E2B_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'].filter(v => !process.env[v]);
+    if (missing.length) {
+      console.error('[claude] not configured:', missing.join(', '));
       await postMessage({
-        token: process.env.SLACK_BOT_TOKEN,
-        channel: event.channel,
-        text: `🎲 ${randomNumber()}`,
-        // Reply in the thread; for a top-level message, ts starts the thread.
-        thread_ts: event.thread_ts ?? event.ts,
+        token, channel, thread_ts,
+        text: `I can't reach Claude — ${missing.join(' and ')} not set on this deployment.`,
       });
-      console.log('[slack] replied in', event.channel);
-    } catch (err) {
-      // Never 500 back at Slack: it would retry and we would fail again.
-      console.error('[slack] reply failed:', err.message);
+      return new Response('ok', { status: 200 });
     }
+
+    // Answer Slack first, then keep working. Slack wants 200 within three
+    // seconds and a placeholder tells the human something is happening, which
+    // silence does not.
+    const placeholder = await postMessage({ token, channel, thread_ts, text: THINKING });
+
+    waitUntil((async () => {
+      const started = Date.now();
+      try {
+        // Swappable so the tests can run the whole path without booting a real
+        // sandbox; in production this is always runClaude.
+        const run = globalThis.__claudeRunner ?? runClaude;
+        const answer = await run({ prompt: promptFrom(event.text) });
+        await updateMessage({
+          token, channel, ts: placeholder.ts,
+          text: answer || '_Claude finished but said nothing._',
+        });
+        console.log('[claude] answered in', Date.now() - started, 'ms');
+      } catch (err) {
+        console.error('[claude] failed:', err.message);
+        // Never leave the placeholder sitting there: a stuck "thinking…" is
+        // indistinguishable from a bot that has died.
+        await updateMessage({
+          token, channel, ts: placeholder.ts,
+          text: `Claude fell over: \`${err.message}\``,
+        }).catch(() => {});
+      }
+    })());
   }
 
   return new Response('ok', { status: 200 });

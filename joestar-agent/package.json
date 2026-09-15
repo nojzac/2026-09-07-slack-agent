@@ -7,5 +7,9 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@vercel/functions": "^3.9.7",
+    "e2b": "^2.49.1"
   }
 }
