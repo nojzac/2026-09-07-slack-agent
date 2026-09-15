@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#4a5766; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 6%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 14%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 14%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 13%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 22%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 5%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 10%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-05/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 05</p>
+<h1>Give the bot a brain: Claude Code in a cloud sandbox</h1>
+<p class="standfirst">Lesson 04 built the pipe. This lesson changes what flows through it: your mention
+becomes a prompt, Claude Code answers it on a computer in the cloud, and the reply appears in the
+thread.</p>
+
+<div class="facts">
+  <span><b>Ray's video:</b> 8 min 30 s</span>
+  <span><b>This page:</b> 45–60 min</span>
+  <span><b>At the end:</b> a bot that can think</span>
+</div>
+
+<div class="fm">
+<h2>What you'll have at the end</h2>
+<ul>
+  <li>Mention the bot with a question and Claude Code answers it, in the thread.</li>
+  <li>A cloud sandbox that boots per question, runs Claude, and is destroyed afterwards.</li>
+  <li>Two more credentials in 1Password: an E2B key and a Claude Code token.</li>
+  <li>An honest "thinking…" while it works, rather than silence.</li>
+</ul>
+</div>
+
+<div class="fm">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 04, so a mention already reaches your deployed code and gets a reply.</p>
+<p>It assumes a <strong>Claude subscription</strong> (Pro, Max, Team or Enterprise) — the token in
+step 2 requires one. It does not assume you have used E2B, or know what a sandbox is; both are
+explained below.</p>
+</div>
+
+<div class="fm">
+<h2>Why this lesson exists</h2>
+<p>A bot that picks numbers needs nothing but a function. A bot that <em>does work</em> needs a
+computer: somewhere to check out a repo, run commands, install things and make a mess — for minutes
+at a time, without any of it touching your machine or anyone else's.</p>
+<p>That is all a cloud sandbox is. This lesson rents one per question and throws it away afterwards.</p>
+<div class="metaphor"><b>It's a hotel room, not a house.</b> You get a room for the night, you can
+leave towels on the floor, and housekeeping erases you completely at checkout. Nothing you do there
+can reach your home.</div>
+</div>
+
+<div class="map">
+<h2>How this page is laid out</h2>
+<p style="color:var(--muted); font-size:15px; margin:6px 0 0;">Same shape as lesson 04. Read part 1,
+work through part 2, keep part 3 for when something breaks.</p>
+<ol>
+  <li><span class="badge b-understand">UNDERSTAND</span>
+      <span><a href="#part1">Part 1 · Understand what changes</a>
+      <span class="what">Why a sandbox, how the message flows now, and why the reply arrives in two
+      stages.</span></span></li>
+  <li><span class="badge b-do">DO NOW</span>
+      <span><a href="#part2">Part 2 · Build it</a>
+      <span class="what">Six steps. The first two are accounts and tokens — only you can do
+      those.</span></span></li>
+  <li><span class="badge b-ref">REFERENCE</span>
+      <span><a href="#part3">Part 3 · Keep for later</a>
+      <span class="what">What the code does, what goes wrong, and how to tell where it broke.</span></span></li>
+</ol>
+</div>
+
+<div class="fm" id="before" style="border-left:4px solid var(--bad)">
+<h2>Before you begin</h2>
+<h3>You need</h3>
+<ul>
+  <li><strong>Lesson 04 finished</strong> — mentioning the bot gets a reply today.</li>
+  <li><strong>A Claude subscription</strong> — Pro, Max, Team or Enterprise. <code>claude setup-token</code> in step 2 refuses without one.</li>
+  <li><strong>E2B</strong> — a free account; new ones come with about $100 of credit.</li>
+  <li><strong>1Password</strong> — the same vault and item from lesson 04.</li>
+</ul>
+<div class="callout"><strong>A decision before you start: whose money pays for Claude.</strong>
+The token in step 2 bills answers to <em>your Claude subscription</em>. The alternative is an
+Anthropic API key, billed per token at API prices. The subscription route is what Ray uses and is
+much cheaper for a personal agent — but check Anthropic's terms if the bot will ever serve people
+other than you, because the allowance is meant for one person's use.</div>
+</div>
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what changes</h2>
+  <p>Three short sections. The wiring from lesson 04 is untouched — only what happens in the middle
+  is different.</p>
+</div>
+
+<details class="sec" id="why-sandbox" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Why Claude needs a computer, not just a function<span class="sec-s">What a cloud sandbox is, and why the answer isn't "run it on Vercel".</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Your Vercel function is a good postbox and a poor workshop. It starts when a request arrives,
+runs briefly, and is thrown away. It has no persistent disk, no git, no place to install things.</p>
+
+<p>Claude Code needs the opposite: a whole machine it can work in for minutes — read files, run
+commands, install packages, break things. So the function stops being the worker and becomes the
+dispatcher. It rents a machine, hands over the question, waits, and reports back.</p>
+
+<div class="metaphor"><b>The function is a receptionist; the sandbox is the workshop out the back.</b>
+Reception is never where the work happens — it's where the work is taken in and handed out.</div>
+
+<details class="sub">
+<summary>Why a sandbox rather than a server you keep running</summary>
+<p>A long-lived server would mean one machine accumulating everybody's mess, patched by you, running
+and billing between questions. It would also mean one Claude's changes could affect the next
+Claude's work.</p>
+<p>A fresh sandbox per question is cleaner in every way: no shared state, no cleanup, nothing running
+when nobody is asking. And it is what makes the next point safe.</p>
+</details>
+
+<details class="sub">
+<summary>Why it's acceptable to let Claude run with all permissions</summary>
+<p>Inside the sandbox, Claude runs with <code>--dangerously-skip-permissions</code> — no approval
+prompts, it just acts. That flag would be reckless on your laptop.</p>
+<p>It is reasonable here because of what the machine <em>is</em>: empty, isolated, freshly created,
+holding nothing of yours, with no path back to your systems, and destroyed when the answer is sent.
+The worst it can do is wreck a computer that was going to be deleted in ninety seconds anyway.</p>
+<div class="callout">This is worth holding on to as a principle, because it comes back in later
+lessons: <strong>you get to skip the safety prompts precisely to the extent that the blast radius is
+already contained.</strong> Widen what the sandbox can reach — your GitHub, your database — and that
+trade changes.</div>
+</details>
+
+<details class="sub">
+<summary>Why E2B, when there are several of these</summary>
+<p>Vercel, Cloudflare, Daytona and others all sell sandboxes; this is a busy market because every
+agent needs one. Ray picks E2B for its network policy controls and because new accounts get free
+credit, which is enough reason for a course.</p>
+<p>Nothing here is deeply E2B-specific. It is "make a machine, run a command, read the output, kill
+the machine" — about fifteen lines in <code>api/_lib/claude.js</code>, which is where you would swap
+providers.</p>
+</details>
+</details>
+
+<details class="sec" id="flow-05" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">How a message flows now<span class="sec-s">The reply arrives in two stages, and the reason is the three-second rule from lesson 04.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<div class="fig">
+<svg viewBox="0 0 700 250" width="100%" height="auto" role="img">
+  <title>A mention becomes a prompt: Slack, a placeholder reply, a cloud sandbox running Claude Code, then the reply is edited with the answer</title>
+  <defs>
+    <marker id="arrow5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4fd8"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="46" width="150" height="78" rx="9" fill="#fff" stroke="#4a154b" stroke-width="1.5"/>
+  <rect x="8" y="46" width="150" height="26" rx="9" fill="#4a154b"/><rect x="8" y="62" width="150" height="10" fill="#4a154b"/>
+  <text x="24" y="64" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Slack</text>
+  <text x="24" y="94" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#2b3038">@joestar who</text>
+  <text x="24" y="110" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#2b3038">are you?</text>
+
+  <rect x="212" y="30" width="172" height="110" rx="9" fill="#fff" stroke="#15171c" stroke-width="1.5"/>
+  <rect x="212" y="30" width="172" height="26" rx="9" fill="#15171c"/><rect x="212" y="46" width="172" height="10" fill="#15171c"/>
+  <text x="228" y="48" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">Your Vercel function</text>
+  <text x="228" y="78" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">1 · post "thinking…"</text>
+  <text x="228" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">2 · answer Slack 200</text>
+  <text x="228" y="118" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">3 · keep working</text>
+
+  <rect x="440" y="30" width="176" height="110" rx="9" fill="#fff" stroke="#0b6b3a" stroke-width="1.5"/>
+  <rect x="440" y="30" width="176" height="26" rx="9" fill="#0b6b3a"/><rect x="440" y="46" width="176" height="10" fill="#0b6b3a"/>
+  <text x="456" y="48" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#fff">E2B sandbox</text>
+  <text x="456" y="78" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">a whole empty</text>
+  <text x="456" y="96" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">computer, running</text>
+  <text x="456" y="114" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#2b3038">claude -p "…"</text>
+  <text x="456" y="132" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#a32020">destroyed afterwards</text>
+
+  <path d="M162,74 L206,74" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrow5)"/>
+  <text x="163" y="66" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.5" font-weight="600" fill="#1f4fd8">app_mention</text>
+
+  <path d="M388,74 L434,74" stroke="#1f4fd8" stroke-width="1.5" marker-end="url(#arrow5)"/>
+  <text x="389" y="66" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.5" font-weight="600" fill="#1f4fd8">the prompt</text>
+
+  <path d="M528,142 L528,176 L83,176 L83,126" stroke="#0b6b3a" stroke-width="1.5" fill="none" marker-end="url(#arrow5)" stroke-dasharray="5 3"/>
+  <text x="196" y="194" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#0b6b3a">minutes later — chat.update edits "thinking…" into the answer</text>
+
+  <rect x="120" y="212" width="460" height="30" rx="9" fill="#fff8e8" stroke="#8a5a00" stroke-width="1"/>
+  <text x="136" y="231" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">Slack still wants its 200 in three seconds. Step 2 is not optional.</text>
+</svg>
+</div>
+
+<p>Lesson 04 could answer inside Slack's three-second window because picking a number takes no time.
+Claude takes minutes. If the function simply waited, Slack would give up, decide the delivery failed,
+and send the same mention again — and again — each one starting another sandbox.</p>
+
+<p>So the reply is split in two. The function posts <em>thinking…</em>, tells Slack "got it", and
+only then starts the real work. When Claude answers, it <strong>edits that same message</strong>
+rather than posting a new one.</p>
+
+<details class="sub">
+<summary>What keeps the function alive after it has answered</summary>
+<p>Normally a serverless function is shut down the moment it responds — which would kill Claude
+mid-thought. Vercel provides <code>waitUntil()</code> for exactly this: it says "I have answered, but
+keep me running until this finishes".</p>
+<p>There is still a ceiling. The function asks for <code>maxDuration = 300</code>, five minutes. A
+question that takes longer than that gets cut off, and the fix is to move the work off the function
+entirely — a bigger change, and not this lesson's.</p>
+</details>
+
+<details class="sub">
+<summary>Why "thinking…" matters more than it looks</summary>
+<p>It is the difference between a bot that is working and a bot that is broken — which, from the
+outside, look identical. Two minutes of silence in a Slack channel reads as failure, and the natural
+response is to mention it again, starting a second sandbox.</p>
+<p>The same reasoning is why a failure <em>replaces</em> the placeholder with the error text. A
+"thinking…" that never resolves is the worst of both worlds.</p>
+</details>
+</details>
+
+<details class="sec" id="creds-05" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">The two new credentials, and what each one pays for<span class="sec-s">One rents the machine; one buys the thinking.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<table>
+  <tr><th>Credential</th><th>What it authorises</th><th>Who bills you</th></tr>
+  <tr><td class="who"><code>E2B_API_KEY</code></td><td>Creating and running sandboxes</td><td>E2B, per second of machine time. New accounts start with about $100 of credit.</td></tr>
+  <tr><td class="who"><code>CLAUDE_CODE_OAUTH_TOKEN</code></td><td>Claude Code answering as you</td><td>Your Claude subscription, not per-token API pricing.</td></tr>
+</table>
+
+<p>They sit alongside the two from lesson 04, so the deployment ends up with four environment
+variables. Same rule as before: 1Password holds the master copies, Vercel holds the runtime ones.</p>
+
+<details class="sub">
+<summary>Subscription token or API key — and the trap if you set both</summary>
+<p><code>claude setup-token</code> produces a long-lived token tied to your Claude subscription. An
+<code>ANTHROPIC_API_KEY</code> is the other route, billed per token at API prices.</p>
+<div class="danger"><strong>If both are present, the API key wins.</strong> Claude Code checks
+<code>ANTHROPIC_API_KEY</code> before the OAuth token, so setting both means you are quietly paying
+API prices while believing you are on your subscription. The sandbox is given the OAuth token and
+nothing else, deliberately.</div>
+<div class="callout"><strong>Also avoid <code>--bare</code></strong> if you use the subscription
+token. The CLI's own help says bare mode makes authentication "strictly ANTHROPIC_API_KEY or
+apiKeyHelper — OAuth and keychain are never read", so it would break this setup with an error that
+looks nothing like its cause.</div>
+</details>
+
+<details class="sub">
+<summary>The token cannot be revoked from a dashboard</summary>
+<p>It is valid for a year, and there is no interface for deleting it. Anyone holding it can spend
+your Claude subscription. That is why it goes straight into 1Password and into Vercel as a hidden
+secret, and never into a file, a commit, or a chat message.</p>
+</details>
+</details>
+
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Six steps. Steps 1 and 2 are accounts and tokens — only you can do those, and everything else
+  waits on them.</p>
+</div>
+
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 1 of 6 — Create an E2B account and an API key<span class="sec-s">The service that rents you a machine per question. Free credit covers this course comfortably.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">1 · E2B account</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">2 · Claude token</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · 1Password</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · Template</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Deploy</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Try it</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Sign up.</strong></p>
+  <p class="where">Where: <a href="https://e2b.dev">e2b.dev</a></p>
+  <p>Click <b>Sign up</b> (top right). Signing in with GitHub or Google is fastest — there is no
+  separate password to store, and you already have both.</p>
+</li>
+<li>
+  <p><strong>Land on the dashboard and check your credit.</strong></p>
+  <p>After signing in you get a dashboard showing running sandboxes and usage — all zeros for now.
+  In the left menu, open <b>Billing</b>. A new account carries roughly <strong>$100 in free
+  credits</strong>, which is far more than this course uses.</p>
+  <details class="sub">
+  <summary>What you are actually being billed for</summary>
+  <p>Machine time, by the second, while a sandbox exists. A question that takes Claude ninety seconds
+  costs ninety seconds of a small VM — fractions of a penny.</p>
+  <p>The thing that costs real money is a sandbox nobody killed, quietly running for hours. That is
+  why the code kills it in a <code>finally</code> block, so it dies even when Claude throws.</p>
+  </details>
+</li>
+<li>
+  <p><strong>Create the API key.</strong></p>
+  <p class="where">Where: E2B dashboard → <b>API Keys</b> in the left menu</p>
+  <p>Click <b>Create API Key</b>, name it something you will recognise later — <code>joestar</code>
+  — and create it. Copy the value now; treat it like a password.</p>
+  <div class="callout"><strong>Leave the tab open.</strong> Step 3 puts this straight into 1Password,
+  and it is easier to copy it once than to go looking for it again. If you do lose it, delete the key
+  and make another — they are free and revocable, unlike the token in step 2.</div>
+</li>
+<li>
+  <p><strong>Note your team, if you are asked to pick one.</strong></p>
+  <p>E2B can put you in a personal team or an organisation. Either works, but the API key belongs to
+  <em>one</em> of them — if sandboxes later fail with a permissions error, a key from the wrong team
+  is the first thing to check.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You have an E2B API key on your clipboard, and a dashboard
+showing free credit.</div>
+</section>
+
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 2 of 6 — Create a Claude Code token<span class="sec-s">One command. It bills the bot's thinking to your Claude subscription.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · E2B account</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">2 · Claude token</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · 1Password</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · Template</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Deploy</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Try it</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Run the setup command in a terminal.</strong></p>
+  <p class="where">Where: any terminal, on your own machine</p>
+  <pre>claude setup-token</pre>
+  <p>It opens a browser to confirm who you are, then prints a long token. This requires a Claude
+  subscription — Pro, Max, Team or Enterprise. On a free account the command refuses, and your route
+  is an <code>ANTHROPIC_API_KEY</code> instead.</p>
+</li>
+<li>
+  <p><strong>Treat the token as unrevocable.</strong></p>
+  <div class="danger"><strong>There is no button to delete this token.</strong> It is valid for a
+  year, and anyone holding it can spend your Claude subscription. Do not paste it into a chat, a
+  file, a commit, or a screenshot. It goes from your terminal into 1Password in step 3, and nowhere
+  else.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A token starting <code>sk-ant-oat…</code> is on your screen,
+ready to be stored.</div>
+</section>
+
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 3 of 6 — Store both in 1Password<span class="sec-s">Two more fields on the item you already made in lesson 04.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · E2B account</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Claude token</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">3 · 1Password</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · Template</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Deploy</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Try it</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Open the existing item and add two fields.</strong></p>
+  <p class="where">Where: the 1Password app → vault <code>SlackAgentOS</code> → item <code>2026-09-07-slack-agent</code></p>
+  <p>Click <b>Edit</b>, then <b>add more</b> at the bottom, twice, each as type <b>Password</b>:</p>
+  <table>
+    <tr><th>Field label</th><th>Value</th></tr>
+    <tr><td class="who"><code>e2b_api_key</code></td><td>the key from step 1</td></tr>
+    <tr><td class="who"><code>claude_code_oauth_token</code></td><td>the token from step 2</td></tr>
+  </table>
+  <p>Save. The labels must match exactly — they are half the address the code looks the values up by.</p>
+</li>
+<li>
+  <p><strong>Uncomment the two references in the repo.</strong></p>
+  <p><code>.env.op</code> already carries them, commented out. Remove the two <code>#</code> marks:</p>
+  <pre>E2B_API_KEY=op://SlackAgentOS/2026-09-07-slack-agent/e2b_api_key
+CLAUDE_CODE_OAUTH_TOKEN=op://SlackAgentOS/2026-09-07-slack-agent/claude_code_oauth_token</pre>
+  <p>Still no secret in the repo — only the addresses of two more.</p>
+</li>
+<li>
+  <p><strong>Check all four resolve, without printing any of them.</strong></p>
+  <pre>bin/preflight</pre>
+  <p>It prints the length of each secret and never the value. Four lengths means the vault, the item,
+  the field labels and the references all line up.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Four secrets resolve from 1Password, and nothing sensitive
+has touched a file.</div>
+</section>
+
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 4 of 6 — Build the sandbox image<span class="sec-s">Define the machine once: Node, Claude Code, and the tools Claude reaches for.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · E2B account</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Claude token</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">3 · 1Password</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">4 · Template</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Deploy</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Try it</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Read the template before building it.</strong> It is five lines, at <code>e2b/template.mjs</code>:</p>
+  <pre>Template()
+  .fromNodeImage('24')
+  .aptInstall(['curl', 'git', 'ripgrep'])
+  .npmInstall('@anthropic-ai/claude-code@latest', { g: true })</pre>
+  <p>Node because Claude Code is a Node program. <code>git</code> because that is what it will mostly
+  be asked to touch. <code>ripgrep</code> because Claude's search shells out to <code>rg</code> and is
+  slow and clumsy without it. <code>curl</code> because half of all install instructions start with it.</p>
+  <details class="sub">
+  <summary>Why the image is built once rather than installed per question</summary>
+  <p>Installing Claude Code takes a minute or so. Doing that on every mention would add a minute to
+  every answer and burn credit doing the same work repeatedly.</p>
+  <p>Building it into the image means a sandbox boots in a second or two with everything already
+  present. The cost is that the image is a snapshot: <code>@latest</code> was resolved the day you
+  built it, and it does not drift until you rebuild.</p>
+  </details>
+</li>
+<li>
+  <p><strong>Build it, with the key injected from 1Password.</strong></p>
+  <pre>bin/with-secrets npx e2b template build</pre>
+  <p>This uploads the definition to E2B and builds the image there. It takes a few minutes the first
+  time. It prints a template ID when it finishes — that is what the code asks for by name.</p>
+  <div class="callout"><strong>A stale template is the trap here.</strong> Ray hits it in the video:
+  the bot fails, the error is unhelpful, and the cause is an image that no longer matches what the
+  code expects. If sandboxes behave strangely later, rebuild this before debugging anything else.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>E2B reports a built template, and its name matches the one
+the code asks for.</div>
+</section>
+
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 5 of 6 — Give Vercel the two new keys and deploy<span class="sec-s">Same pipe-don't-type rule as lesson 04. Four environment variables when you are done.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · E2B account</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Claude token</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">3 · 1Password</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">4 · Template</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">5 · Deploy</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Try it</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Pipe both into Vercel, production only.</strong></p>
+  <pre>op read "op://SlackAgentOS/2026-09-07-slack-agent/e2b_api_key" \
+  | npx vercel@latest env add E2B_API_KEY production
+
+op read "op://SlackAgentOS/2026-09-07-slack-agent/claude_code_oauth_token" \
+  | npx vercel@latest env add CLAUDE_CODE_OAUTH_TOKEN production</pre>
+  <p>Neither value passes through your clipboard or a browser form.</p>
+</li>
+<li>
+  <p><strong>Confirm there are now four.</strong></p>
+  <pre>npx vercel@latest env ls production</pre>
+  <p>Expect <code>SLACK_SIGNING_SECRET</code>, <code>SLACK_BOT_TOKEN</code>, <code>E2B_API_KEY</code>
+  and <code>CLAUDE_CODE_OAUTH_TOKEN</code>, all hidden.</p>
+</li>
+<li>
+  <p><strong>Push, and let the tests gate the deploy.</strong></p>
+  <pre>git push</pre>
+  <p>The workflow from lesson 04 runs the tests and only then deploys. Watch it with
+  <code>gh run watch</code> if you want to see it happen.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Four production variables, a green CI run, and a new
+deployment live.</div>
+</section>
+
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 6 of 6 — Ask it something<span class="sec-s">The whole point. Expect two stages, and expect it to be slower than lesson 04.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 6 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · E2B account</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Claude token</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">3 · 1Password</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">4 · Template</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">5 · Deploy</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">6 · Try it</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Mention the bot with a real question.</strong></p>
+  <pre>@joestar who are you?</pre>
+  <p>Within a second or two you should see <em>thinking…</em> in a thread. Some seconds later that
+  same message is replaced by Claude's answer. Watching it change is the proof that both stages
+  work.</p>
+</li>
+<li>
+  <p><strong>If it stays on "thinking…"</strong>, the sandbox or Claude failed in a way the code could
+  not report. Pull the logs:</p>
+  <pre>npx vercel@latest logs &lt;your-domain&gt;</pre>
+  <p>Look for <code>[claude] failed:</code> — the message after it is the real cause. Part 3 lists the
+  ones worth recognising.</p>
+</li>
+</ol>
+<div class="win"><strong>That is the lesson.</strong> Everything after this is giving Claude more to
+work with — your repo, tools, memory — rather than changing this shape.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>You asked a question in Slack and Claude answered it in the
+thread.</div>
+</section>
+
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>Reference. Come back when the bot goes quiet, or when you want to change what it can do.</p>
+</div>
+
+<details class="sec" id="code-05" style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What the code does<span class="sec-s">Two small files. The dispatcher, and the fifteen lines that rent a machine.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<details class="sub" open>
+<summary><code>api/_lib/claude.js</code> — rent, run, read, kill</summary>
+<p>Creates a sandbox from the template, handing it only the Claude token and three settings. Runs one
+command. Reads the answer out of the JSON. Kills the sandbox in a <code>finally</code>, so it dies
+even when something throws.</p>
+<p>The command is worth reading closely:</p>
+<pre>claude -p '&lt;your question&gt;' --dangerously-skip-permissions --output-format json</pre>
+<ul>
+  <li><code>-p</code> — non-interactive. No terminal, no trust dialog, no onboarding to hang on.</li>
+  <li><code>--dangerously-skip-permissions</code> — no approval prompts. Safe only because the machine is empty and about to be destroyed.</li>
+  <li><code>--output-format json</code> — a structured envelope; the answer is the <code>result</code> field.</li>
+</ul>
+</details>
+
+<details class="sub">
+<summary>Why the prompt is shell-quoted, and how that is tested</summary>
+<p>The question is pasted into a shell command, so a message containing backticks,
+<code>$(…)</code> or a stray quote could otherwise run as commands inside the sandbox. Every prompt
+is wrapped in single quotes with embedded quotes escaped.</p>
+<p>The test does not eyeball the escaping — it round-trips hostile strings
+(<code>'; rm -rf /</code>, <code>$(whoami)</code>, backticks) through a real shell and asserts that
+what comes out is byte-for-byte what went in.</p>
+</details>
+
+<details class="sub">
+<summary>The three environment settings passed into the sandbox</summary>
+<table>
+  <tr><th>Setting</th><th>Why</th></tr>
+  <tr><td class="who"><code>CLAUDE_CODE_OAUTH_TOKEN</code></td><td>Authenticates as you, billed to your subscription. Nothing else is passed in — particularly not an API key, which would silently take precedence.</td></tr>
+  <tr><td class="who"><code>DISABLE_TELEMETRY</code>, <code>DISABLE_ERROR_REPORTING</code></td><td>Nothing useful to report from a machine that exists for ninety seconds.</td></tr>
+  <tr><td class="who"><code>CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS</code></td><td>Claude waits up to <strong>ten minutes</strong> for background tasks before exiting. The whole function budget is five, so this caps the wait at five seconds.</td></tr>
+</table>
+</details>
+
+<details class="sub">
+<summary><code>api/slack/events.js</code> — what changed from lesson 04</summary>
+<p>Everything before the reply is identical: signature check, challenge, retry guard, self-mention
+guard. What changed is the reply itself — placeholder, acknowledge, work, edit — plus a check that
+names any missing variable in Slack rather than failing silently.</p>
+</details>
+</details>
+
+<details class="sec" id="broken-05" style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When it doesn't answer<span class="sec-s">Symptoms and their causes, including the two that cost Ray the most time.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+  <tr><th>What you see</th><th>What it usually is</th></tr>
+  <tr><td>A message naming a variable</td><td>Exactly what it says — that variable is not set on the deployment. Re-run step 5.</td></tr>
+  <tr><td>Stuck on <em>thinking…</em> forever</td><td>The sandbox or Claude threw after the placeholder went up. <code>vercel logs</code>, look for <code>[claude] failed:</code>.</td></tr>
+  <tr><td><em>thinking…</em> replaced by an auth error</td><td>The token is wrong, expired, or an <code>ANTHROPIC_API_KEY</code> is also set and taking precedence.</td></tr>
+  <tr><td>Sandbox creation fails outright</td><td>Wrong E2B key, a key from a different team, or no credit left.</td></tr>
+  <tr><td>Odd failures that make no sense</td><td>A stale template. Rebuild it (step 4) before debugging anything else — this is the one that cost Ray the video's last five minutes.</td></tr>
+  <tr><td>Answer truncated, or nothing after five minutes</td><td>The function's ceiling. The work needs to move off the function, which is a larger change.</td></tr>
+  <tr><td>The same question answered twice</td><td>Slack retried and the retry guard did not catch it. Check the <code>x-slack-retry-num</code> branch still returns early.</td></tr>
+</table>
+
+<div class="callout"><strong>The cheapest first move is still the ladder from lesson 04.</strong>
+Run <code>bin/smoke</code>. If all five probes pass, the Slack wiring is fine and the fault is in the
+sandbox or Claude — which halves the search immediately.</div>
+</details>
+
+<details class="sec" id="done-05" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">You're done when<span class="sec-s">Three things work, and two things you can explain.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<ul class="check">
+  <li>Mentioning the bot with a question produces <em>thinking…</em>, then a real answer in its place.</li>
+  <li>Asking something that takes a while still works — the answer arrives late rather than never.</li>
+  <li>No secret is in any file or commit; all four live in 1Password and Vercel.</li>
+  <li>You can say why Claude is allowed to skip permission prompts in there, and what would change that.</li>
+  <li>You can say why the reply arrives in two stages instead of one.</li>
+</ul>
+</details>
+
+<details class="sec" id="where-05" style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where everything lives<span class="sec-s">Sources, the code, and what this page assumes from lesson 04.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+  <tr><th>Thing</th><th>Where</th></tr>
+  <tr><td class="who">Ray's video</td><td><a href="https://www.agenticcoding.school/v/w_JNpais">agenticcoding.school</a> · transcript at <code>course/transcripts/05-0-to-1--connecting-claude-code.md</code></td></tr>
+  <tr><td class="who">E2B's Claude Code template</td><td><a href="https://docs.e2b.dev/template/examples/claude-code">docs.e2b.dev</a></td></tr>
+  <tr><td class="who">The sandbox runner</td><td><code>joestar-agent/api/_lib/claude.js</code></td></tr>
+  <tr><td class="who">The dispatcher</td><td><code>joestar-agent/api/slack/events.js</code></td></tr>
+  <tr><td class="who">The image definition</td><td><code>joestar-agent/e2b/template.mjs</code></td></tr>
+  <tr><td class="who">Lesson 04</td><td><a href="../lesson-04/index.html">sops/lesson-04/index.html</a> — the wiring this builds on</td></tr>
+  <tr><td class="who">Traps, all lessons</td><td><code>TRAPS.md</code> at the repo root</td></tr>
+</table>
+</details>
+
+
+<footer>
+Written alongside doing lesson 05, not after it. Steps 1 to 3 are yours; 4 to 6 happen once those
+credentials exist.
+</footer>
+
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l4-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l4-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l4-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>
