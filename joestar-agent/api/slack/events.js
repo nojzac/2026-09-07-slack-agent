@@ -23,6 +23,11 @@ export async function POST(request) {
   if (!ok) return new Response('invalid signature', { status: 401 });
 
   const payload = JSON.parse(rawBody);
+  console.log('[slack] received', {
+    type: payload.type,
+    event: payload.event?.type,
+    retry: request.headers.get('x-slack-retry-num'),
+  });
 
   // One-off handshake when the URL is first saved in the Slack app config.
   if (payload.type === 'url_verification') {
@@ -36,13 +41,19 @@ export async function POST(request) {
 
   const event = payload.event;
   if (event?.type === 'app_mention' && !event.bot_id) {
-    await postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: event.channel,
-      text: `🎲 ${randomNumber()}`,
-      // Reply in the thread; for a top-level message, ts starts the thread.
-      thread_ts: event.thread_ts ?? event.ts,
-    });
+    try {
+      await postMessage({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: event.channel,
+        text: `🎲 ${randomNumber()}`,
+        // Reply in the thread; for a top-level message, ts starts the thread.
+        thread_ts: event.thread_ts ?? event.ts,
+      });
+      console.log('[slack] replied in', event.channel);
+    } catch (err) {
+      // Never 500 back at Slack: it would retry and we would fail again.
+      console.error('[slack] reply failed:', err.message);
+    }
   }
 
   return new Response('ok', { status: 200 });
