@@ -1,0 +1,120 @@
+#!/bin/bash
+# Check every prerequisite this project needs, before you start work on a lesson.
+# Nothing here changes anything: it only reads. Exits non-zero if any check fails.
+#
+#   bin/preflight
+#
+# Most failures cost hours when found mid-lesson and seconds when found here.
+set -uo pipefail
+
+cd "$(dirname "$0")/.." || exit 1
+APP_DIR=joestar-agent
+PROD=https://joestar-agent-five.vercel.app
+VAULT=SlackAgentOS
+ITEM=2026-09-07-slack-agent
+
+pass=0 fail=0
+ok()   { printf "  \033[32m✓\033[0m %-34s %s\n" "$1" "${2:-}"; pass=$((pass+1)); }
+bad()  { printf "  \033[31m✗\033[0m %-34s %s\n" "$1" "${2:-}"; fail=$((fail+1)); }
+note() { printf "    \033[2m%s\033[0m\n" "$1"; }
+
+echo
+echo "Preflight — $(pwd)"
+echo
+
+# --- local tooling -----------------------------------------------------------
+major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+[ "$major" -ge 20 ] && ok "node >= 20" "v$(node -v | tr -d v)" || bad "node >= 20" "found ${major:-none}"
+
+if gh auth status >/dev/null 2>&1; then
+  ok "gh authenticated" "$(gh api user --jq .login 2>/dev/null)"
+else
+  bad "gh authenticated" "run: gh auth login"
+fi
+
+# --- 1Password ---------------------------------------------------------------
+token=$(security find-generic-password -a "$USER" -s op-slackagentos -w 2>/dev/null)
+if [ -n "$token" ] && [ "${#token}" -gt 500 ]; then
+  ok "1Password service-account token" "${#token} chars, in Keychain"
+  export OP_SERVICE_ACCOUNT_TOKEN="$token"
+else
+  bad "1Password service-account token" "missing or truncated (${#token} chars)"
+  note "see TRAPS.md — the security(1) prompt truncates at 128 chars"
+fi
+
+if [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
+  vaults=$(op vault list --format json 2>/dev/null | grep -c '"name"')
+  if op vault list 2>/dev/null | grep -q "$VAULT"; then
+    ok "op reaches the $VAULT vault" "$vaults vault(s) visible"
+  else
+    bad "op reaches the $VAULT vault" "check the service account's grant"
+  fi
+
+  for field in signing_secret bot_token; do
+    len=$(op read "op://$VAULT/$ITEM/$field" 2>/dev/null | tr -d '\n' | wc -c | tr -d ' ')
+    [ "${len:-0}" -gt 0 ] && ok "secret $field resolves" "$len chars" \
+                          || bad "secret $field resolves" "op://$VAULT/$ITEM/$field"
+  done
+fi
+
+# --- Slack -------------------------------------------------------------------
+if [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
+  bot=$(op read "op://$VAULT/$ITEM/bot_token" 2>/dev/null | tr -d '\n')
+  if [ -n "$bot" ]; then
+    hdrs=$(curl -s -D - -o /tmp/preflight.slack -X POST -H "Authorization: Bearer $bot" \
+             https://slack.com/api/auth.test 2>/dev/null)
+    if grep -q '"ok":true' /tmp/preflight.slack 2>/dev/null; then
+      who=$(python3 -c 'import json;d=json.load(open("/tmp/preflight.slack"));print(d["user"],"@",d["team"])' 2>/dev/null)
+      ok "Slack bot token valid" "$who"
+      scopes=$(echo "$hdrs" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-oauth-scopes"{print $2}')
+      for s in app_mentions:read chat:write; do
+        case ",$scopes," in *",$s,"*) ok "scope $s" ;; *) bad "scope $s" "have: $scopes" ;; esac
+      done
+    else
+      bad "Slack bot token valid" "$(head -c 120 /tmp/preflight.slack)"
+    fi
+    rm -f /tmp/preflight.slack
+  fi
+fi
+
+# --- Vercel ------------------------------------------------------------------
+who=$(npx --yes vercel@latest whoami 2>/dev/null | grep -v '^>' | tail -1)
+if [ -n "$who" ] && [ "$who" != "Logged out." ]; then
+  ok "Vercel logged in" "$who"
+else
+  bad "Vercel logged in" "run: npx vercel@latest login"
+fi
+
+if [ -f "$APP_DIR/.vercel/project.json" ]; then
+  ok "Vercel project linked" "$(python3 -c 'import json;print(json.load(open("'$APP_DIR'/.vercel/project.json"))["projectName"])' 2>/dev/null)"
+else
+  bad "Vercel project linked" "run: npx vercel@latest link  (inside $APP_DIR)"
+fi
+
+envs=$(cd "$APP_DIR" && npx --yes vercel@latest env ls production 2>/dev/null)
+for v in SLACK_SIGNING_SECRET SLACK_BOT_TOKEN; do
+  echo "$envs" | grep -q "$v" && ok "Vercel env $v" "production" \
+                              || bad "Vercel env $v" "not set in production"
+done
+
+# --- the deployed thing, and the path that deploys it ------------------------
+code=$(curl -s -o /dev/null -w '%{http_code}' "$PROD/api/slack/events")
+[ "$code" = "405" ] && ok "production endpoint alive" "GET → 405 (POST-only, as designed)" \
+                    || bad "production endpoint alive" "GET → $code (expected 405)"
+
+# A green deploy job is the only cheap proof that Vercel↔GitHub is still wired:
+# without that connection, deploys are blocked silently. See TRAPS.md.
+run=$(gh run list --limit 1 --json conclusion,name --jq '.[0] | "\(.conclusion) \(.name)"' 2>/dev/null)
+case "$run" in
+  success*) ok "last CI run" "$run" ;;
+  "")       bad "last CI run" "no runs found" ;;
+  *)        bad "last CI run" "$run" ;;
+esac
+
+echo
+if [ "$fail" -eq 0 ]; then
+  printf "  \033[32m%d passed\033[0m, none failed.\n\n" "$pass"
+else
+  printf "  \033[32m%d passed\033[0m, \033[31m%d failed\033[0m — fix these before starting.\n\n" "$pass" "$fail"
+fi
+exit $(( fail > 0 ))

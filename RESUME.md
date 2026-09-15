@@ -26,6 +26,12 @@ All written up in `TRAPS.md` — read it before lesson 05. Short version: Vercel
 needs a GitHub login connection or deploys hang at UNKNOWN with no error, and
 Slack's Event Subscriptions page does nothing until you click Save Changes.
 
+## Before starting a lesson
+Run `bin/preflight` (about 20s, read-only). After any Slack or Vercel config
+change, run `bin/smoke`. Together they cover the two failure modes that cost an
+evening in lesson 04: an unmet prerequisite found late, and a silent break
+somewhere in the mention → reply chain.
+
 ## Next step
 Lesson 05 connects Claude Code in an E2B sandbox. Build its page from
 `course/transcripts/05-0-to-1--connecting-claude-code.md` following

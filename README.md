@@ -32,6 +32,13 @@ change, rather than by using someone else's.
   from the research project as they are finished.
 - Transcripts: `~/projects/2026-09-04-ray-amjad-mcp/autonomy/transcripts/slack-agents/`
 
+## Scripts
+| Command | What it does |
+|---|---|
+| `bin/preflight` | Checks every prerequisite (tooling, 1Password, Slack scopes, Vercel, CI). Read-only. Run it before starting a lesson. |
+| `bin/smoke` | Probes the deployed bot end to end. Posts two real messages — set `SLACK_SMOKE_CHANNEL`, default `#bot-smoke`. |
+| `bin/with-secrets <cmd>` | Runs a command with the secrets injected from 1Password. |
+
 ## Traps
 Setup traps that cost real time, and the prerequisites Ray's videos assume
 you already have: `TRAPS.md`. Read it before starting a new lesson.

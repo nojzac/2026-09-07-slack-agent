@@ -1,0 +1,9 @@
+#!/bin/sh
+# End-to-end probes against the deployed bot, with secrets from 1Password.
+#
+#   bin/smoke                              # posts into #bot-smoke
+#   SLACK_SMOKE_CHANNEL=#general bin/smoke
+#
+# It posts two real messages (a probe message and the bot's threaded reply), so
+# point it at a channel you don't mind cluttering.
+exec "$(dirname "$0")/with-secrets" node "$(dirname "$0")/smoke.mjs"
