@@ -11,13 +11,14 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
   Vercel's environment variables are the deploy-side copy; set them in Vercel's UI.
 - Never commit a file over 10 MB. The pre-commit hook enforces this.
 - No push to any remote without Noj's explicit go.
-- Course inputs live in `course/` (transcripts, downloads, lesson-page rules,
-  lesson 04 candidates). Lesson pages are MADE here, in `sops/`, one HTML file
-  per lesson. Broader research about agents in general stays in
+- Course inputs live in `course/` (transcripts, downloads, lesson-page rules).
+  Lesson pages are MADE here, in `sops/lesson-NN/`, one folder per lesson:
+  `index.html` is the SOP, with any debrief/retrospective pages and an
+  `archive/` for superseded drafts beside it. Broader research about agents in general stays in
   `~/projects/2026-09-04-ray-amjad-mcp`; do not copy it here.
 
 ## How lessons are followed
-- Each lesson gets a learning page in `sops/` (HTML, open in a browser), built
+- Each lesson gets a learning page at `sops/lesson-NN/index.html` (HTML, open in a browser), built
   from `course/transcripts/` following `course/LESSON-PAGE-RULES.md`. Build one,
   show it, get a yes, then continue. Follow the page's Steps section when building. The verbatim prompts Ray pastes are in the page; paste them
   as written unless the page says otherwise.

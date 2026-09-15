@@ -9,3 +9,11 @@ On 2026-09-06 the user said the per-lesson SOPs for Ray Amjad's Slack-agent cour
 Template rules adopted from the v1 review: only the grounding section, Steps and Done are mandatory; omit empty sections rather than render shells; phases only when there are 5 or more steps; the message-flow diagram grows cumulatively lesson to lesson; short orientation lessons (18, 21) get a short page. Each page notes where the fleet standard changes Ray's steps (e.g. lesson 04: git already exists; secrets go to 1Password, then Vercel).
 
 Open calls on v3 (ask before changing): it has five self-check questions in section 06; it loads Google Fonts.
+
+## Template decided (2026-09-15)
+`sops/lesson-04/index.html` is the template for every later lesson, superseding the v1–v3 candidates (now in
+`sops/lesson-04/archive/`). It drops the two open calls on v3: no Google Fonts (system stack only) and no
+self-check questions. It adds, from doing the lesson for real: a "cast" section giving each platform one job
+and the constraint that forces it; silent-failure callouts placed at the step where they bite, not in a
+debrief afterwards; and a "test one link at a time" section, since "nothing happened" is the normal failure
+mode and guessing at it is expensive. One folder per lesson: `sops/lesson-NN/index.html`.

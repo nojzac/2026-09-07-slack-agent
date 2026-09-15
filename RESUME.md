@@ -3,8 +3,9 @@
 ## Where things stand (2026-09-15)
 
 Joestar is live. Mention `@joestar` in the SlackAgentOS workspace and it replies
-in the thread with a random number. Built directly rather than from the lesson 04
-page; the page in `sops/` is still the draft v3 and has not been used or chosen.
+in the thread with a random number. Lesson 04 is finished and written up in
+`sops/lesson-04/` — `index.html` there is both the SOP and the agreed template
+for every later lesson page.
 
 - Code: `joestar-agent/api/slack/events.js` (Vercel function), tests in
   `joestar-agent/test/` — `npm test`, no network.
@@ -41,7 +42,9 @@ Its keys go in the `SlackAgentOS` vault; the commented `ANTHROPIC_API_KEY` and
 
 ## Open decisions
 - Whether the Vercel project should move off the smartflowconsultants team to
-  the personal account.
-- Whether to fix the GitHub↔Vercel connection for push-to-deploy.
-- Which lesson 04 candidate page is the template for later lessons (v3 is the
-  current draft, still unreviewed).
+  the personal account. Recommendation: leave it — the SlackAgentOS vault and
+  its service account are on the same smartflowllc account, so moving Vercel
+  alone would split the project across two identities.
+
+Settled since: GitHub↔Vercel is connected and push-to-deploy works; the lesson
+page template is `sops/lesson-04/index.html`.

@@ -28,7 +28,7 @@ change, rather than by using someone else's.
 - Course: Ray Amjad, "Slack agents", https://www.agenticcoding.school
 - Reference code (public): https://github.com/ray-amjad/slack-agent-course
   - No local clone kept; clone to a temp folder when needed. Tags `lesson-02-end` to `lesson-15-end`; look each lesson up in `course/transcripts/DOWNLOADS.md`.
-- Lesson pages (learning aids, one HTML file per lesson): `sops/` here, copied
+- Lesson pages (learning aids, one folder per lesson: `sops/lesson-NN/index.html`): `sops/` here, copied
   from the research project as they are finished.
 - Transcripts: `~/projects/2026-09-04-ray-amjad-mcp/autonomy/transcripts/slack-agents/`
 
