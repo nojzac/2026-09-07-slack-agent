@@ -10,41 +10,72 @@
     --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
     --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
     --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
-    --s-fit:#7a3d9c; --s-cast:#1a6ce7; --s-flow:#0b6b3a; --s-words:#8a5a00;
-    --s-before:#a32020; --s-build:#1f4fd8; --s-code:#15171c; --s-stuck:#a32020; --s-done:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--body);
          font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
   .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-         font-size:12.5px; padding:8px 16px; position:sticky; top:0; z-index:9; }
-  main { max-width:880px; margin:0 auto; padding:34px 20px 110px; }
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
 
-  h1 { font-size:35px; line-height:1.16; margin:26px 0 12px; color:var(--ink); letter-spacing:-0.022em; }
-  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 16px; line-height:1.6; }
-  .meta-row { font-size:14px; color:var(--muted); border-top:1px solid var(--line);
-              border-bottom:1px solid var(--line); padding:11px 0; margin:24px 0 16px; }
-  .meta-row b { color:var(--ink); font-weight:600; }
-  .howto { font-size:14.5px; color:var(--muted); background:#f4f6f8; border-radius:9px;
-           padding:12px 15px; margin:0 0 30px; }
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
 
-  /* ---- section = top-level accordion ---- */
-  details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
-                border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px; }
-  details.sec[open] { padding-bottom:20px; box-shadow:0 1px 2px rgba(20,25,35,.04); }
-  details.sec > summary { cursor:pointer; padding:17px 0; list-style:none; display:flex;
-                          align-items:baseline; gap:12px; }
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
   details.sec > summary::-webkit-details-marker { display:none; }
-  details.sec > summary::before { content:"▸"; color:var(--sc,var(--accent)); font-size:15px;
-                                  transition:transform .15s; line-height:1.4; }
-  details.sec[open] > summary::before { transform:rotate(90deg); }
-  .sec-n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
-           color:var(--sc,var(--accent)); letter-spacing:.1em; }
-  .sec-t { font-size:21px; font-weight:650; color:var(--ink); letter-spacing:-0.012em; line-height:1.3; }
-  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px;
-           letter-spacing:0; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
 
-  /* ---- nested accordion ---- */
+  /* ---------- nested explanation ---------- */
   details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
                 background:#fcfdfe; }
   details.sub[open] { padding-bottom:9px; }
@@ -77,6 +108,8 @@
   .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
          margin:18px 0; overflow-x:auto; }
   .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
   .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
 
   .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
@@ -92,7 +125,12 @@
          border-radius:0 8px 8px 0; font-size:14.6px; }
   .ray b { color:var(--ink); }
 
-  .phase { margin:30px 0 14px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
   .phase h3 { margin:0; font-size:18.5px; }
   .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
 
@@ -114,31 +152,198 @@
   a { color:var(--accent); }
   footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
            font-size:14px; }
-  @media print { details { open:true; } }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
 </style>
 </head>
 <body>
 <div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-04/index.html</div>
 <main>
 
-<h1>Make a bot answer in Slack —<br>and understand every part of the round trip</h1>
-<p class="standfirst">Lesson 04 of Ray Amjad's Slack-agents course, rewritten from a run that actually
-happened. You finish with a bot that replies in a thread, and a clear picture of why five different
-services are involved in something this small.</p>
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 04</p>
+<h1>Connect a Slack bot to code you control</h1>
+<p class="standfirst">A step-by-step guide to wiring Slack to a deployed function, written after
+doing it rather than before — so it also explains what each piece is for and where the silent
+failures are.</p>
 
-<div class="meta-row">
-  <b>You end up with:</b> mention the bot, get a number back in the thread &nbsp;·&nbsp;
-  <b>Ray's video:</b> 4m14s &nbsp;·&nbsp; <b>Realistically:</b> 60–90 min the first time
+<div class="facts">
+  <span><b>Ray's video:</b> 4 min 14 s</span>
+  <span><b>This page:</b> 60–90 min the first time</span>
+  <span><b>At the end:</b> a working bot</span>
 </div>
-<p class="howto">Every section below opens and closes. Collapsed, the page is a summary you can skim in a
-minute. Open a section to do the work; open the <b>+</b> boxes inside it when you want to know why something
-is the way it is. Nothing is hidden because it's unimportant — it's hidden so the page stays readable.</p>
 
-<!-- ══════════════════════════════════════ 00 ══ -->
-<details class="sec" open style="--sc:var(--s-fit); --sc2:var(--s-fit)">
-<summary><span><span class="sec-n">00</span> <span class="sec-t">The random number doesn't matter
-<span class="sec-s">What you're really building is a round trip. Everything after this lesson just changes what goes in the reply.</span></span></span></summary>
+<div class="fm">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 196" width="100%" height="auto" role="img">
+  <title>The finished result: you mention the bot in Slack and it replies in a thread with a random number</title>
+  <rect x="8" y="8" width="684" height="180" rx="10" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <rect x="8" y="8" width="684" height="32" rx="10" fill="#4a154b"/>
+  <rect x="8" y="26" width="684" height="14" fill="#4a154b"/>
+  <text x="26" y="29" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#ffffff"># general</text>
 
+  <circle cx="38" cy="72" r="13" fill="#c9cfd8"/>
+  <text x="62" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">Noj</text>
+  <text x="96" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">1:08 AM</text>
+  <rect x="62" y="78" width="132" height="17" rx="4" fill="#e8f0fe"/>
+  <text x="68" y="91" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#1f4fd8">@joestar</text>
+  <text x="200" y="91" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">give me a number</text>
+
+  <path d="M38,102 V132 H58" fill="none" stroke="#c9cfd8" stroke-width="2"/>
+
+  <circle cx="78" cy="136" r="11" fill="#4a154b"/>
+  <text x="98" y="134" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">joestar</text>
+  <rect x="146" y="124" width="34" height="14" rx="3" fill="#e5e8ec"/>
+  <text x="151" y="135" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#616a77">APP</text>
+  <text x="98" y="156" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" fill="#2b3038">🎲 47</text>
+
+  <text x="98" y="177" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#0b6b3a">in a thread, within a second or two</text>
+</svg>
+</div>
+<ul>
+  <li>A Slack bot that replies in a thread when you mention it.</li>
+  <li>A deployed endpoint of your own that Slack sends events to, and that refuses anything not from Slack.</li>
+  <li>Both Slack credentials stored in 1Password, in no file and no commit.</li>
+  <li>Tests that run on every push, and a deploy that only happens when they pass.</li>
+</ul>
+</div>
+
+<div class="fm">
+<h2>Who this is for, and what it assumes</h2>
+<p>Someone following Ray Amjad's Slack-agents course who has finished lesson 03, and who would
+rather understand the system than reproduce a sequence of clicks.</p>
+<p>It assumes you can use a terminal and have used git before. It does <strong>not</strong> assume
+you have used Slack's developer site, Vercel, or 1Password — those are explained as they come up,
+click by click.</p>
+</div>
+
+<div class="fm">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
+  <title>Where lesson 04 sits in the course: lessons 1 to 3 make a workspace, lesson 4 builds the pipe, lessons 5 onward change what flows through it</title>
+  <defs>
+    <marker id="arrowArc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="34" width="190" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="26" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–03</text>
+  <text x="26" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">A workspace to break</text>
+  <text x="26" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">things in safely</text>
+
+  <path d="M204,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc)"/>
+
+  <rect x="252" y="20" width="196" height="102" rx="9" fill="#f3f0f7" stroke="#7a3d9c" stroke-width="2.5"/>
+  <text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 04 — YOU ARE HERE</text>
+  <text x="270" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#15171c">Build the pipe</text>
+  <text x="270" y="90" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">mention → your code → reply</text>
+  <text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">today it sends back a number</text>
+
+  <path d="M454,71 L496,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc)"/>
+
+  <rect x="502" y="34" width="190" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="520" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 05–17</text>
+  <text x="520" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">Same pipe. Claude Code,</text>
+  <text x="520" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">tools, memory, a database.</text>
+
+  <text x="350" y="141" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">The pipe you build today never changes. Only what flows through it does.</text>
+</svg>
+</div>
+<p>Nobody needs a bot that picks random numbers. What this lesson builds is the <strong>pipe</strong>:
+Slack notices someone said your bot's name, hands that to code you control, your code decides
+something, and pushes an answer back into the conversation.</p>
+<p>Lesson 05 replaces "decides something" with Claude Code running in a sandbox. Later lessons make
+it richer again. The pipe itself does not change — which is why it is worth understanding once,
+properly, rather than clicking through it.</p>
+</div>
+
+<div class="map">
+<h2>How this page is laid out</h2>
+<p style="color:var(--muted); font-size:15px; margin:6px 0 0;">Three parts. Read part 1 before you
+start, work through part 2 at the keyboard, and come back to part 3 when something breaks.</p>
+<ol>
+  <li><span class="badge b-understand">UNDERSTAND</span>
+      <span><a href="#part1">Part 1 · Understand what you're building</a>
+      <span class="what">Four short sections, about ten minutes. What the pieces are and how a
+      message travels between them.</span></span></li>
+  <li><span class="badge b-do">DO NOW</span>
+      <span><a href="#part2">Part 2 · Build it</a>
+      <span class="what">Six steps in order, 60–90 minutes. Start with "Before you begin" — one
+      unticked box there can silently cost you an evening.</span></span></li>
+  <li><span class="badge b-ref">REFERENCE</span>
+      <span><a href="#part3">Part 3 · Keep for later</a>
+      <span class="what">What the code does, how to find a broken link when the bot goes quiet, and
+      where everything lives.</span></span></li>
+</ol>
+</div>
+
+<div class="fm" id="before" style="border-left:4px solid var(--bad)">
+<h2>Before you begin</h2>
+<div class="danger"><strong>If you read nothing else, read this section.</strong> On the run this page comes
+from, most of the lost time was a prerequisite that was missing <em>and silent</em>. Not a bug. Not a
+difficult step. A setting that had never been switched on, failing quietly, hours later, while we looked
+somewhere else entirely.</div>
+
+<div class="metaphor"><b>It's the keys-wallet-phone check at the front door.</b> Five seconds there saves you
+the walk back.</div>
+
+<h3>Accounts you need</h3>
+<ul>
+  <li>A throwaway Slack workspace (lesson 03) where you're allowed to install apps.</li>
+  <li>GitHub, with the <code>gh</code> command logged in.</li>
+  <li>Vercel — <strong>with GitHub connected to it</strong>. This is the one. See below.</li>
+  <li>1Password, if you're handling secrets properly. A Teams or Business account if you want a service account.</li>
+  <li>Claude Code in a terminal, and Node 20 or newer.</li>
+</ul>
+
+<div class="danger">
+<h4 style="margin-top:0; color:var(--bad)">Connect Vercel to GitHub before you start anything</h4>
+<p>If your Vercel account has no GitHub connection, two things happen and neither says so plainly:</p>
+<ul>
+  <li><code>vercel link</code> refuses: <em>"You need to add a Login Connection to your GitHub account first."</em></li>
+  <li>Much worse — deploys are <strong>blocked</strong>. They sit at <code>UNKNOWN</code> forever. No build
+      log, no error from the command, nothing. The reason exists in one place only: a dialog in the Vercel
+      dashboard saying <em>"the commit email … could not be matched to a GitHub account."</em></li>
+</ul>
+<p>And that message points you at the wrong fix. It suggests changing your git email. Check before you touch
+anything — if GitHub already links your commits to you, your email is fine:</p>
+<pre>gh api repos/&lt;owner&gt;/&lt;repo&gt;/commits --jq '.[] | "\(.commit.author.email) \(.author.login)"'</pre>
+<p>Seeing your username in the second column means the email is verified and correct. The real fix is on
+Vercel: <b>account settings → Login Connections → Add Connection → GitHub</b>, pick your GitHub username, and
+give it access to this repo only.</p>
+</div>
+
+<details class="sub">
+<summary>One command that checks all of it (if you have this project's scripts)</summary>
+<pre>bin/preflight</pre>
+<p>Fifteen checks, about twenty seconds, changes nothing: Node, <code>gh</code>, your 1Password token and both
+secrets, the Slack token and its permissions, Vercel login, the project link, the live endpoint, and the last
+CI run.</p>
+<p>That last check is doing something sneaky and useful. There's no command that asks "is Vercel still
+connected to GitHub?" — so a green deploy job stands in for it, because without the connection nothing
+deploys at all.</p>
+</details>
+</div>
+
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what you're building</h2>
+  <p>Four short sections, about ten minutes. Skip them and part 2 becomes a sequence of clicks you cannot debug.</p>
+</div>
+
+<details class="sec" id="what-building" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">What you are building: one mention, one reply<span class="sec-s">The round trip this lesson creates, and why the random number is beside the point.</span></h2>
+      <span class="badge b-understand">UNDERSTAND</span>
+    </div></summary>
 <p>Nobody needs a bot that picks numbers. What you're building is a <strong>round trip</strong>: Slack notices
 someone said your bot's name, hands that over to code you control, your code decides something, and pushes an
 answer back into the conversation.</p>
@@ -161,11 +366,11 @@ type a mention, what happens, in what order, and what would stop it?</em></p>
 </table>
 </details>
 
-<!-- ══════════════════════════════════════ 01 ══ -->
-<details class="sec" style="--sc:var(--s-cast); --sc2:var(--s-cast)">
-<summary><span><span class="sec-n">01</span> <span class="sec-t">Five services, and why each one has to be there
-<span class="sec-s">The honest answer to "why does a bot that picks a number need five accounts?"</span></span></span></summary>
-
+<details class="sec" id="services" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">The five services you'll use: Slack, Vercel, GitHub, 1Password and GitHub Actions<span class="sec-s">What each one does, and the constraint that makes it necessary.</span></h2>
+      <span class="badge b-understand">UNDERSTAND</span>
+    </div></summary>
 <p>It's a fair question, and each one is there because of a constraint that's obvious once someone says it out
 loud.</p>
 
@@ -237,11 +442,11 @@ never think about it again.</p>
 </details>
 </details>
 
-<!-- ══════════════════════════════════════ 02 ══ -->
-<details class="sec" style="--sc:var(--s-flow); --sc2:var(--s-flow)">
-<summary><span><span class="sec-n">02</span> <span class="sec-t">Follow one message all the way round
-<span class="sec-s">Mention → Slack pushes → your code checks, decides, posts → reply appears in the thread.</span></span></span></summary>
-
+<details class="sec" id="flow" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">How one message travels from mention to reply<span class="sec-s">The three-second rule, the two credentials, and the line that puts the reply in a thread.</span></h2>
+      <span class="badge b-understand">UNDERSTAND</span>
+    </div></summary>
 <div class="fig">
 <svg viewBox="0 0 700 268" width="100%" height="auto" role="img">
   <title>One mention travelling from Slack to a Vercel function and back into the thread</title>
@@ -444,10 +649,11 @@ buries the channel.</p>
 </details>
 </details>
 
-<!-- ══════════════════════════════════════ 03 ══ -->
-<details class="sec" style="--sc:var(--s-words); --sc2:var(--s-words)">
-<summary><span><span class="sec-n">03</span> <span class="sec-t">Words this lesson assumes you know
-<span class="sec-s">Each one in plain English first.</span></span></span></summary>
+<details class="sec" id="words" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">Words used in this lesson<span class="sec-s">Plain-English definitions of the eight terms that appear in the steps.</span></h2>
+      <span class="badge b-understand">UNDERSTAND</span>
+    </div></summary>
 <dl class="gloss">
   <dt>Event subscription</dt>
   <dd><span class="plain">A standing order: "whenever this happens, send it to this address."</span>
@@ -477,62 +683,32 @@ buries the channel.</p>
 </dl>
 </details>
 
-<!-- ══════════════════════════════════════ 04 ══ -->
-<details class="sec" style="--sc:var(--s-before); --sc2:var(--s-before)">
-<summary><span><span class="sec-n">04</span> <span class="sec-t">Check the ground before you start
-<span class="sec-s">This is where the hours go. Not the hard steps — the box nobody ticked.</span></span></span></summary>
-
-<div class="danger"><strong>If you read nothing else, read this section.</strong> On the run this page comes
-from, most of the lost time was a prerequisite that was missing <em>and silent</em>. Not a bug. Not a
-difficult step. A setting that had never been switched on, failing quietly, hours later, while we looked
-somewhere else entirely.</div>
-
-<div class="metaphor"><b>It's the keys-wallet-phone check at the front door.</b> Five seconds there saves you
-the walk back.</div>
-
-<h3>Accounts you need</h3>
-<ul>
-  <li>A throwaway Slack workspace (lesson 03) where you're allowed to install apps.</li>
-  <li>GitHub, with the <code>gh</code> command logged in.</li>
-  <li>Vercel — <strong>with GitHub connected to it</strong>. This is the one. See below.</li>
-  <li>1Password, if you're handling secrets properly. A Teams or Business account if you want a service account.</li>
-  <li>Claude Code in a terminal, and Node 20 or newer.</li>
-</ul>
-
-<div class="danger">
-<h4 style="margin-top:0; color:var(--bad)">Connect Vercel to GitHub before you start anything</h4>
-<p>If your Vercel account has no GitHub connection, two things happen and neither says so plainly:</p>
-<ul>
-  <li><code>vercel link</code> refuses: <em>"You need to add a Login Connection to your GitHub account first."</em></li>
-  <li>Much worse — deploys are <strong>blocked</strong>. They sit at <code>UNKNOWN</code> forever. No build
-      log, no error from the command, nothing. The reason exists in one place only: a dialog in the Vercel
-      dashboard saying <em>"the commit email … could not be matched to a GitHub account."</em></li>
-</ul>
-<p>And that message points you at the wrong fix. It suggests changing your git email. Check before you touch
-anything — if GitHub already links your commits to you, your email is fine:</p>
-<pre>gh api repos/&lt;owner&gt;/&lt;repo&gt;/commits --jq '.[] | "\(.commit.author.email) \(.author.login)"'</pre>
-<p>Seeing your username in the second column means the email is verified and correct. The real fix is on
-Vercel: <b>account settings → Login Connections → Add Connection → GitHub</b>, pick your GitHub username, and
-give it access to this repo only.</p>
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Six steps, in order, 60–90 minutes. Each ends with a checkpoint so you know whether to carry on. Read "Before you begin" above first.</p>
 </div>
 
-<details class="sub">
-<summary>One command that checks all of it (if you have this project's scripts)</summary>
-<pre>bin/preflight</pre>
-<p>Fifteen checks, about twenty seconds, changes nothing: Node, <code>gh</code>, your 1Password token and both
-secrets, the Slack token and its permissions, Vercel login, the project link, the live endpoint, and the last
-CI run.</p>
-<p>That last check is doing something sneaky and useful. There's no command that asks "is Vercel still
-connected to GitHub?" — so a green deploy job stands in for it, because without the connection nothing
-deploys at all.</p>
-</details>
-</details>
-
-<!-- ══════════════════════════════════════ 05 ══ -->
-<details class="sec" style="--sc:var(--s-build); --sc2:var(--s-build)">
-<summary><span><span class="sec-n">05</span> <span class="sec-t">Build it — six phases
-<span class="sec-s">A and B run at the same time. That parallelism is why the video looks so fast.</span></span></span></summary>
-
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+      <h2 class="sec-t">Step 1 of 6 — Write the bot with Claude Code<span class="sec-s">One prompt, plus the manifest you will need in step 2.</span></h2>
+      <span class="badge b-do">DO NOW</span>
+    </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">1 · Write the bot</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">2 · Slack app</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · Secrets</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · Deploy</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Connect Slack</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Tests (optional)</text>
+</svg></div>
 <div class="phase"><h3>Phase A · The code</h3><p>Claude writes it. You read it in section 06.</p></div>
 <ol class="steps">
 <li>
@@ -555,7 +731,29 @@ message in the thread with a random number.</pre>
   and add the address by hand in Phase E, or replace the placeholder once you have the real domain.</div>
 </li>
 </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Claude has written the handler and a Slack manifest. Nothing is deployed yet, and the manifest still has a placeholder where the address goes.</div>
+</section>
 
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+      <h2 class="sec-t">Step 2 of 6 — Create and install the Slack app<span class="sec-s">Create it from the manifest, install it, and collect the two credentials.</span></h2>
+      <span class="badge b-do">DO NOW</span>
+    </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · Write the bot</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">2 · Slack app</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · Secrets</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · Deploy</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Connect Slack</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Tests (optional)</text>
+</svg></div>
 <div class="phase"><h3>Phase B · The Slack app</h3><p>Create it, install it, collect two secrets.</p></div>
 <ol class="steps">
 <li>
@@ -574,7 +772,29 @@ message in the thread with a random number.</pre>
   Secret → Show.</p>
 </li>
 </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The app exists and is installed in your workspace, and you are holding two secrets: a signing secret and a bot token starting <code>xoxb-</code>.</div>
+</section>
 
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+      <h2 class="sec-t">Step 3 of 6 — Put the two secrets in 1Password<span class="sec-s">A vault, an item, a read-only login for your agents — every click, from nothing.</span></h2>
+      <span class="badge b-do">DO NOW</span>
+    </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · Write the bot</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Slack app</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">3 · Secrets</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · Deploy</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Connect Slack</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Tests (optional)</text>
+</svg></div>
 <div class="phase"><h3>Phase C · The secrets</h3><p>A vault of their own, an item inside it, then a read-only login for your agents. Every click below.</p></div>
 
 <div class="fig">
@@ -802,7 +1022,29 @@ op read "op://SlackAgentOS/2026-09-07-slack-agent/bot_token" \
   <code>.env*</code> to <code>.gitignore</code> as a backstop.</div>
 </li>
 </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The length check prints two numbers, and both values are set in Vercel's production environment. No secret exists in any file.</div>
+</section>
 
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+      <h2 class="sec-t">Step 4 of 6 — Deploy to Vercel<span class="sec-s">Private repo, linked project, and a live address to hand to Slack.</span></h2>
+      <span class="badge b-do">DO NOW</span>
+    </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · Write the bot</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Slack app</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">3 · Secrets</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">4 · Deploy</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · Connect Slack</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Tests (optional)</text>
+</svg></div>
 <div class="phase"><h3>Phase D · Deploy</h3><p>Get a public address with your code behind it.</p></div>
 <ol class="steps">
 <li>
@@ -827,7 +1069,29 @@ npx vercel@latest link --yes</pre>
   <code>vercel.com/sso-api</code> means that particular address is protected; use the plain production one.</p>
 </li>
 </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Fetching <code>/api/slack/events</code> returns 405 — the endpoint is live and refusing anything that is not a POST.</div>
+</section>
 
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+      <h2 class="sec-t">Step 5 of 6 — Point Slack at your deployment<span class="sec-s">Two fields and one button. The button is the one everybody misses.</span></h2>
+      <span class="badge b-do">DO NOW</span>
+    </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · Write the bot</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Slack app</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">3 · Secrets</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">4 · Deploy</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">5 · Connect Slack</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Tests (optional)</text>
+</svg></div>
 <div class="phase"><h3>Phase E · Wire the event</h3><p>Two fields and one button. The button is what everyone misses.</p></div>
 
 <div class="fig">
@@ -926,7 +1190,29 @@ npx vercel@latest link --yes</pre>
   course is changing what goes in that reply.</div>
 </li>
 </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Mentioning the bot in a channel it belongs to produces a number in a thread. That is the deliverable of the lesson.</div>
+</section>
 
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+      <h2 class="sec-t">Step 6 of 6 — Add tests and a deploy gate<span class="sec-s">Optional for the video. Not optional once pushing deploys by itself.</span></h2>
+      <span class="badge b-do">DO NOW</span>
+    </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 6 of 6</title>
+  <rect x="8" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="61" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">1 · Write the bot</text>
+  <rect x="124" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">2 · Slack app</text>
+  <rect x="240" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="293" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">3 · Secrets</text>
+  <rect x="356" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="409" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">4 · Deploy</text>
+  <rect x="472" y="10" width="106" height="28" rx="7" fill="#eef1f5" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="525" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#616a77">5 · Connect Slack</text>
+  <rect x="588" y="10" width="106" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">6 · Tests (optional)</text>
+</svg></div>
 <div class="phase"><h3>Phase F · Make it hold up</h3><p>Optional for the video. Not optional once pushing deploys by itself.</p></div>
 
 <div class="fig">
@@ -996,13 +1282,20 @@ npx vercel@latest link --yes</pre>
   <p><strong>A smoke script</strong> you run after any config change. Section 07.</p>
 </li>
 </ol>
-</details>
+<div class="checkpoint"><b>CHECKPOINT</b>A push runs the tests, and production only moves when they pass.</div>
+</section>
 
-<!-- ══════════════════════════════════════ 06 ══ -->
-<details class="sec" style="--sc:var(--s-code); --sc2:var(--s-code)">
-<summary><span><span class="sec-n">06</span> <span class="sec-t">What Claude wrote for you, in five jobs
-<span class="sec-s">One file does everything. It's the shape you'll be editing for the next fourteen lessons.</span></span></span></summary>
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>Reference. Come back to this when the bot goes quiet, or when you want to change what it does.</p>
+</div>
 
+<details class="sec" id="code" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">What the code does, in five jobs<span class="sec-s">The one file you will be editing for the next fourteen lessons.</span></h2>
+      <span class="badge b-ref">REFERENCE</span>
+    </div></summary>
 <p>The file is <code>api/slack/events.js</code>. Read it in this order — each job exists for a reason, and the
 reasons are the interesting part.</p>
 
@@ -1058,11 +1351,11 @@ an attacker when you actually just mistyped a variable name.</div>
 </details>
 </details>
 
-<!-- ══════════════════════════════════════ 07 ══ -->
-<details class="sec" style="--sc:var(--s-stuck); --sc2:var(--s-stuck)">
-<summary><span><span class="sec-n">07</span> <span class="sec-t">When nothing happens
-<span class="sec-s">"Nothing happened" isn't a diagnosis. Test one link at a time and the first failure is your answer.</span></span></span></summary>
-
+<details class="sec" id="broken" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">When the bot doesn't reply: find the broken link<span class="sec-s">Five things a script can test, one it cannot, and a table of symptoms with their real causes.</span></h2>
+      <span class="badge b-ref">REFERENCE</span>
+    </div></summary>
 <div class="fig">
 <svg viewBox="0 0 700 452" width="100%" height="auto" role="img">
   <title>A six-link debugging ladder: endpoint alive, signature accepted, forgery rejected, bot can post, handler replies, and finally a human mention, which only a person can test.</title>
@@ -1178,10 +1471,11 @@ the fault <em>isn't</em> in your code.</p>
 </details>
 </details>
 
-<!-- ══════════════════════════════════════ 08 ══ -->
-<details class="sec" open style="--sc:var(--s-done); --sc2:var(--s-done)">
-<summary><span><span class="sec-n">08</span> <span class="sec-t">You're done when
-<span class="sec-s">Four things work, and two things you can explain.</span></span></span></summary>
+<details class="sec" id="done" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">Checklist: how to know you're finished<span class="sec-s">Four things that work, and two things you should be able to explain.</span></h2>
+      <span class="badge b-ref">REFERENCE</span>
+    </div></summary>
 <ul class="check">
   <li>Mentioning the bot in a channel it's in produces a number in a thread.</li>
   <li>Mentioning it <em>inside an existing thread</em> replies there, not in a new one.</li>
@@ -1195,10 +1489,11 @@ the reply and nothing else. If the round trip is a picture in your head rather t
 performed, the rest of the course is editing one function.</div>
 </details>
 
-<!-- ══════════════════════════════════════ 09 ══ -->
-<details class="sec" style="--sc:var(--muted); --sc2:var(--muted)">
-<summary><span><span class="sec-n">09</span> <span class="sec-t">Where everything lives
-<span class="sec-s">Sources, the code, and how this page departs from the video.</span></span></span></summary>
+<details class="sec" id="where" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+      <h2 class="sec-t">Where everything lives, and how this differs from the video<span class="sec-s">Sources, the code, the traps file, and the four places this page departs from Ray.</span></h2>
+      <span class="badge b-ref">REFERENCE</span>
+    </div></summary>
 <table>
   <tr><th>Thing</th><th>Where</th></tr>
   <tr><td class="who">Ray's video</td><td><a href="https://www.agenticcoding.school/v/T3b_BNyN">agenticcoding.school</a> · transcript at <code>course/transcripts/04-0-to-1--setting-up-bot-foundations.md</code></td></tr>
@@ -1223,8 +1518,8 @@ performed, the rest of the course is editing one function.</div>
 </details>
 
 <footer>
-Written after doing lesson 04, not before. The traps in sections 04, 05 and 07 are the ones that actually cost
-time — none of them are hypothetical.
+Written after doing lesson 04, not before. The warnings in "Before you begin", step 5 and part 3
+are the failures that actually cost time on the real run — none of them are hypothetical.
 </footer>
 
 </main>
