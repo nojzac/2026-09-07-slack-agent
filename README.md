@@ -38,10 +38,11 @@ Nothing exists yet. Fill in as each is created.
 
 | System | Name | Where the credential lives |
 |---|---|---|
-| Slack test workspace | (lesson 03) | browser login |
-| Slack app | (lesson 04, api.slack.com/apps) | signing secret and bot token → 1Password `SlackAgentOS/2026-09-07-slack-agent` |
-| Vercel project | (lesson 04) | Vercel account login; env vars set in Vercel are the deploy-side copy of the 1Password values |
-| GitHub repo (private) | (lesson 04) | `gh` CLI login |
+| Slack workspace | SlackAgentOS (slackagentos.slack.com) | browser login |
+| Slack app | joestar (api.slack.com/apps) | signing secret and bot token → 1Password `SlackAgentOS/2026-09-07-slack-agent` |
+| Vercel project | smartflowconsultants/joestar-agent → joestar-agent-five.vercel.app | Vercel account login; env vars set in Vercel are the deploy-side copy of the 1Password values |
+| GitHub repo (private) | nojzac/2026-09-07-slack-agent | `gh` CLI login |
+| 1Password service account | slack-agent-2 (smartflowllc account, read-only on SlackAgentOS) | token in macOS Keychain, service `op-slackagentos`; used by `bin/with-secrets` |
 | E2B | (lesson 05) | 1Password `Projects/shared-e2b` |
 | Anthropic API | (lesson 05) | 1Password `Projects/shared-anthropic` |
 
