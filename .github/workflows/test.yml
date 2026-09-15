@@ -36,8 +36,10 @@ jobs:
         with:
           node-version: 24.x
 
+      # Deploy from the repo root: Vercel applies the project's own Root
+      # Directory (joestar-agent) on top of wherever the CLI is run, so doing
+      # this inside joestar-agent/ makes it look for joestar-agent/joestar-agent.
       - name: Deploy to production
-        working-directory: joestar-agent
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
