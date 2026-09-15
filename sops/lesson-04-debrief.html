@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+  :root { --ink:#16181d; --muted:#5c6370; --line:#e3e6ea; --bg:#fbfbfc; --ok:#0b6b3a; --bad:#a32020; --warn:#8a5a00; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#16181d; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:31px; margin:24px 0 8px; letter-spacing:-0.01em; }
+  .sub { color:var(--muted); margin:0 0 30px; font-size:17px; }
+  h2 { font-size:20px; margin:40px 0 12px; padding-top:20px; border-top:1px solid var(--line); }
+  h3 { font-size:16px; margin:22px 0 6px; }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.5px;
+         background:#eef0f3; padding:1px 5px; border-radius:4px; }
+  pre { background:#16181d; color:#e6edf3; padding:14px 16px; border-radius:8px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; margin:12px 0; }
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.5px; }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  td.s { white-space:nowrap; font-weight:600; }
+  .same { color:var(--ok); }
+  .diff { color:var(--warn); }
+  .chain { list-style:none; padding:0; margin:14px 0; }
+  .chain li { padding:8px 0 8px 28px; position:relative; border-bottom:1px solid var(--line); }
+  .chain li.y::before { content:"✓"; position:absolute; left:2px; color:var(--ok); font-weight:700; }
+  .chain li.n::before { content:"✗"; position:absolute; left:2px; color:var(--bad); font-weight:700; }
+  .note { border-left:3px solid var(--warn); background:#fff8e8; padding:11px 14px; margin:14px 0; font-size:15px; }
+  .key { border-left:3px solid var(--bad); background:#fdeeee; padding:11px 14px; margin:16px 0; font-size:15.5px; }
+  p { margin:10px 0; }
+</style>
+</head>
+<body>
+<div class="pwd">~/projects/2026-09-07-slack-agent</div>
+<main>
+
+<h1>Lesson 04, after the fact</h1>
+<p class="sub">What we built, why it sat silent for an hour, and how it lines up with the video.</p>
+
+<h2>We did follow the lesson — without the page open</h2>
+<p>Your first message to me was, near enough word for word, the lesson's own step 1 prompt:</p>
+<pre>"Can we make a really simple Slack bot here that will be deployed to
+Vercel whereby I can tag it and then it'll automatically reply to the
+message in the thread with a random number."</pre>
+<p>So the build followed the lesson's path. What we skipped was reading
+<code>sops/sop-lesson-04.html</code> first, which is why the order felt arbitrary and why two of
+its warnings bit us anyway.</p>
+
+<h2>Step by step against the lesson</h2>
+<table>
+  <tr><th>Lesson step</th><th>What happened here</th><th></th></tr>
+  <tr><td class="s">1. Prompt Claude Code in a new folder</td>
+      <td>Same prompt, in <code>joestar-agent/</code>. Folder and git repo already existed, so no <code>git init</code>.</td>
+      <td class="same">same</td></tr>
+  <tr><td class="s">2. Create the Slack app from a manifest</td>
+      <td>I wrote <code>slack-app-manifest.yml</code>, but your app already existed, so scopes and events were set in Slack's UI instead of by pasting the manifest.</td>
+      <td class="diff">differs</td></tr>
+  <tr><td class="s">3. Private GitHub repo + Vercel project</td>
+      <td>Repo <code>nojzac/2026-09-07-slack-agent</code>, Vercel project <code>smartflowconsultants/joestar-agent</code>.</td>
+      <td class="same">same</td></tr>
+  <tr><td class="s">4. Paste the signing secret into Vercel's UI</td>
+      <td>Piped from 1Password into Vercel with <code>op read … | vercel env add … production</code>. Production-only, never on screen, never in a file.</td>
+      <td class="diff">differs</td></tr>
+  <tr><td class="s">5. Install app, paste the bot token</td>
+      <td>Same pipe. App was already installed, so the token already existed.</td>
+      <td class="diff">differs</td></tr>
+  <tr><td class="s">6. Request URL → Verified → <strong>Save Changes</strong></td>
+      <td>Where it stalled. See below.</td>
+      <td class="same">same</td></tr>
+  <tr><td class="s">7. <code>/invite</code> and tag the bot</td>
+      <td>Worked first time.</td>
+      <td class="same">same</td></tr>
+</table>
+
+<h3>Why the secrets deviate from the video</h3>
+<p>Ray pastes both values into Vercel's dashboard and keeps a <code>.env.example</code> in the repo. This
+project's own rule (<code>CLAUDE.md</code>) is stricter: secrets live in 1Password only, and
+<code>.env.op</code> holds <code>op://</code> pointers instead of an example file. Same end state in Vercel —
+the values just never pass through a browser form, a file, or this transcript.</p>
+
+<h2>Why it didn't work, and what fixed it</h2>
+<p>Two separate stalls, one after the other.</p>
+
+<h3>First: the placeholder URL</h3>
+<p>The Request URL box contained <code>https://&lt;deployment&gt;/api/slack/events</code> — the literal
+placeholder from the manifest, pasted before I'd filled in the real domain. No such host exists, so Slack
+reported "Your URL didn't respond."</p>
+
+<h3>Second: Verified, but never saved</h3>
+<p>You pasted the real URL, Slack said <strong>✓ Verified</strong> — and nothing was saved. The lesson page
+calls this out, and it's the one thing the green tick doesn't tell you:</p>
+<div class="key"><strong>Verified proves Slack can reach your endpoint. Save Changes is what makes Slack
+actually send you events.</strong> They are different things, and the save bar sits off the bottom of a long
+page.</div>
+<p>That's the entire explanation for the silent hour. Everything else was already correct.</p>
+
+<h2>How I proved where the fault was</h2>
+<p>Rather than guess, I tested each link in the chain separately — worth knowing, because you'll debug this
+shape of problem for the next fourteen lessons:</p>
+<ul class="chain">
+  <li class="y"><code>curl</code> the endpoint → <code>200 slack events endpoint: ok</code>. The deployment is alive.</li>
+  <li class="y">A hand-signed <code>url_verification</code> → challenge echoed. The signing secret in Vercel matches 1Password's.</li>
+  <li class="y">A deliberately mis-signed request → <code>401</code>. The signature check is real, not decorative.</li>
+  <li class="y">A direct <code>chat.postMessage</code> with the bot token → posted. Token, <code>chat:write</code>, and channel membership all fine.</li>
+  <li class="y">A hand-signed <code>app_mention</code> POSTed to production → the threaded number appeared. The handler works end to end.</li>
+  <li class="n">A real mention typed by you → nothing arrived. Everything I could test passed, so the fault had to be upstream, in Slack's dispatch.</li>
+</ul>
+<p>That last line is what pointed at unsaved settings. I guessed "reinstall the app" first, which was wrong —
+the save was the missing piece.</p>
+
+<h2>What you have that the lesson doesn't give you</h2>
+<table>
+  <tr><th>Thing</th><th>Why</th></tr>
+  <tr><td class="s">5 tests (<code>npm test</code>)</td>
+      <td>Signature rejection, challenge echo, in-range number, threading, retry dedupe. No network — Slack is stubbed.</td></tr>
+  <tr><td class="s">Retry dedupe</td>
+      <td>Slack retries anything it thinks failed. Without the <code>x-slack-retry-num</code> check you get the same number posted three times.</td></tr>
+  <tr><td class="s">Never 500 back at Slack</td>
+      <td>A failed post used to reject the handler → 500 → Slack retries → fails again. Now it logs and acks.</td></tr>
+  <tr><td class="s"><code>bin/with-secrets</code></td>
+      <td>Runs any command with the secrets injected, via a 1Password service account scoped read-only to the <code>SlackAgentOS</code> vault. Not your whole account.</td></tr>
+</table>
+
+<h2>Still open</h2>
+<p><strong>Four commits are unpushed.</strong> The repo on GitHub has only the first two.</p>
+<p><strong>No push-to-deploy.</strong> Vercel couldn't connect to GitHub ("add a Login Connection to your
+GitHub account first"), so deploys are CLI-only.</p>
+<p><strong>The Vercel project is in the smartflowconsultants team</strong>, not your personal account.</p>
+<p><strong>The lesson page itself is still unread and unchosen</strong> — <code>sops/sop-lesson-04.html</code>
+is draft v3, and section 3 of it walks through Ray's finished code, which is worth reading against ours now
+that you have a working bot to compare it to.</p>
+
+</main>
+</body>
+</html>

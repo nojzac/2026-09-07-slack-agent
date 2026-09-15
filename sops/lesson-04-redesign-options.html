@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+  :root { --ink:#16181d; --muted:#5c6370; --line:#e3e6ea; --bg:#fbfbfc; --ok:#0b6b3a; --bad:#a32020; --warn:#8a5a00; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#16181d; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:31px; margin:24px 0 8px; letter-spacing:-0.01em; }
+  .sub { color:var(--muted); margin:0 0 30px; font-size:17px; }
+  h2 { font-size:21px; margin:42px 0 12px; padding-top:20px; border-top:1px solid var(--line); }
+  h3 { font-size:16.5px; margin:24px 0 6px; }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.5px;
+         background:#eef0f3; padding:1px 5px; border-radius:4px; }
+  pre { background:#16181d; color:#e6edf3; padding:14px 16px; border-radius:8px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; margin:12px 0; }
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.5px; }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  p { margin:10px 0; }
+  .lead { font-size:17px; }
+  .opt { border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin:16px 0; background:#fff; }
+  .opt h3 { margin-top:0; }
+  .tag { display:inline-block; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em;
+         padding:2px 8px; border-radius:20px; margin-left:8px; vertical-align:middle; }
+  .t-low { background:#eefaf2; color:var(--ok); }
+  .t-mid { background:#fff8e8; color:var(--warn); }
+  .t-high { background:#fdeeee; color:var(--bad); }
+  .meta { color:var(--muted); font-size:14px; margin:8px 0 0; }
+  .quiet { border-left:3px solid var(--bad); background:#fdeeee; padding:11px 14px; margin:16px 0; }
+  ul.tight li { margin:5px 0; }
+</style>
+</head>
+<body>
+<div class="pwd">~/projects/2026-09-07-slack-agent</div>
+<main>
+
+<h1>If I did lesson 04 again</h1>
+<p class="sub">What went wrong, what genuinely surprised me, and five ways to redesign this — cheapest first.</p>
+
+<div class="quiet"><strong>The one pattern behind everything.</strong> Not a single failure announced itself.
+Vercel blocked deploys and reported <code>UNKNOWN</code> with no logs. Slack accepted settings it never saved.
+The Keychain silently truncated a token at 128 characters. Every hour lost went to a system that failed
+quietly and let us keep working on the wrong hypothesis. So every redesign below is really the same idea:
+<em>make failures loud, and check them early.</em></div>
+
+<h2>What I'd do differently</h2>
+
+<h3>1. Preflight before writing any code</h3>
+<p>Every prerequisite failure hit us <em>mid-flow</em>, hours after it could have been found. The whole set is
+checkable in about 20 seconds — Vercel login, GitHub↔Vercel connection, <code>op</code> access, <code>gh</code>
+auth, the Slack app's existence. I wrote code first and discovered the environment later, which is backwards.</p>
+
+<h3>2. Never hand over a placeholder</h3>
+<p>I gave you a manifest containing <code>https://&lt;deployment&gt;/api/slack/events</code> and you pasted it,
+reasonably. Anything a person will copy should either contain a real value or refuse to exist yet.</p>
+
+<h3>3. Verify each step as it's made, not at the end</h3>
+<p>I did the five-probe diagnosis (curl, signed challenge, bad signature, direct post, synthetic mention)
+<em>after</em> an hour of silence. Run as a smoke test right after configuration, it would have isolated the
+fault in a minute.</p>
+
+<h3>4. Prefer pipes to prompts for secrets</h3>
+<p>Two of the three secret-handling failures came from asking a human to paste into an interactive prompt.
+<code>op … --raw | …</code> straight into its destination has no truncation limit, no clipboard, no history.</p>
+
+<h3>5. Say "I don't know" faster</h3>
+<p>I offered two confident wrong diagnoses — concurrent builds, then app-needs-reinstall — before finding the
+real causes. Both were plausible and both sent you off to do work that didn't help. The evidence at the time
+supported "something upstream is silent", not a specific cause.</p>
+
+<h2>What actually surprised me</h2>
+<table>
+  <tr><th>Surprise</th><th>Why it matters</th></tr>
+  <tr><td>Vercel blocks deploys with <code>UNKNOWN</code> and <em>zero</em> CLI output</td>
+      <td><code>vercel inspect --logs</code> returned one line: the status. The reason existed only in a dashboard modal.</td></tr>
+  <tr><td>Vercel's error named the wrong fix</td>
+      <td>It told you to change <code>git config user.email</code>. GitHub already attributed every commit to your account, so the email was fine — the missing piece was Vercel's GitHub connection.</td></tr>
+  <tr><td><code>security add-generic-password -w</code> truncates at 128 chars</td>
+      <td>Silent corruption of an 832-character token. The error surfaced later, in a different tool, as malformed JSON.</td></tr>
+  <tr><td>The Vercel CLI applies Root Directory <em>on top of</em> the working directory</td>
+      <td>Worked locally, failed in CI as <code>joestar-agent/joestar-agent</code>. Same command, different result by context.</td></tr>
+  <tr><td><code>vercel link</code> writes a <code>.env.local</code> unasked</td>
+      <td>In a project whose premise is that no secret touches a file. It only held an OIDC token, but <code>vercel env pull</code> would have written the real ones.</td></tr>
+  <tr><td><code>op service-account</code> has no <code>list</code> or <code>delete</code></td>
+      <td>Create-only CLI. Management is web-only, and on whichever of your two accounts owns the vault.</td></tr>
+  <tr><td>Slack's ✓ Verified is not a subscription</td>
+      <td>The single highest-cost misunderstanding of the evening, and the video passes it in one sentence.</td></tr>
+</table>
+
+<h2>Edge cases the code now handles</h2>
+<p>Most were anticipated rather than discovered — worth listing because lesson 05 keeps all of them:</p>
+<ul class="tight">
+  <li><strong>Slack retries</strong> — without the <code>x-slack-retry-num</code> check, one slow response posts the number three times.</li>
+  <li><strong>Threading</strong> — <code>thread_ts ?? ts</code>: reply inside an existing thread, otherwise start one on the message.</li>
+  <li><strong>Self-mentions</strong> — ignore events carrying <code>bot_id</code>, or a bot that mentions itself loops forever.</li>
+  <li><strong>Replay window</strong> — reject signatures older than five minutes.</li>
+  <li><strong>Timing-safe compare</strong> — length check first, then <code>timingSafeEqual</code>.</li>
+  <li><strong>Raw body integrity</strong> — the signature covers exact bytes, so a re-serialised parse would fail every time.</li>
+  <li><strong>Misconfiguration vs forgery</strong> — a missing env var returns 500, not 401, so it can't masquerade as an attack (adopted from Ray).</li>
+  <li><strong>Never 500 at Slack</strong> — a failed post logs and still acks, or Slack retries into the same failure.</li>
+</ul>
+
+<h2>Five redesigns, cheapest first</h2>
+
+<div class="opt">
+<h3>A. <code>bin/preflight</code> <span class="tag t-low">~20 min</span></h3>
+<p>One script that checks every prerequisite and prints a pass/fail table: <code>vercel whoami</code>, the
+GitHub↔Vercel connection, <code>op</code> vault reachability, <code>gh auth</code>, Node version, whether the
+Slack app exists and which scopes its token carries. Run it at the start of every lesson.</p>
+<p class="meta"><strong>Buys:</strong> the largest single time sink, found in 20 seconds instead of 3 hours.
+<strong>Costs:</strong> almost nothing. <strong>My pick if you do only one thing.</strong></p>
+</div>
+
+<div class="opt">
+<h3>B. <code>bin/smoke</code> <span class="tag t-low">~30 min</span></h3>
+<p>The five-probe chain as a single command, ending with a real threaded reply in a test channel. Run after any
+config change, and after every deploy.</p>
+<p class="meta"><strong>Buys:</strong> turns "nothing happened" into "link 4 of 5 is broken". Reusable unchanged
+through lesson 15. <strong>Costs:</strong> it posts to Slack, so it wants a dedicated <code>#bot-smoke</code> channel.</p>
+</div>
+
+<div class="opt">
+<h3>C. Prerequisites and traps baked into the lesson pages <span class="tag t-mid">~1 h</span></h3>
+<p>Amend <code>course/LESSON-PAGE-RULES.md</code> so every page opens with a runnable preflight block and marks
+the silent-failure steps inline — "Verified is not Saved" next to the step, not in a debrief afterwards. The
+information existed in the lesson 04 page; it wasn't in front of you at the moment it mattered.</p>
+<p class="meta"><strong>Buys:</strong> compounding across 13 remaining lessons. <strong>Costs:</strong> a rules
+change plus a pass over each page as you build it.</p>
+</div>
+
+<div class="opt">
+<h3>D. Slack configured by API, not by clicking <span class="tag t-mid">~2 h</span></h3>
+<p>Slack app configuration tokens plus <code>apps.manifest.update</code> let the manifest be applied
+programmatically. The manifest in the repo becomes the source of truth, and <code>bin/apply-manifest</code>
+pushes it.</p>
+<p class="meta"><strong>Buys:</strong> eliminates the entire Save-Changes class of bug — there is no unsaved
+state. Scope changes in later lessons become a diff instead of a click-hunt. <strong>Costs:</strong> config
+tokens expire every 12 hours and must be refreshed, which is its own small trap.</p>
+</div>
+
+<div class="opt">
+<h3>E. <code>bin/bootstrap</code> — the whole environment from one command <span class="tag t-high">~1 day</span></h3>
+<p>Create the Vercel project, set Root Directory via API, push env vars from 1Password, connect the repo, apply
+the Slack manifest, run the smoke test, print what's left for a human. Everything we did by hand tonight,
+encoded.</p>
+<p class="meta"><strong>Buys:</strong> the course becomes reproducible — a second workspace, a fresh machine, or
+a clean re-run costs minutes. Real proof the setup is understood. <strong>Costs:</strong> a day, and it only
+pays back if you actually re-run it. <strong>Honest take:</strong> premature unless you plan to teach this,
+demo it, or run a second environment.</p>
+</div>
+
+<h3>F. The ambitious one worth naming</h3>
+<p>Per-branch preview environments: every PR gets its own Vercel preview <em>and</em> its own Slack app in a
+scratch workspace, so a change is exercised by a real mention before it can reach production. This is what
+"properly engineered" would look like for a bot that later runs Claude Code with repo access — at that point a
+bad deploy stops being cosmetic. Worth revisiting around lesson 09, not now.</p>
+
+<h2>If I could keep only two</h2>
+<p class="lead">A and B. They are an hour together, they cover the two failure modes that actually cost us the
+evening — unmet prerequisites and silent breakage mid-chain — and they stay useful unchanged for the rest of
+the course. C is the natural follow-up because it compounds. D is genuinely good engineering with a nagging
+token-refresh cost. E is a day spent proving a point you may not need to prove.</p>
+
+</main>
+</body>
+</html>
