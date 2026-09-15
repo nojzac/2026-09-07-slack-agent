@@ -227,11 +227,6 @@
   #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
               line-height:1; padding:2px 6px; border-radius:5px; }
   #nav-hide:hover { background:#eef1f5; color:var(--ink); }
-  #nav-acts { display:flex; gap:6px; margin-top:10px; }
-  #nav-acts button { flex:1; border:1px solid var(--line); background:#fff; border-radius:6px;
-                     padding:5px 0; font-size:11.5px; cursor:pointer; color:var(--muted);
-                     font-family:inherit; }
-  #nav-acts button:hover { background:#f2f5f9; color:var(--ink); }
   #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
   .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
          cursor:pointer; line-height:1.36; }
@@ -303,10 +298,6 @@
   <div id="nav-head">
     <div id="nav-title"><span>CONTENTS</span>
       <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
-    <div id="nav-acts">
-      <button id="nav-open">expand all</button>
-      <button id="nav-close">collapse all</button>
-    </div>
     <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
     <button id="nav-reset">reset progress</button>
   </div>
@@ -1808,10 +1799,6 @@ are the failures that actually cost time on the real run — none of them are hy
     });
   }, { rootMargin: '-6% 0px -78% 0px' });
   document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
-
-  /* ---------- expand / collapse all ---------- */
-  document.getElementById('nav-open').onclick  = () => document.querySelectorAll('main details').forEach(d => d.open = true);
-  document.getElementById('nav-close').onclick = () => document.querySelectorAll('main details.hacc, main details.sub').forEach(d => d.open = false);
 
   /* ---------- hide / reveal, with swipe ---------- */
   const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l4-nav-hidden', h ? '1' : ''); };
