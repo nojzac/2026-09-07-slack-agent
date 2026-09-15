@@ -1,8 +1,5 @@
 # Slack app manifest — paste at https://api.slack.com/apps → Create New App → From a manifest.
-# Before pasting: replace <deployment> with the Vercel production domain.
-# Slack calls the Request URL when you save, so the app must be deployed first.
-# Not deployed yet? Delete the whole settings.event_subscriptions block, create the
-# app, deploy, then add the URL and the app_mention event in the UI.
+# Production URL is filled in below and live.
 display_information:
   name: joestar
   description: Mention me and I reply in the thread with a random number.
@@ -22,7 +19,7 @@ oauth_config:
       - chat:write
 settings:
   event_subscriptions:
-    request_url: https://<deployment>/api/slack/events
+    request_url: https://joestar-agent-five.vercel.app/api/slack/events
     bot_events:
       - app_mention
   interactivity:
