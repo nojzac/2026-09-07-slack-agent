@@ -32,6 +32,10 @@ change, rather than by using someone else's.
   from the research project as they are finished.
 - Transcripts: `~/projects/2026-09-04-ray-amjad-mcp/autonomy/transcripts/slack-agents/`
 
+## Traps
+Setup traps that cost real time, and the prerequisites Ray's videos assume
+you already have: `TRAPS.md`. Read it before starting a new lesson.
+
 ## Access
 
 Nothing exists yet. Fill in as each is created.

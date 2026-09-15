@@ -21,18 +21,10 @@ page; the page in `sops/` is still the draft v3 and has not been used or chosen.
   scopes `app_mentions:read` and `chat:write`. Manifest kept at
   `joestar-agent/slack-app-manifest.yml`.
 
-## Gotchas learned the hard way
-- Slack's Event Subscriptions page does nothing until the green **Save Changes**
-  bar at the bottom is clicked. A verified Request URL is not enough.
-- `vercel link` and `vercel dev` write a `.env.local`; `vercel env pull` would
-  write the real secrets there. `joestar-agent/.gitignore` blocks `.env*`.
-  Never run `vercel env pull`.
-- A Vercel deploy that sits at UNKNOWN forever with no build logs is usually
-  blocked, not queued. The cause here: the Vercel account had no GitHub login
-  connection, so it could not match the commit email nojzac@gmail.com to a
-  GitHub account. Fixed 2026-09-15 by adding the GitHub App connection
-  "vercel-slack-agent-nojzac" (namespace nojzac, scoped to this repo only).
-  Deploys went from hanging indefinitely to Ready in 5s.
+## Gotchas
+All written up in `TRAPS.md` — read it before lesson 05. Short version: Vercel
+needs a GitHub login connection or deploys hang at UNKNOWN with no error, and
+Slack's Event Subscriptions page does nothing until you click Save Changes.
 
 ## Next step
 Lesson 05 connects Claude Code in an E2B sandbox. Build its page from
