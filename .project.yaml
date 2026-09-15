@@ -5,7 +5,7 @@ created: 2026-09-07
 source_course: ray-amjad-slack-agents
 related:
   - ~/projects/2026-09-04-ray-amjad-mcp        # research and lesson pages
-  - ~/projects/ray-amjad-slack-agent-course    # read-only reference clone
+  - https://github.com/ray-amjad/slack-agent-course   # Ray's public code, no local clone
 secrets:
   carrier: env.op
   path: .env.op

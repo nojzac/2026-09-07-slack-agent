@@ -7,5 +7,4 @@
 - `what-ray-provides-per-lesson.md` — downloads, prompts, and repo tags per lesson (tags run two behind video numbers).
 - `beyond-the-course.md` — what to add after lesson 17, ranked by effort.
 
-Ray's code itself is the read-only clone at `~/projects/ray-amjad-slack-agent-course`.
 The public repo: https://github.com/ray-amjad/slack-agent-course
