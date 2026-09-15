@@ -12,7 +12,8 @@ Open calls on v3 (ask before changing): it has five self-check questions in sect
 
 ## Template and conventions (decided 2026-09-15, revised after review)
 
-`sops/lesson-04/index.html` is the template for every lesson page. One folder per lesson:
+`sops/lesson-04/index.html` is the template for every lesson page. Visual design and
+navigation live in `sops/DESIGN-SPEC.md`. One folder per lesson:
 `sops/lesson-NN/index.html`, with any debrief pages and an `archive/` for drafts beside it.
 
 The first version of that page failed a cold reader — no purpose statement, headings written from
