@@ -27,8 +27,7 @@ change, rather than by using someone else's.
 
 - Course: Ray Amjad, "Slack agents", https://www.agenticcoding.school
 - Reference code (public): https://github.com/ray-amjad/slack-agent-course
-  - Local clone: `~/projects/ray-amjad-slack-agent-course`
-  - Repo tags run two behind video numbers: video 04 = tag `lesson-02-end`.
+  - No local clone kept; clone to a temp folder when needed. Tags `lesson-02-end` to `lesson-15-end`; look each lesson up in `course/transcripts/DOWNLOADS.md`.
 - Lesson pages (learning aids, one HTML file per lesson): `sops/` here, copied
   from the research project as they are finished.
 - Transcripts: `~/projects/2026-09-04-ray-amjad-mcp/autonomy/transcripts/slack-agents/`
@@ -40,7 +39,7 @@ Nothing exists yet. Fill in as each is created.
 | System | Name | Where the credential lives |
 |---|---|---|
 | Slack test workspace | (lesson 03) | browser login |
-| Slack app | (lesson 04, api.slack.com/apps) | signing secret and bot token → 1Password `Projects/2026-09-07-slack-agent` |
+| Slack app | (lesson 04, api.slack.com/apps) | signing secret and bot token → 1Password `SlackAgentOS/2026-09-07-slack-agent` |
 | Vercel project | (lesson 04) | Vercel account login; env vars set in Vercel are the deploy-side copy of the 1Password values |
 | GitHub repo (private) | (lesson 04) | `gh` CLI login |
 | E2B | (lesson 05) | 1Password `Projects/shared-e2b` |

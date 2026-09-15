@@ -13,7 +13,7 @@ Mention the bot in Slack, it replies in the thread with a random number.
 | `SLACK_BOT_TOKEN` | Slack app → OAuth & Permissions → Bot User OAuth Token (`xoxb-…`) |
 | `RANDOM_MIN` / `RANDOM_MAX` | optional, default 1 and 100 |
 
-Both secrets also live in 1Password (`Projects/2026-09-07-slack-agent`) and are
+Both secrets also live in 1Password (`SlackAgentOS/2026-09-07-slack-agent`) and are
 referenced from `../.env.op`. Never write them into a file.
 
 ## Slack app setup

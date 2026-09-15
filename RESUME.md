@@ -20,7 +20,7 @@ Noj has not yet chosen which candidate is the template for the other lessons.
    it to push to a new private GitHub repo and create the Vercel project only.
    The first push needs Noj's explicit go.
 6. Put the Slack signing secret and bot token in 1Password
-   (`Projects/2026-09-07-slack-agent`, fields `signing_secret` and `bot_token`),
+   (`SlackAgentOS/2026-09-07-slack-agent`, fields `signing_secret` and `bot_token`),
    then set them in Vercel as Production environment variables.
 7. Fill in README.md "Access" with the Slack app name, Vercel project, and repo.
 
