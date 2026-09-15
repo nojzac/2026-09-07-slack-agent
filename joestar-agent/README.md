@@ -2,7 +2,7 @@
 
 Mention the bot in Slack, it replies in the thread with a random number.
 
-- `api/slack/events.js` — the Slack Events API endpoint (Vercel function).
+- `api/slack/events.js` — the Slack Events API endpoint (Vercel function). POST only; anything else gets 405.
 - `api/_lib/slack.js` — signature verification and `chat.postMessage`.
 - `test/events.test.js` — `npm test` (no network, `fetch` is stubbed).
 

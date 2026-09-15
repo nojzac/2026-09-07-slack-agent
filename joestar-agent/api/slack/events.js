@@ -1,17 +1,23 @@
+import { randomInt } from 'node:crypto';
 import { verifySlackSignature, postMessage } from '../_lib/slack.js';
 
 const MIN = Number(process.env.RANDOM_MIN ?? 1);
 const MAX = Number(process.env.RANDOM_MAX ?? 100);
 
 function randomNumber() {
-  return Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+  // randomInt is unbiased and needs no floor/range arithmetic to get right.
+  return randomInt(MIN, MAX + 1);
 }
 
-export function GET() {
-  return new Response('slack events endpoint: ok', { status: 200 });
-}
-
+// Only POST is exported, so anything else gets a 405 without reaching this code.
 export async function POST(request) {
+  // A missing variable is a deploy mistake, not a forged request — say so,
+  // rather than letting it surface as an indistinguishable 401.
+  if (!process.env.SLACK_SIGNING_SECRET || !process.env.SLACK_BOT_TOKEN) {
+    console.error('[slack] missing SLACK_SIGNING_SECRET or SLACK_BOT_TOKEN');
+    return new Response('server misconfigured', { status: 500 });
+  }
+
   const rawBody = await request.text();
 
   const ok = verifySlackSignature({

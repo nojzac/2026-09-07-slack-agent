@@ -78,3 +78,14 @@ test('ignores Slack retries', async () => {
   assert.equal(res.status, 200);
   assert.equal(calls.length, 0);
 });
+
+test('a missing env var is a 500, not a 401', async () => {
+  const saved = process.env.SLACK_SIGNING_SECRET;
+  delete process.env.SLACK_SIGNING_SECRET;
+  try {
+    const res = await POST(signedRequest({ type: 'event_callback' }));
+    assert.equal(res.status, 500);
+  } finally {
+    process.env.SLACK_SIGNING_SECRET = saved;
+  }
+});
