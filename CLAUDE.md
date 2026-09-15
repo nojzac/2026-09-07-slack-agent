@@ -11,8 +11,6 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
   Vercel's environment variables are the deploy-side copy; set them in Vercel's UI.
 - Never commit a file over 10 MB. The pre-commit hook enforces this.
 - No push to any remote without Noj's explicit go.
-- Never modify `~/projects/ray-amjad-slack-agent-course`. It is a read-only
-  reference clone of Ray's code.
 - Course inputs live in `course/` (transcripts, downloads, lesson-page rules,
   lesson 04 candidates). Lesson pages are MADE here, in `sops/`, one HTML file
   per lesson. Broader research about agents in general stays in
@@ -25,12 +23,13 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
   as written unless the page says otherwise.
 - Ray's lesson 04 has Claude create the git repo and Vercel project. Here the
   folder and git repo already exist; skip `git init`, keep the rest.
-- Ray's agent is named Joestar. Noj's agent name: (decide in lesson 04 and record here).
+- Ray's agent is named Joestar. Noj's agent name: Joestar (same).
 - After finishing a lesson: commit, update RESUME.md with the lesson done and the
   next one, and record any new credential location in README.md under Access.
 
 ## Reference
 - Course transcripts: `course/transcripts/` (INDEX.md and DOWNLOADS.md there)
-- Ray's code at the end of any lesson: `git -C ~/projects/ray-amjad-slack-agent-course show lesson-NN-end:<path>`
-  (tags run two behind video numbers).
+- Ray's code at the end of any lesson: Ray's public code is at https://github.com/ray-amjad/slack-agent-course (tags lesson-02-end to lesson-15-end). No local clone is kept (deleted 2026-09-08); clone it when needed: `git clone https://github.com/ray-amjad/slack-agent-course /tmp/ray-course`.
+  There is no fixed offset between video number and tag; look the lesson up in
+  `course/transcripts/DOWNLOADS.md`, then confirm by reading the tag's contents. Tags stop at lesson-15-end.
 - What to build beyond the course: `course/beyond-the-course.md`

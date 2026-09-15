@@ -1,0 +1,49 @@
+import { verifySlackSignature, postMessage } from '../_lib/slack.js';
+
+const MIN = Number(process.env.RANDOM_MIN ?? 1);
+const MAX = Number(process.env.RANDOM_MAX ?? 100);
+
+function randomNumber() {
+  return Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+}
+
+export function GET() {
+  return new Response('slack events endpoint: ok', { status: 200 });
+}
+
+export async function POST(request) {
+  const rawBody = await request.text();
+
+  const ok = verifySlackSignature({
+    signingSecret: process.env.SLACK_SIGNING_SECRET,
+    signature: request.headers.get('x-slack-signature'),
+    timestamp: request.headers.get('x-slack-request-timestamp'),
+    rawBody,
+  });
+  if (!ok) return new Response('invalid signature', { status: 401 });
+
+  const payload = JSON.parse(rawBody);
+
+  // One-off handshake when the URL is first saved in the Slack app config.
+  if (payload.type === 'url_verification') {
+    return Response.json({ challenge: payload.challenge });
+  }
+
+  // Slack retries anything it thinks failed; don't post the number twice.
+  if (request.headers.get('x-slack-retry-num')) {
+    return new Response('ok', { status: 200 });
+  }
+
+  const event = payload.event;
+  if (event?.type === 'app_mention' && !event.bot_id) {
+    await postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: event.channel,
+      text: `🎲 ${randomNumber()}`,
+      // Reply in the thread; for a top-level message, ts starts the thread.
+      thread_ts: event.thread_ts ?? event.ts,
+    });
+  }
+
+  return new Response('ok', { status: 200 });
+}
