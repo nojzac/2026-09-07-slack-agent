@@ -91,6 +91,33 @@ Slack's dispatch: unsaved settings first, app-needs-reinstall second.
 - Production deploys come from GitHub Actions only — `joestar-agent/vercel.json`
   disables Vercel's own git trigger so the tests gate production.
 
+## A dependency that works locally and dies on Vercel (lesson 05)
+
+**Symptom.** Every request to the deployed function returns 500 with
+`FUNCTION_INVOCATION_FAILED`. A GET, which should be a clean 405, fails the
+same way — the giveaway that it breaks at module load, before any routing.
+Local tests all pass.
+
+**Cause.** `import { Sandbox } from 'e2b'`. The e2b package ships no `exports`
+map, so Node follows `main` to the CommonJS build, which calls
+`require('chalk')` — and chalk v5 is ESM-only. Node 22+ tolerates `require()`
+of an ESM module, so it works on a modern local Node and inside `node --test`.
+Vercel's bundled runtime does its own module loading and does not, so it throws
+`ERR_REQUIRE_ESM` and the process exits.
+
+**Wrong fix.** Raising `engines.node`. The project was already on Node 24,
+which supports require(esm) natively. The Node version was never the problem.
+
+**Fix.** Import the ESM build explicitly: `from 'e2b/dist/index.mjs'`. Ugly,
+because it reaches past the package's front door, but it is the thing that
+makes both environments load the same file.
+
+**The general lesson.** Tests passing locally says nothing about whether a
+dependency *loads* in the deploy runtime. The cheap check is a GET against the
+deployed endpoint: a POST-only function should answer 405. Anything else, and
+`vercel logs <url>` names the failing module in one line. Preflight already
+does this check — it is what caught it.
+
 ## Where the time actually went
 
 | Cause | Roughly |

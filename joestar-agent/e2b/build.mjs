@@ -1,4 +1,4 @@
-import { Template, defaultBuildLogger } from 'e2b';
+import { Template, defaultBuildLogger } from 'e2b/dist/index.mjs'; // see api/_lib/claude.js
 import { template } from './template.mjs';
 
 /**

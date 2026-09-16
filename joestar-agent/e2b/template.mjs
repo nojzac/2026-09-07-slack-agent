@@ -1,4 +1,4 @@
-import { Template } from 'e2b';
+import { Template } from 'e2b/dist/index.mjs'; // see api/_lib/claude.js
 
 /**
  * The machine Claude Code runs on. Node 24 plus the three tools Claude reaches

@@ -1,4 +1,13 @@
-import { Sandbox } from 'e2b';
+// Deliberately the .mjs build, not the bare 'e2b' specifier.
+//
+// e2b ships no "exports" map, so `import 'e2b'` follows "main" to the
+// CommonJS build, which does require('chalk') — and chalk v5 is ESM-only.
+// Node 22+ tolerates require() of ESM, so this passes locally and in tests,
+// then dies on Vercel with ERR_REQUIRE_ESM at module load, taking every
+// request with it. Vercel runs Node 24, so it is the bundler's loader that
+// cannot do it, not the Node version: raising engines.node does not help.
+// The .mjs build imports chalk properly and loads in both places.
+import { Sandbox } from 'e2b/dist/index.mjs';
 
 const TEMPLATE = process.env.E2B_TEMPLATE ?? 'joestar-claude';
 
