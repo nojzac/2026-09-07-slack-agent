@@ -33,6 +33,29 @@ change, run `bin/smoke`. Together they cover the two failure modes that cost an
 evening in lesson 04: an unmet prerequisite found late, and a silent break
 somewhere in the mention → reply chain.
 
+## Where lesson 05 stands (2026-09-15)
+
+Code written, tested and pushed; not live. `api/_lib/claude.js` boots an E2B
+sandbox and runs Claude Code, `api/slack/events.js` posts "thinking…" inside
+Slack's three-second window and edits it with the answer via `waitUntil`.
+10 tests pass. The learning page is `sops/lesson-05/index.html`.
+
+**Blocked on two credentials only Noj can create**, both then stored in the
+1Password item `SlackAgentOS/2026-09-07-slack-agent`:
+
+| Field | How to get it |
+|---|---|
+| `e2b_api_key` | e2b.dev → sign up → Dashboard → API Keys → Create |
+| `claude_code_oauth_token` | `claude setup-token` in a terminal (needs a Claude subscription; cannot be revoked afterwards) |
+
+Then, in order: uncomment the two lines in `.env.op`; `bin/with-secrets npx e2b
+template build`; pipe both into Vercel with `op read … | vercel env add …
+production`; push; mention the bot. Steps 3–6 of the lesson 05 page.
+
+Known unknown: Claude runs for minutes and the function is capped at
+`maxDuration = 300`. If answers truncate, the work has to move off the Vercel
+function, which is a larger change.
+
 ## Next step
 Lesson 05 connects Claude Code in an E2B sandbox. Build its page from
 `course/transcripts/05-0-to-1--connecting-claude-code.md` following
