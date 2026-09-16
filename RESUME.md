@@ -194,3 +194,8 @@ Open, neither blocking: rotate `claude_code_oauth_token` (about 19 characters
 of it reached a transcript on 2026-09-15; it cannot be revoked, so replacing it
 is the only remedy), and delete whichever of the two live 1Password service
 accounts is now spare.
+
+**Decided 2026-09-16:** the token rotation happens at the *end* of the course,
+not now. Rotating it mid-course means rebuilding the E2B sandbox image and
+updating Vercel in the middle of lessons that keep changing both. Don't keep
+raising it — it is deferred on purpose, not forgotten.
