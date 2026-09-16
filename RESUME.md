@@ -71,3 +71,22 @@ Its keys go in the `SlackAgentOS` vault; the commented `ANTHROPIC_API_KEY` and
 
 Settled since: GitHub↔Vercel is connected and push-to-deploy works; the lesson
 page template is `sops/lesson-04/index.html`.
+
+## Where lesson 05 stands (2026-09-15, end of session)
+Both credentials now exist in `SlackAgentOS/2026-09-07-slack-agent` as
+`e2b_api_key` and `claude_code_oauth_token`, and `.env.op` references both —
+the two lines are uncommented. The Claude token was pasted with a leading
+space; Noj removed it, and the fix is unverified because verification now goes
+through `op run`, not `op read`.
+
+Next, in order:
+1. `op run --env-file=.env.op -- npx e2b template build` (from `joestar-agent/`)
+2. Pipe both keys into Vercel production
+3. Push, then mention `@joestar` in `#bot-smoke`
+Steps 3–6 of `sops/lesson-05/index.html`.
+
+New rule, enforced by a hook: Claude never reads a secret's value. See
+`~/.claude/hooks/block-secret-reads.py` and
+`~/.claude/instructions/onepassword-access.md`. Secrets reach commands only via
+`op run --env-file=.env.op -- <command>`; verification is the exit code of a
+real command, never an inspection of the value.
