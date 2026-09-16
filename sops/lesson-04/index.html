@@ -161,7 +161,7 @@
   }
 
   /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
-  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#4a5766; }
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
 
   .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
   .part .pn { color:var(--pc); font-weight:700; }
@@ -177,25 +177,25 @@
 
   /* L3 · sub-heading band, hue at 6% */
   .sec h3 {
-    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 6%, #fff);
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
     color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
-    border-top:1px solid color-mix(in srgb, var(--sc) 14%, #fff);
-    border-bottom:1px solid color-mix(in srgb, var(--sc) 14%, #fff);
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
   }
   .phase { border-left:3px solid var(--sc); }
   .phase h3 { background:none; border:0; margin:0; padding:0; }
 
   /* L4 · explainer box, hue at 13% */
   details.sub {
-    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 13%, #fff);
-    border:1px solid color-mix(in srgb, var(--sc) 22%, #fff);
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
     border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
   }
   details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
   details.sub pre { background:#15171c; }
 
   .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
-              background:color-mix(in srgb, var(--sc) 5%, #fff); }
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
   .danger  { border-left:3px solid #a32020; background:#fdeeee; }
   .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
   .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
@@ -270,7 +270,7 @@
              border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
              align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
              color:var(--sc); flex:none; padding:0; font-family:inherit; }
-  .stepbox:hover { background:color-mix(in srgb, var(--sc) 10%, #fff); }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
   .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
   .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
   .stepbox[aria-pressed="true"] > span { display:none; }
@@ -290,6 +290,167 @@
   #nav-reset:hover { color:var(--bad); }
   .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
   @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+  /* ===== per-box read ticks ===== */
+  .boxtick { position:absolute; top:8px; right:8px; width:19px; height:19px; border-radius:50%;
+             border:1.5px solid color-mix(in srgb, var(--sc,#616a77) 55%, #fff);
+             background:rgba(255,255,255,.75); cursor:pointer; padding:0; z-index:2;
+             display:flex; align-items:center; justify-content:center; font-size:11px;
+             line-height:1; color:transparent; font-family:inherit; }
+  .boxtick:hover { border-color:var(--sc,#616a77); background:#fff; color:#b9c2cf; }
+  .boxtick::after { content:"✓"; }
+  .boxtick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .read { opacity:.62; }
+  .read:hover { opacity:.85; }
+  details.sub > summary { padding-right:26px; }
+  .danger, .callout, .metaphor, .ray, .win, .checkpoint { padding-right:34px; }
+  @media print { .boxtick { display:none !important; } .read { opacity:1 !important; } }
 </style>
 </head>
 <body class="has-nav">
@@ -319,7 +480,7 @@ failures are.</p>
   <span><b>At the end:</b> a working bot</span>
 </div>
 
-<div class="fm">
+<div class="fm" style="--fc:#0b6b3a">
 <h2>What you'll have at the end</h2>
 <div class="fig">
 <svg viewBox="0 0 700 196" width="100%" height="auto" role="img">
@@ -355,7 +516,7 @@ failures are.</p>
 </ul>
 </div>
 
-<div class="fm">
+<div class="fm" style="--fc:#4a5766">
 <h2>Who this is for, and what it assumes</h2>
 <p>Someone following Ray Amjad's Slack-agents course who has finished lesson 03, and who would
 rather understand the system than reproduce a sequence of clicks.</p>
@@ -364,7 +525,7 @@ you have used Slack's developer site, Vercel, or 1Password — those are explain
 click by click.</p>
 </div>
 
-<div class="fm">
+<div class="fm" style="--fc:#7a3d9c">
 <h2>Why this lesson exists</h2>
 <div class="fig">
 <svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
@@ -426,7 +587,7 @@ start, work through part 2 at the keyboard, and come back to part 3 when somethi
 </ol>
 </div>
 
-<div class="fm" id="before" style="border-left:4px solid var(--bad)">
+<div class="fm" id="before" style="--fc:#a32020">
 <h2>Before you begin</h2>
 <div class="danger"><strong>If you read nothing else, read this section.</strong> On the run this page comes
 from, most of the lost time was a prerequisite that was missing <em>and silent</em>. Not a bug. Not a
@@ -1911,6 +2072,48 @@ are the failures that actually cost time on the real run — none of them are hy
   };
 
   paint();
+
+  /* ---------- a tick on every box, so you can mark what you have read ---------- */
+  (function boxTicks() {
+    const BKEY = 'l-boxes';
+    const bstate = JSON.parse(localStorage.getItem(BKEY) || '{}');
+    const sel = 'details.sub, .danger, .callout, .metaphor, .ray, .win, .checkpoint, .fig';
+    document.querySelectorAll('main .sec, main .fm, main .map').forEach(host => {
+      const base = host.id || 'x';
+      host.querySelectorAll(sel).forEach((box, i) => {
+        if (box.closest('.stepbox')) return;
+        const id = `${base}:b${i}`;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'boxtick';
+        b.title = 'Mark as read';
+        b.setAttribute('aria-label', 'Mark as read');
+        b.setAttribute('aria-pressed', bstate[id] ? 'true' : 'false');
+        box.classList.toggle('read', !!bstate[id]);
+        b.onclick = e => {
+          e.stopPropagation();
+          e.preventDefault();
+          bstate[id] = !bstate[id];
+          b.setAttribute('aria-pressed', bstate[id] ? 'true' : 'false');
+          box.classList.toggle('read', !!bstate[id]);
+          localStorage.setItem(BKEY, JSON.stringify(bstate));
+        };
+        box.style.position = 'relative';
+        box.prepend(b);
+      });
+    });
+    // the reset button clears these too
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(BKEY, '{}');
+        document.querySelectorAll('.boxtick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.read').forEach(el => el.classList.remove('read'));
+        if (prev) prev();
+      };
+    }
+  })();
 
   applyAuto();
 })();

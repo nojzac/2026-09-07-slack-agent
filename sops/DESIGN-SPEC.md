@@ -126,12 +126,35 @@ Requested explicitly, and it overrides the research default that only explanatio
 
 ---
 
-## 8. Outstanding work
+## 8. Revisions after review (2026-09-15)
 
-1. Apply the colour system in section 2–4 to `sops/lesson-04/index.html`.
-2. Add the per-heading accordions from section 7.
-3. Build the navigation widget from section 6 across the whole page (prototype exists at
-   `scratchpad/nav-prototype.html`, not committed).
+Sections 2–4 above describe the first attempt, which read as one grey slab in practice. What is
+actually implemented now, on both lesson pages, whose `<style>` blocks are identical:
 
-Content must not change: all 22 steps stay byte-identical and in order, verified by diff, as in the
-previous restructure.
+- **Each part is a family of one hue, not grey cards with coloured trim.** The card surface itself
+  is tinted. Ladder, deepest inward: figures 13%, section card 16%, table rows 19%, metaphors 23%,
+  section header bar 27%, sub-heading band 31%, part plate 32%, explainer box 37%, borders 40–50%.
+- **Nothing is pure white.** Page `#e7eaf0`, cards tinted from `#f7f8fb`, figures lightest. White
+  everywhere was the main reason blocks would not separate.
+- **Part 3 is teal `#0e6b73`**, not slate — slate read as an absence of colour beside the other two.
+- **Section headers are coloured bars.** Previously a section opened with white space and was
+  indistinguishable from the prose under it.
+- **Front-matter cards each carry their own accent** (`--fc`): green, slate, violet, blue, and red
+  for "before you begin".
+- **Semantic callouts deliberately stayed out of the hue families.** Red, amber and green must
+  outrank structure; tinting them toward the part hue turns a warning into decoration.
+- **The contents menu includes the front matter** as a "Start here" group. It was built from `.part`
+  elements only, so the whole introduction was missing from it.
+- **Progress tracking**: a checkbox on each of the numbered steps, and a read-tick on every box
+  (explainer, callout, checkpoint, figure, metaphor). Both persist in `localStorage`; the nav has a
+  reset that clears both.
+- Expand/collapse-all buttons were removed as redundant once every heading collapses.
+
+### If more colour is ever wanted
+Deepen borders and headings rather than fills. Body text is `#2b3038`, and the 37% surface is close
+to the limit before the text colour has to change with it.
+
+## 9. Still to do
+
+Nothing outstanding on the design. Next lesson pages inherit this by copying either page's `<style>`
+and `<script>` block wholesale — that is how the two stay identical.
