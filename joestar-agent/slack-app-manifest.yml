@@ -1,8 +1,12 @@
-# Slack app manifest — paste at https://api.slack.com/apps → Create New App → From a manifest.
+# Slack app manifest — paste at https://api.slack.com/apps → joestar → App Manifest.
 # Production URL is filled in below and live.
+#
+# Saving this in the Slack editor is not enough: new scopes do not exist until
+# the app is REINSTALLED, and reinstalling mints a new bot token that has to be
+# updated in both Vercel and 1Password. See sops/lesson-07/index.html, steps 3-4.
 display_information:
   name: joestar
-  description: Mention me and I reply in the thread with a random number.
+  description: Mention me, or reply in a thread I'm in, and I answer with Claude.
   background_color: "#2c2d30"
 features:
   bot_user:
@@ -15,13 +19,33 @@ features:
 oauth_config:
   scopes:
     bot:
+      # Hear mentions, and reply.
       - app_mentions:read
       - chat:write
+      # Read a thread to decide whether it is ours and to replay it as context.
+      # Public and private channels need separate scopes.
+      - channels:history
+      - groups:history
+      # Download attachments via url_private, and upload files back.
+      - files:read
+      - files:write
+      # 👀 when a message lands, ✅ or ❌ when the run ends.
+      - reactions:write
+      #
+      # Deliberately NOT here: im:history and mpim:history. This bot does not
+      # support DMs, and subscribing to them means receiving private messages it
+      # will never answer. Scopes are easy to add and awkward to remove.
 settings:
   event_subscriptions:
     request_url: https://joestar-agent-five.vercel.app/api/slack/events
     bot_events:
       - app_mention
+      # These are what make a plain thread reply work without a re-mention.
+      # They also mean the bot now hears EVERY message in every channel it is
+      # in — check its channel membership before reinstalling, and see the three
+      # loop guards in api/slack/events.js.
+      - message.channels
+      - message.groups
   interactivity:
     is_enabled: false
   org_deploy_enabled: false

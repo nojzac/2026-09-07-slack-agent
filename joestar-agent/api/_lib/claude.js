@@ -11,15 +11,27 @@ import { Sandbox } from 'e2b/dist/index.mjs';
 
 const TEMPLATE = process.env.E2B_TEMPLATE ?? 'joestar-claude';
 
+/** Where attachments land, and where anything to send back is collected from. */
+export const INPUT_DIR = '/tmp/inputs';
+export const OUTPUT_DIR = '/tmp/outputs';
+
+// Slack is not a file server and this is a 300-second function. Caps keep a
+// model that decides to write a hundred files from turning into a hundred
+// uploads.
+const MAX_OUTPUT_FILES = 5;
+const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
+
 /**
- * Run one prompt through Claude Code in a throwaway cloud sandbox and return
- * its answer as text.
+ * Run one prompt through Claude Code in a throwaway cloud sandbox.
  *
  * The sandbox is the point: Claude runs with --dangerously-skip-permissions,
  * which is only safe because the machine it runs on is empty, isolated, and
  * destroyed afterwards. Nothing of ours is reachable from inside it.
+ *
+ * `inputs` are files the user attached, written in before the run.
+ * Returns the answer plus whatever the model left in OUTPUT_DIR.
  */
-export async function runClaude({ prompt, timeoutMs = 240_000 }) {
+export async function runClaude({ prompt, inputs = [], timeoutMs = 240_000 }) {
   const sandbox = await Sandbox.create(TEMPLATE, {
     envs: {
       // Billed through the Claude subscription that created this token, not
@@ -37,6 +49,14 @@ export async function runClaude({ prompt, timeoutMs = 240_000 }) {
   });
 
   try {
+    // The output directory has to exist before the run, or "write your answer
+    // to /tmp/outputs/x.md" is a path error the model has to recover from.
+    await sandbox.files.makeDir(OUTPUT_DIR).catch(() => {});
+
+    for (const file of inputs) {
+      await sandbox.files.write(file.path, new Blob([file.bytes]));
+    }
+
     // -p is non-interactive: no TTY, no trust dialog, no onboarding to hang on.
     // --dangerously-skip-permissions is safe only because this machine is empty
     // and about to be destroyed. NOT --bare: it makes auth "strictly
@@ -46,11 +66,66 @@ export async function runClaude({ prompt, timeoutMs = 240_000 }) {
       `claude -p ${shellQuote(prompt)} --dangerously-skip-permissions --output-format json`,
       { timeoutMs },
     );
-    return parseAnswer(result.stdout);
+
+    return {
+      answer: parseAnswer(result.stdout),
+      files: await collectOutputs(sandbox),
+    };
   } finally {
     // Always kill it: a sandbox left running is a sandbox still being billed.
     await sandbox.kill().catch(() => {});
   }
+}
+
+/**
+ * Everything the model left in OUTPUT_DIR, read out before the sandbox dies.
+ *
+ * Never throws: a missing directory is the normal case — most answers are just
+ * text — and a file that cannot be read should not lose the answer with it.
+ */
+async function collectOutputs(sandbox) {
+  let entries;
+  try {
+    entries = await sandbox.files.list(OUTPUT_DIR);
+  } catch {
+    return [];
+  }
+
+  const files = [];
+  for (const entry of entries ?? []) {
+    if (files.length >= MAX_OUTPUT_FILES) {
+      console.warn(`[claude] more than ${MAX_OUTPUT_FILES} output files; ignoring the rest`);
+      break;
+    }
+    if (entry.type === 'dir') continue;
+    if (entry.size > MAX_OUTPUT_BYTES) {
+      console.warn(`[claude] skipping ${entry.name}: ${entry.size} bytes is over the cap`);
+      continue;
+    }
+    try {
+      const bytes = await sandbox.files.read(entry.path, { format: 'bytes' });
+      if (bytes?.length) files.push({ name: entry.name, bytes });
+    } catch (err) {
+      console.warn(`[claude] could not read ${entry.name}:`, err.message);
+    }
+  }
+  return files;
+}
+
+/**
+ * Where one attachment lands inside the sandbox.
+ *
+ * The name comes from whoever uploaded the file, so it is treated as hostile:
+ * anything that is not a plain filename character is replaced, which flattens
+ * "../../etc/passwd" into something harmless. The index keeps two files called
+ * screenshot.png from becoming one.
+ */
+export function sandboxInputPath(name, index) {
+  const safe = String(name ?? '')
+    .replace(/[^A-Za-z0-9._-]/g, '_')
+    .replace(/^\.+/, '')
+    .slice(0, 80);
+  return `${INPUT_DIR}/${index}-${safe || 'file'}`;
 }
 
 /** Single-quote for the shell, so a prompt full of quotes and backticks is inert. */
