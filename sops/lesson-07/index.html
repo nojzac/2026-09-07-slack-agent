@@ -639,7 +639,7 @@ before they arrive as one large prompt.</p>
 <tr><td>No acknowledgement until the placeholder</td><td>A few seconds where nothing has happened</td><td><code>reactions:write</code>, 👀 before the run</td></tr>
 <tr><td>No signal when a run ends</td><td>You reread the thread to see if it finished</td><td>✅ / ❌ added on completion</td></tr>
 <tr><td>Cannot see attachments</td><td>Screenshots and PDFs are invisible to it</td><td><code>files:read</code> + <code>url_private</code> download</td></tr>
-<tr><td>Cannot send files</td><td>Long output arrives as a wall of message text</td><td><code>files:write</code> + <code>files.uploadV2</code></td></tr>
+<tr><td>Cannot send files</td><td>Long output arrives as a wall of message text</td><td><code>files:write</code> + the three-step external upload</td></tr>
 <tr><td>Emits Markdown, not mrkdwn</td><td>Literal <code>**asterisks**</code> in the answer</td><td>Convert in code after the run</td></tr>
 </tbody>
 </table>
@@ -880,6 +880,27 @@ day someone pastes a screenshot and gets a confident answer about nothing.</div>
 <p class="cap">Four of the five new stops happen before Claude is ever called. The interface work is
 almost entirely about what surrounds the model, not the model itself.</p>
 </div>
+
+<h3>What this costs in the three-second window</h3>
+<p>Slack wants a <code>200</code> within about three seconds. Until this lesson the bot made
+<strong>one</strong> Slack call before answering: post the placeholder. It now makes up to
+<strong>four</strong>.</p>
+
+<table>
+<thead><tr><th>Call</th><th>When</th><th>Why it cannot wait until after the 200</th></tr></thead>
+<tbody>
+<tr><td><code>auth.test</code></td><td>Once per warm instance, then cached</td><td>The loop guards need the bot's own user id. Guessing past it disables a guard whose failure mode is unbounded spend.</td></tr>
+<tr><td><code>conversations.replies</code></td><td>Thread replies only</td><td>It answers "is this our thread?" — the decision of whether to reply at all. The same call returns the transcript.</td></tr>
+<tr><td><code>reactions.add</code> 👀</td><td>Every handled event</td><td>Awaited deliberately: it is what makes 👀-before-placeholder true rather than a race.</td></tr>
+<tr><td><code>chat.postMessage</code></td><td>Every handled event</td><td>The placeholder, as before.</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Still comfortably inside the window, but this is where the time now
+lives.</strong> The worst case is a cold instance handling a thread reply — all four calls, none
+cached. If the bot ever starts missing Slack's timeout and getting retried, this is the path to look
+at first, not the sandbox: everything after the <code>200</code> runs in
+<code>waitUntil</code> and cannot cause a timeout.</div>
 </details>
 
 <details class="sec" id="words-07" open style="--sc:var(--understand); --sc2:var(--understand)">
@@ -896,7 +917,7 @@ almost entirely about what surrounds the model, not the model itself.</p>
 <tr><td>mrkdwn</td><td>Slack's own formatting dialect. Not Markdown: bold is <code>*one asterisk*</code>, links are <code>&lt;url|text&gt;</code>. Deliberately spelled without the "a".</td></tr>
 <tr><td><code>url_private</code></td><td>The download URL on an uploaded file. Fetching it needs the bot token in an <code>Authorization</code> header.</td></tr>
 <tr><td>Transcript replay</td><td>Rebuilding the conversation by re-reading the Slack thread each turn, instead of keeping a session alive.</td></tr>
-<tr><td><code>files.uploadV2</code></td><td>The current way to send a file. The old <code>files.upload</code> was retired in March 2025 and any example using it is out of date.</td></tr>
+<tr><td>The external upload dance</td><td>The current way to send a file, in three calls: <code>files.getUploadURLExternal</code> → PUT the bytes → <code>files.completeUploadExternal</code>. The old one-shot <code>files.upload</code> was retired in March 2025, so any example using it is out of date. <code>@slack/web-api</code> wraps all three as <code>files.uploadV2</code>; this repo does not use that SDK — see step 1.</td></tr>
 </tbody>
 </table>
 
@@ -977,6 +998,14 @@ event.user === BOT_USER_ID</code></pre>
   Read the diff here. Not because Claude writes badly, but because two of the mistakes available in
   this change — a missing loop guard and dedup on the wrong signal — fail silently, one by spending
   money and the other by dropping images.</div>
+  <div class="ray"><b>One dependency decision, made deliberately.</b> Ray's prompt suggests
+  <code>@slack/web-api</code> and its <code>files.uploadV2</code> helper for uploads. This repo does
+  not use it: <code>api/_lib/slack.js</code> is about fifty lines of hand-rolled <code>fetch</code>
+  with no Slack SDK, and the three upload calls are written in the same idiom. The reason is in
+  <code>TRAPS.md</code> — in lesson 05 a dependency that worked locally returned 500 on Vercel
+  (<code>ERR_REQUIRE_ESM</code>, out of a transitive <code>chalk</code>), and every new package on
+  this function buys that risk again. Keep the uploads behind a single <code>uploadFile()</code> so
+  adopting the SDK later is a one-function change.</div>
 </li>
 <li>
   <p><strong>Run the tests, and don't commit yet.</strong></p>
@@ -1023,7 +1052,7 @@ it is the source of truth for this app's scopes and events.</code></pre>
   Slack app do not drift apart.</p>
 </li>
 <li>
-  <p><strong>Check what it is asking for.</strong> The five new scopes should be:</p>
+  <p><strong>Check what it is asking for.</strong> Five scopes are being <em>added</em>, on top of the two the bot has had since lesson 04:</p>
   <table>
   <thead><tr><th>Scope</th><th>Why the code needs it</th></tr></thead>
   <tbody>
@@ -1042,13 +1071,14 @@ it is the source of truth for this app's scopes and events.</code></pre>
   subscribing to them means receiving private messages it will never answer.</div>
 </li>
 </ol>
-<div class="checkpoint"><b>CHECKPOINT</b><code>joestar-agent/slack-app-manifest.yml</code> lists seven
-bot scopes and at least two bot events, and you can say what each one is for.</div>
+<div class="checkpoint"><b>CHECKPOINT</b><code>joestar-agent/slack-app-manifest.yml</code> lists
+<b>seven</b> bot scopes — the five above plus lesson 04's <code>app_mentions:read</code> and
+<code>chat:write</code> — and at least two bot events, and you can say what each one is for.</div>
 </section>
 
 <section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
 <div class="sec-head">
-  <h2 class="sec-t">Step 3 of 7 — Paste the manifest into Slack and reinstall<span class="sec-s">Browser work. Two clicks that are easy to miss, and nothing works without either.</span></h2>
+  <h2 class="sec-t">Step 3 of 7 — Paste the manifest into Slack and reinstall<span class="sec-s">Browser work. Check the bot’s channels first, then two clicks that are easy to miss.</span></h2>
   <span class="badge b-do">DO NOW</span>
 </div>
 <div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
@@ -1070,6 +1100,19 @@ bot scopes and at least two bot events, and you can say what each one is for.</d
 </svg></div>
 
 <ol class="steps">
+<li>
+  <p><strong>First, check which channels the bot is actually in.</strong></p>
+  <p class="where">Where: Slack → click <b>joestar</b> → <b>View full profile</b> → <b>Channels</b></p>
+  <p>Do this <em>before</em> the reinstall, while the bot can still only hear mentions. Every channel
+  on that list becomes a live event source the moment this change deploys — the bot will receive every
+  message posted there, not just the ones addressed to it.</p>
+  <div class="callout"><strong>In this workspace that is two channels, not one.</strong>
+  <code>#joestar-test</code> and <code>#bot-smoke</code> both have joestar as a member. That is fine
+  and expected — <code>bin/smoke</code> posts with the bot token, so its messages carry
+  <code>bot_id</code> and the loop guards drop them. The point is to know the list, because each
+  channel on it is somewhere a broken guard could loop. Remove the bot from anything it does not need
+  to be in, now.</div>
+</li>
 <li>
   <p><strong>Open the manifest editor.</strong></p>
   <p class="where">Where: <a href="https://api.slack.com/apps">api.slack.com/apps</a> → <b>joestar</b>
@@ -1101,7 +1144,7 @@ Subscriptions page lists <code>message.channels</code> alongside <code>app_menti
 
 <section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
 <div class="sec-head">
-  <h2 class="sec-t">Step 4 of 7 — Put the new bot token in 1Password and Vercel<span class="sec-s">Reinstalling mints a new token and silently retires the old one.</span></h2>
+  <h2 class="sec-t">Step 4 of 7 — Check the bot token, and update it only if it rotated<span class="sec-s">Reinstalling may mint a new token. Check before copying anything — here, it did not.</span></h2>
   <span class="badge b-do">DO NOW</span>
 </div>
 <div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
@@ -1122,13 +1165,35 @@ Subscriptions page lists <code>message.channels</code> alongside <code>app_menti
   <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Verify</text>
 </svg></div>
 
-<p>This is the step that catches people, because nothing announces it. The app still works in the
-dashboard, the code is fine, the scopes are granted — and the deployed function is holding a token
-that no longer exists.</p>
+<div class="win"><b>On this workspace, this step was a no-op.</b> The reinstall did <em>not</em> mint
+a new token: the existing one was widened to carry all seven scopes, so there was nothing to copy into
+1Password or Vercel. Verified by reading the <code>x-oauth-scopes</code> header on an
+<code>auth.test</code> response, which names scopes and never shows the value.</div>
+
+<p>Whether a reinstall rotates the token depends on the app. With
+<code>token_rotation_enabled: false</code> and a scope change on an app already installed in the same
+workspace, Slack keeps the token and widens its grant. A new token comes from rotation being enabled,
+or from revoking and reinstalling — not from adding scopes. When it <em>does</em> rotate, nothing
+announces it: the app still works in the dashboard, the code is fine, the scopes are granted, and the
+deployed function is holding a token that no longer exists.</p>
+
+<div class="ray"><b>Where this differs from Ray.</b> Ray copies a new token and updates his Vercel
+variable, and presents it as what always happens. It is true for his setup, not universally. Check
+first; copy only if the check says the token actually changed.</div>
 
 <ol class="steps">
 <li>
-  <p><strong>Copy the new bot token.</strong></p>
+  <p><strong>Check whether the token actually changed.</strong></p>
+  <pre><code>bin/preflight</code></pre>
+  <p>If the Slack token line passes and every scope from the manifest is ticked, the token in the vault
+  is still valid and already carries the new permissions. <strong>Skip the rest of this step.</strong>
+  If it fails with <code>invalid_auth</code>, the token rotated — carry on.</p>
+  <div class="callout"><strong>Never compare tokens by eye.</strong> Reading a secret to see whether it
+  changed is still reading a secret. Ask a tool whether it works: that answers the question without
+  anyone looking at the value.</div>
+</li>
+<li>
+  <p><strong>Only if it rotated: copy the new bot token.</strong></p>
   <p class="where">Where: <b>OAuth &amp; Permissions</b> → <b>Bot User OAuth Token</b> (<code>xoxb-…</code>)</p>
 </li>
 <li>
@@ -1161,8 +1226,14 @@ that no longer exists.</p>
   fail — never the value.</p>
 </li>
 </ol>
-<div class="checkpoint"><b>CHECKPOINT</b><code>bin/preflight</code> passes its Slack token and scope
-checks, and the new scopes show up in what it reports.</div>
+<div class="checkpoint"><b>CHECKPOINT</b><code>bin/preflight</code> reports the Slack token valid and
+ticks all seven scopes by name — <code>app_mentions:read</code>, <code>chat:write</code>,
+<code>channels:history</code>, <code>groups:history</code>, <code>files:read</code>,
+<code>files:write</code> and <code>reactions:write</code>.</div>
+<div class="danger"><strong>This checkpoint only became true today.</strong> <code>bin/preflight</code>
+had the lesson-04 scope list hard-coded, so it checked two scopes and passed green while blind to the
+five just added — a tool confirming what you hoped rather than what was true. It now reads the required
+scopes out of <code>slack-app-manifest.yml</code>, so it cannot go stale again.</div>
 </section>
 
 <section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
@@ -1502,7 +1573,10 @@ immediately, without waiting on a deploy. Fix the guard, then turn it back on.</
 <thead><tr><th>Thing</th><th>Where</th></tr></thead>
 <tbody>
 <tr><td>The handler</td><td><code>joestar-agent/api/slack/events.js</code></td></tr>
-<tr><td>Slack API calls</td><td><code>joestar-agent/api/_lib/slack.js</code></td></tr>
+<tr><td>Slack API calls</td><td><code>joestar-agent/api/_lib/slack.js</code> — signatures, posting, reactions, thread reads, file download and the three-step upload</td></tr>
+<tr><td>Deciding what to do with an event</td><td><code>classifyEvent()</code> in <code>api/slack/events.js</code> — pure and exported, so the guards and the dedup split are unit-testable without a fake Slack</td></tr>
+<tr><td>Replaying a thread as context</td><td><code>joestar-agent/api/_lib/thread.js</code></td></tr>
+<tr><td>Markdown → mrkdwn</td><td><code>joestar-agent/api/_lib/mrkdwn.js</code> — code blocks masked out first, so a fenced block containing Markdown survives</td></tr>
 <tr><td>The sandbox runner</td><td><code>joestar-agent/api/_lib/claude.js</code></td></tr>
 <tr><td>Scopes and events, source of truth</td><td><code>joestar-agent/slack-app-manifest.yml</code></td></tr>
 <tr><td>Test channel</td><td><code>#joestar-test</code> — <code>C0C1QB5PCNB</code></td></tr>

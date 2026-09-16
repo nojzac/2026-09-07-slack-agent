@@ -91,6 +91,39 @@ Slack's dispatch: unsaved settings first, app-needs-reinstall second.
 - Production deploys come from GitHub Actions only — `joestar-agent/vercel.json`
   disables Vercel's own git trigger so the tests gate production.
 
+## Slack traps found in lesson 07
+
+- **A reinstall does not always mint a new bot token.** With
+  `token_rotation_enabled: false` and a scope change on an app already installed
+  in the same workspace, Slack widens the existing grant and the token is
+  unchanged. Ray states rotation as certain; it is not. Check with
+  `bin/preflight` rather than comparing tokens by eye — reading a secret to see
+  whether it changed is still reading a secret.
+- **`bin/preflight` passed green while blind to five new scopes.** Its scope list
+  was hard-coded to lesson 04's two, so after the lesson-07 reinstall it
+  confirmed a change it had never checked. Fixed 2026-09-16: it now reads the
+  required scopes out of `slack-app-manifest.yml`. The general trap is worse than
+  the instance — a checking tool that silently narrows is more dangerous than no
+  tool, because it answers the question you asked with the wrong scope of truth.
+- **A `url_private` download with insufficient permission returns HTTP 200 and an
+  HTML sign-in page, not a 401.** Status-code checking sees success and hands the
+  model a login form where the screenshot should be. Check `content-type`;
+  `text/html` means a missing `files:read` or the bot not being in the channel.
+- **`files.getUploadURLExternal` rejects a JSON body** with `invalid_arguments`.
+  It needs form encoding, which is why `callForm` exists in `api/_lib/slack.js`
+  beside the JSON `call`.
+- **An @mention fires two events, and the obvious dedup drops images.** Both
+  `app_mention` and a `message` twin arrive. Splitting on event type loses
+  attachments, because `app_mention` carries `files` in practice but not by
+  contract. Split on files instead: text-only mention → `app_mention`; mention
+  with files → the twin.
+- **Subscribing to `message.channels` makes the bot hear itself.** Unguarded it
+  answers its own posts forever, booting a real sandbox each cycle. It never
+  errors; it just spends. Three overlapping guards (`bot_id`, `subtype ===
+  'bot_message'`, `user === BOT_USER_ID`) because Slack has more than one way of
+  saying a bot wrote something. If it ever loops, turn off the `message.channels`
+  event subscription in Slack — that stops it immediately, without a deploy.
+
 ## A dependency that works locally and dies on Vercel (lesson 05)
 
 **Symptom.** Every request to the deployed function returns 500 with

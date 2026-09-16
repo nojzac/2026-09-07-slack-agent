@@ -35,10 +35,12 @@ fi
 # --- 1Password ---------------------------------------------------------------
 token=$(security find-generic-password -a "$USER" -s op-slackagentos -w 2>/dev/null)
 if [ -n "$token" ] && [ "${#token}" -gt 500 ]; then
-  ok "1Password service-account token" "${#token} chars, in Keychain"
+  # The length is compared, never printed: docs/secrets.md forbids reporting a
+  # secret's value, prefix OR length. "Full-length" is the fact worth stating.
+  ok "1Password service-account token" "in Keychain, full length"
   export OP_SERVICE_ACCOUNT_TOKEN="$token"
 else
-  bad "1Password service-account token" "missing or truncated (${#token} chars)"
+  bad "1Password service-account token" "missing, or truncated"
   note "see TRAPS.md — the security(1) prompt truncates at 128 chars"
 fi
 
@@ -52,7 +54,7 @@ if [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
 
   for field in signing_secret bot_token; do
     len=$(op read "op://$VAULT/$ITEM/$field" 2>/dev/null | tr -d '\n' | wc -c | tr -d ' ')
-    [ "${len:-0}" -gt 0 ] && ok "secret $field resolves" "$len chars" \
+    [ "${len:-0}" -gt 0 ] && ok "secret $field resolves" \
                           || bad "secret $field resolves" "op://$VAULT/$ITEM/$field"
   done
 fi
@@ -67,9 +69,19 @@ if [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
       who=$(python3 -c 'import json;d=json.load(open("/tmp/preflight.slack"));print(d["user"],"@",d["team"])' 2>/dev/null)
       ok "Slack bot token valid" "$who"
       scopes=$(echo "$hdrs" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-oauth-scopes"{print $2}')
-      for s in app_mentions:read chat:write; do
-        case ",$scopes," in *",$s,"*) ok "scope $s" ;; *) bad "scope $s" "have: $scopes" ;; esac
-      done
+      # Read the required scopes from the manifest rather than listing them
+      # here. Hard-coded, this check silently went stale: it still asked for
+      # lesson 04's two scopes while the app had grown to seven, so it passed
+      # green while blind to every scope that had just been added.
+      want=$(awk '/^ *bot:/{f=1;next} f&&/^ *- /{gsub(/^ *- |\r/,"");print;next} f&&/^ *[a-z_]+:/{exit}' \
+               joestar-agent/slack-app-manifest.yml)
+      if [ -z "$want" ]; then
+        bad "manifest scopes readable" "joestar-agent/slack-app-manifest.yml"
+      else
+        for s in $want; do
+          case ",$scopes," in *",$s,"*) ok "scope $s" ;; *) bad "scope $s" "have: $scopes" ;; esac
+        done
+      fi
     else
       bad "Slack bot token valid" "$(head -c 120 /tmp/preflight.slack)"
     fi

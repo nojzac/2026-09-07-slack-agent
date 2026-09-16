@@ -124,27 +124,71 @@ from joestar, first try.
   session; the detail moved to `docs/secrets.md`, `docs/verifying.md` and
   `docs/lessons.md`.
 
-## In progress (2026-09-16, uncommitted)
+## Lesson 07, as built
 
-- `sops/lesson-07/index.html` is **built and validated but not yet approved** —
-  Noj has not said go, so no lesson-07 work has started. The bot is unchanged.
-- Progressive disclosure was tested with three read-only probes, one per
-  `CLAUDE.md` pointer. All three fired. The weak one was `docs/verifying.md`,
-  reached only after nine files because `joestar-agent/README.md` still
-  described the lesson-04 random-number bot; fixing that README moved it to
-  fourth, with no source files read first.
-- Fixed in passing: `joestar-agent/README.md` (stale description, env table, and
-  pointers up to the parent `CLAUDE.md` and `docs/`), and the deploy note below,
-  which wrongly said deploys were CLI-only.
+Joestar is now conversational. Mention it, or just reply in a thread it is
+already in, and it answers with 👀 while it works and ✅ when it finishes. It
+reads attachments, sends files back, and formats for Slack. Verified end to end
+in `#joestar-test` on 2026-09-16 by two Claude sessions and by Noj's own manual
+image test — every row green: heard, answered, finished, formatted, remembered,
+stopped, file out, file in.
+
+- Built by a second Claude session working in parallel; commit `d48886c`,
+  deployed by CI run 35094069610. New: `api/_lib/thread.js` (transcript replay),
+  `api/_lib/mrkdwn.js` (Markdown→mrkdwn, code blocks masked first), and
+  `classifyEvent()` exported pure from `events.js` so the guards are testable.
+- **Transcript replay, not session resume.** The sandbox is destroyed every run,
+  so there is no session to resume: each turn refetches `conversations.replies`
+  and replays it as untrusted data. Ray's video says the opposite; his own
+  written prompt says to pick by runtime. Proved live — asked which word it had
+  put in backticks two turns earlier, it answered correctly.
+- **The reinstall did NOT rotate the bot token.** `token_rotation_enabled: false`
+  plus a same-workspace scope change means Slack widens the existing grant. The
+  lesson page said rotation was certain; it is now a check-first branch. When it
+  does rotate, the token has to go in both 1Password and Vercel.
+- **The ack path now makes up to four Slack calls before the 200**, where it made
+  one: `auth.test` (cached), `conversations.replies` (thread replies only),
+  `reactions.add`, `chat.postMessage`. Still inside Slack's ~3s window, but this
+  is where to look first if retries ever start.
+- **No uploads SDK.** `files.upload` v1 is retired; the three-step v2 dance is
+  hand-rolled in `api/_lib/slack.js` rather than adding `@slack/web-api`, because
+  of the lesson-05 dependency failure in TRAPS.md. `callForm` exists because
+  `files.getUploadURLExternal` rejects a JSON body.
+- The bot now hears **every message in every channel it is in** — currently
+  `#joestar-test` and `#bot-smoke`. The three loop guards are what keep that
+  safe, and a second unprompted reply is an emergency: turn off the
+  `message.channels` subscription in Slack immediately, then fix the guard.
+
+## Also done 2026-09-16
+
+- **Progressive disclosure verified.** Three read-only probes, one per `CLAUDE.md`
+  pointer. All fired. `docs/verifying.md` was reached only after nine files
+  because `joestar-agent/README.md` still described the lesson-04 random-number
+  bot; fixing that README moved it to fourth with no source files read first.
+- **`bin/preflight` was passing green while blind.** It had lesson 04's two
+  scopes hard-coded and could not see the five added in lesson 07, so it
+  confirmed a reinstall it had not actually checked. It now reads the required
+  scopes out of `slack-app-manifest.yml` and cannot go stale again.
+- Corrected here: the deploy note, which said deploys were CLI-only. A push to
+  `main` runs `test.yml`, which tests and then deploys.
+
+## Open, not blocking
+
+- `bin/preflight` prints `secret <field> resolves — NN chars`. The rule in
+  `docs/secrets.md` is never to read a secret's value, "not a prefix, not a
+  length". A length is a weak leak but the tool contradicts the rule. Noj's call
+  whether it becomes a bare pass/fail.
 
 ## Next step
 
-Lesson 07, "Polishing the Bot" — thread replies without re-mentioning the bot,
-which is the gap Noj noticed on 2026-09-16 ("@joestar does not respond to
-replies to its replies"). Needs the `message.channels` / `message.groups` events
-and the `channels:history` / `groups:history` scopes. Build
-`sops/lesson-07/index.html` from the transcript following `docs/lessons.md`,
-show it, get a yes, then do the lesson.
+Lesson 08, "Connecting to GitHub" — transcript at
+`course/transcripts/08-0-to-1--connecting-to-github.md`. Build
+`sops/lesson-08/index.html` from it following `docs/lessons.md`, show it, get a
+yes, then do the lesson.
+
+Fourteen lessons remain: 08–17 finish the "0 to 1" chapter, and 18–21 are the
+"Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
+page rather than the full treatment.
 
 Open, neither blocking: rotate `claude_code_oauth_token` (about 19 characters
 of it reached a transcript on 2026-09-15; it cannot be revoked, so replacing it
