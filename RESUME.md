@@ -1,11 +1,15 @@
 # RESUME — cold-start note
 
-## Where things stand (2026-09-15)
+## Where things stand (2026-09-16)
 
-Joestar is live. Mention `@joestar` in the SlackAgentOS workspace and it replies
-in the thread with a random number. Lesson 04 is finished and written up in
-`sops/lesson-04/` — `index.html` there is both the SOP and the agreed template
-for every later lesson page.
+Joestar is live and thinking. Mention `@joestar` in the SlackAgentOS workspace
+and it posts a placeholder, boots an E2B sandbox, runs Claude Code headless
+inside it, and edits the placeholder with the answer. Verified working in
+#general and #smoke-test on 2026-09-16.
+
+**Lessons 04 and 05 are both finished**, written up in `sops/lesson-04/` and
+`sops/lesson-05/`. Lesson 04's `index.html` is the agreed template for every
+later lesson page.
 
 - Code: `joestar-agent/api/slack/events.js` (Vercel function), tests in
   `joestar-agent/test/` — `npm test`, no network.
@@ -33,34 +37,12 @@ change, run `bin/smoke`. Together they cover the two failure modes that cost an
 evening in lesson 04: an unmet prerequisite found late, and a silent break
 somewhere in the mention → reply chain.
 
-## Where lesson 05 stands (2026-09-15)
+## Known unknown
 
-Code written, tested and pushed; not live. `api/_lib/claude.js` boots an E2B
-sandbox and runs Claude Code, `api/slack/events.js` posts "thinking…" inside
-Slack's three-second window and edits it with the answer via `waitUntil`.
-10 tests pass. The learning page is `sops/lesson-05/index.html`.
-
-**Blocked on two credentials only Noj can create**, both then stored in the
-1Password item `SlackAgentOS/2026-09-07-slack-agent`:
-
-| Field | How to get it |
-|---|---|
-| `e2b_api_key` | e2b.dev → sign up → Dashboard → API Keys → Create |
-| `claude_code_oauth_token` | `claude setup-token` in a terminal (needs a Claude subscription; cannot be revoked afterwards) |
-
-Then, in order: uncomment the two lines in `.env.op`; `bin/with-secrets node e2b/build.mjs`; pipe both into Vercel with `op read … | vercel env add …
-production`; push; mention the bot. Steps 3–6 of the lesson 05 page.
-
-Known unknown: Claude runs for minutes and the function is capped at
-`maxDuration = 300`. If answers truncate, the work has to move off the Vercel
-function, which is a larger change.
-
-## Next step
-Lesson 05 connects Claude Code in an E2B sandbox. Build its page from
-`course/transcripts/05-0-to-1--connecting-claude-code.md` following
-`course/LESSON-PAGE-RULES.md`, show it, get a yes, then do the lesson.
-Its keys go in the `SlackAgentOS` vault; the commented `ANTHROPIC_API_KEY` and
-`E2B_API_KEY` lines in `.env.op` still say `Projects` and need repointing.
+Claude can run for minutes and the function is capped at `maxDuration = 300`.
+A trivial prompt answered in about 15 seconds; long ones are untested. If
+answers start truncating, the work has to move off the Vercel function, which
+is a larger change.
 
 ## Open decisions
 - Whether the Vercel project should move off the smartflowconsultants team to
@@ -71,21 +53,43 @@ Its keys go in the `SlackAgentOS` vault; the commented `ANTHROPIC_API_KEY` and
 Settled since: GitHub↔Vercel is connected and push-to-deploy works; the lesson
 page template is `sops/lesson-04/index.html`.
 
-## Where lesson 05 stands (2026-09-15, end of session)
-Both credentials now exist in `SlackAgentOS/2026-09-07-slack-agent` as
-`e2b_api_key` and `claude_code_oauth_token`, and `.env.op` references both —
-the two lines are uncommented. The Claude token was pasted with a leading
-space; Noj removed it, and the fix is unverified because verification now goes
-through `op run`, not `op read`.
+## Lesson 05, as built
 
-Next, in order:
-1. `bin/with-secrets node e2b/build.mjs` (from `joestar-agent/`) — DONE
-2. Pipe both keys into Vercel production
-3. Push, then mention `@joestar` in `#bot-smoke`
-Steps 3–6 of `sops/lesson-05/index.html`.
+- Sandbox image: `joestar-agent/e2b/template.mjs`, built with
+  `bin/with-secrets node e2b/build.mjs`. Registered as `joestar-claude`.
+  The CLI's `e2b template build` is deprecated and reads a Dockerfile, so it
+  cannot build this; the build goes through `Template.build()` in
+  `e2b/build.mjs`.
+- Runner: `joestar-agent/api/_lib/claude.js`. Imports
+  `e2b/dist/index.mjs` deliberately — see TRAPS.md, the bare `e2b` specifier
+  500s on Vercel.
+- Secrets: `e2b_api_key` and `claude_code_oauth_token` in the same 1Password
+  item, and as Vercel production env vars (set by hand in the dashboard).
+- Known behaviour: a cold start can exceed Slack's 3-second window, so Slack
+  retries. The `x-slack-retry-num` check drops the retries, so it is harmless —
+  it shows up in the logs as `retry: '2'`, not as a duplicate reply.
 
-New rule, enforced by a hook: Claude never reads a secret's value. See
-`~/.claude/hooks/block-secret-reads.py` and
-`~/.claude/instructions/onepassword-access.md`. Secrets reach commands only via
-`op run --env-file=.env.op -- <command>`; verification is the exit code of a
-real command, never an inspection of the value.
+## Security posture (changed 2026-09-16)
+
+Claude must never read a secret's value. Enforced by, in order: auto-mode's
+classifier, `permissions.deny` rules in `~/.claude/settings.json`, and the hook
+`~/.claude/hooks/block-secret-reads.py`. Guidance in
+`~/.claude/instructions/onepassword-access.md`.
+
+The 1Password desktop app's CLI integration is **off**, so no shell inherits
+Noj's whole account. Claude reaches exactly one vault, read-only, via the
+service-account token that `bin/with-secrets` reads from the Keychain. Register
+hooks with absolute paths: `$CLAUDE_CONFIG_DIR` is unset, and a hook whose
+script is missing fails open silently.
+
+## Next step
+
+Lesson 06. Find it in `course/transcripts/DOWNLOADS.md`, build
+`sops/lesson-06/index.html` from the transcript following
+`course/LESSON-PAGE-RULES.md` and `sops/DESIGN-SPEC.md`, show it, get a yes,
+then do the lesson.
+
+Open, neither blocking: rotate `claude_code_oauth_token` (about 19 characters
+of it reached a transcript on 2026-09-15; it cannot be revoked, so replacing it
+is the only remedy), and delete whichever of the two live 1Password service
+accounts is now spare.
