@@ -438,20 +438,18 @@
     section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
   }
 
-  /* ===== per-box read ticks ===== */
-  .boxtick { position:absolute; top:8px; right:8px; width:19px; height:19px; border-radius:50%;
-             border:1.5px solid color-mix(in srgb, var(--sc,#616a77) 55%, #fff);
-             background:rgba(255,255,255,.75); cursor:pointer; padding:0; z-index:2;
-             display:flex; align-items:center; justify-content:center; font-size:11px;
-             line-height:1; color:transparent; font-family:inherit; }
-  .boxtick:hover { border-color:var(--sc,#616a77); background:#fff; color:#b9c2cf; }
-  .boxtick::after { content:"✓"; }
-  .boxtick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
-  .read { opacity:.62; }
-  .read:hover { opacity:.85; }
-  details.sub > summary { padding-right:26px; }
-  .danger, .callout, .metaphor, .ray, .win, .checkpoint { padding-right:34px; }
-  @media print { .boxtick { display:none !important; } .read { opacity:1 !important; } }
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
 </style>
 </head>
 <body class="has-nav">
@@ -1375,43 +1373,57 @@ credentials exist.
 
   paint();
 
-  /* ---------- a tick on every box, so you can mark what you have read ---------- */
-  (function boxTicks() {
-    const BKEY = 'l-boxes';
-    const bstate = JSON.parse(localStorage.getItem(BKEY) || '{}');
-    const sel = 'details.sub, .danger, .callout, .metaphor, .ray, .win, .checkpoint, .fig';
-    document.querySelectorAll('main .sec, main .fm, main .map').forEach(host => {
-      const base = host.id || 'x';
-      host.querySelectorAll(sel).forEach((box, i) => {
-        if (box.closest('.stepbox')) return;
-        const id = `${base}:b${i}`;
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'boxtick';
-        b.title = 'Mark as read';
-        b.setAttribute('aria-label', 'Mark as read');
-        b.setAttribute('aria-pressed', bstate[id] ? 'true' : 'false');
-        box.classList.toggle('read', !!bstate[id]);
-        b.onclick = e => {
-          e.stopPropagation();
-          e.preventDefault();
-          bstate[id] = !bstate[id];
-          b.setAttribute('aria-pressed', bstate[id] ? 'true' : 'false');
-          box.classList.toggle('read', !!bstate[id]);
-          localStorage.setItem(BKEY, JSON.stringify(bstate));
-        };
-        box.style.position = 'relative';
-        box.prepend(b);
-      });
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
     });
-    // the reset button clears these too
+
     const r = document.getElementById('nav-reset');
     if (r) {
       const prev = r.onclick;
       r.onclick = () => {
-        localStorage.setItem(BKEY, '{}');
-        document.querySelectorAll('.boxtick').forEach(b => b.setAttribute('aria-pressed', 'false'));
-        document.querySelectorAll('.read').forEach(el => el.classList.remove('read'));
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
         if (prev) prev();
       };
     }
