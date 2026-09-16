@@ -1082,7 +1082,7 @@ message in the thread with a random number.</pre>
 
 <section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
 <div class="sec-head">
-      <h2 class="sec-t">Step 3 of 6 — Put the two secrets in 1Password<span class="sec-s">A vault, an item, a read-only login for your agents — every click, from nothing.</span></h2>
+      <h2 class="sec-t">Step 3 of 6 — Put the two secrets in 1Password<span class="sec-s">Optional. A vault, an item, a read-only login for your agents — every click, from nothing.</span></h2>
       <span class="badge b-do">DO NOW</span>
     </div>
 <div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
@@ -1100,6 +1100,63 @@ message in the thread with a random number.</pre>
   <rect x="588" y="10" width="106" height="28" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
   <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Tests (optional)</text>
 </svg></div>
+
+<div class="callout">
+<p><b>This whole step is optional.</b> Nothing that runs unattended needs 1Password. The deployed
+bot reads its secrets from Vercel's own environment variables, CI reads its own from GitHub Actions
+secrets, and the tests use no secrets at all. You can skip this step, paste the values straight into
+Vercel, and the bot works identically.</p>
+<p>What 1Password is actually used for here — all of it local, and none of it often:</p>
+<ul>
+  <li><b>Building the E2B sandbox image</b> (lesson 05) needs <code>E2B_API_KEY</code>. Once, and
+      again only when you change the image. Without 1Password:
+      <code>E2B_API_KEY=… node e2b/build.mjs</code>.</li>
+  <li><b><code>bin/smoke</code></b> needs the Slack bot token to post a test message. Without it,
+      mention the bot yourself in Slack — same test, one more keystroke.</li>
+  <li><b><code>bin/preflight</code></b> uses it for five of its fifteen checks. Without the token it
+      skips those five and runs the other ten.</li>
+</ul>
+<p>What you get for the effort: no secret values sitting in plaintext on your Mac, and one place to
+change a token instead of three. That is worth real money once you have several projects. For one
+project with four secrets, it is a preference, not a requirement.</p>
+</div>
+
+<div class="danger">
+<p><b>Never turn on "Integrate with 1Password CLI".</b> It lives in the desktop app under
+<b>Settings → Developer</b>, it looks like the obvious way to make <code>op</code> work in your
+terminal, and it is the most dangerous setting involved in any of this.</p>
+<p>It signs in <b>every shell on the machine</b> as you, with your <b>entire account</b> — your
+interactive terminal and the non-interactive shells your AI agent runs in, equally. It ignores
+service-account scoping completely, because it is a different way of authenticating altogether:
+having a carefully scoped service account changes nothing while the integration is on, since the
+wide door is still there and <code>op</code> reaches for it first.</p>
+<p>On 15 September 2026, on this project, it gave the coding agent read access to <b>five vaults —
+including a client's</b> — on a machine where exactly one vault was intended. The agent then read
+part of a non-revocable token into its own transcript while "just checking" that the credential
+existed.</p>
+<p>There is no way to grant it to your terminal but not to an agent's. It is one switch for both.
+<b>Leave it off</b> and authenticate with a service account token instead, which is what the steps
+below create.</p>
+<p><b>How to check where you stand:</b> run <code>op vault list</code>. It should return only the
+vaults you granted that service account — for this project, one. If vaults you never granted appear,
+the integration is on.</p>
+</div>
+
+<div class="callout">
+<p><b>Two more things that will catch you out.</b></p>
+<ul>
+  <li><b>A service account token is shown once.</b> At creation it appears a single time and can
+      never be displayed again. Get it where it needs to go before you close the tab. If you lose
+      it, delete the service account and make another — do not leave one with vault access that
+      nobody holds the key to.</li>
+  <li><b>A helper script that fetches the token gives your agent the vault.</b>
+      <code>bin/with-secrets</code> reads the token from your Keychain without prompting, so any
+      agent that can run that script has that vault's access. That is deliberate, and bounded to one
+      vault, read-only. But "the agent has no access" is not a true statement while the script
+      exists — check by running it, not by assuming.</li>
+</ul>
+</div>
+
 <div class="phase"><h3>Phase C · The secrets</h3><p>A vault of their own, an item inside it, then a read-only login for your agents. Every click below.</p></div>
 
 <div class="fig">

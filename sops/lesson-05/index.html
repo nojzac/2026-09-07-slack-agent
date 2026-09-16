@@ -741,6 +741,53 @@ secret, and never into a file, a commit, or a chat message.</p>
   <text x="641" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">6 · Try it</text>
 </svg></div>
 
+
+<div class="callout">
+<p><b>This step is optional.</b> The two credentials have to reach <em>Vercel</em>, because that is
+where the deployed bot reads them from. Putting them in 1Password first is a convenience, not a
+requirement — you can paste them straight into Vercel's dashboard and skip this step entirely.</p>
+<p>The one thing that genuinely wants a local copy is the sandbox image build in step 4, which needs
+<code>E2B_API_KEY</code> on your own machine. Without 1Password that is
+<code>E2B_API_KEY=… node e2b/build.mjs</code>, once.</p>
+<p>See the fuller note in lesson 04, step 3, for what 1Password does and does not buy you here.</p>
+</div>
+
+<div class="danger">
+<p><b>Never turn on "Integrate with 1Password CLI".</b> It lives in the desktop app under
+<b>Settings → Developer</b>, it looks like the obvious way to make <code>op</code> work in your
+terminal, and it is the most dangerous setting involved in any of this.</p>
+<p>It signs in <b>every shell on the machine</b> as you, with your <b>entire account</b> — your
+interactive terminal and the non-interactive shells your AI agent runs in, equally. It ignores
+service-account scoping completely, because it is a different way of authenticating altogether:
+having a carefully scoped service account changes nothing while the integration is on, since the
+wide door is still there and <code>op</code> reaches for it first.</p>
+<p>On 15 September 2026, on this project, it gave the coding agent read access to <b>five vaults —
+including a client's</b> — on a machine where exactly one vault was intended. The agent then read
+part of a non-revocable token into its own transcript while "just checking" that the credential
+existed.</p>
+<p>There is no way to grant it to your terminal but not to an agent's. It is one switch for both.
+<b>Leave it off</b> and authenticate with a service account token instead, which is what the steps
+below create.</p>
+<p><b>How to check where you stand:</b> run <code>op vault list</code>. It should return only the
+vaults you granted that service account — for this project, one. If vaults you never granted appear,
+the integration is on.</p>
+</div>
+
+<div class="callout">
+<p><b>Two more things that will catch you out.</b></p>
+<ul>
+  <li><b>A service account token is shown once.</b> At creation it appears a single time and can
+      never be displayed again. Get it where it needs to go before you close the tab. If you lose
+      it, delete the service account and make another — do not leave one with vault access that
+      nobody holds the key to.</li>
+  <li><b>A helper script that fetches the token gives your agent the vault.</b>
+      <code>bin/with-secrets</code> reads the token from your Keychain without prompting, so any
+      agent that can run that script has that vault's access. That is deliberate, and bounded to one
+      vault, read-only. But "the agent has no access" is not a true statement while the script
+      exists — check by running it, not by assuming.</li>
+</ul>
+</div>
+
 <ol class="steps">
 <li>
   <p><strong>Sign up.</strong></p>
@@ -825,7 +872,7 @@ ready to be stored.</div>
 
 <section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
 <div class="sec-head">
-  <h2 class="sec-t">Step 3 of 6 — Store both in 1Password<span class="sec-s">Two more fields on the item you already made in lesson 04.</span></h2>
+  <h2 class="sec-t">Step 3 of 6 — Store both in 1Password<span class="sec-s">Optional. Two more fields on the item you already made in lesson 04.</span></h2>
   <span class="badge b-do">DO NOW</span>
 </div>
 <div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
