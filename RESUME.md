@@ -14,9 +14,11 @@ template for every later lesson page.
 - Code: `joestar-agent/api/slack/events.js` (Vercel function), tests in
   `joestar-agent/test/` — `npm test`, no network.
 - Production: https://joestar-agent-five.vercel.app/api/slack/events
-  (Vercel project `smartflowconsultants/joestar-agent`). GitHub login
-  connection now in place; the project itself is still not linked to the repo,
-  so deploys are CLI-only (`vercel deploy --prod`) until someone links it.
+  (Vercel project `smartflowconsultants/joestar-agent`). **Pushing to `main`
+  deploys**: `.github/workflows/test.yml` runs the tests, then runs
+  `vercel deploy --prod` from the repo root. Vercel's own git trigger is
+  deliberately off (`joestar-agent/vercel.json`) so the tests gate production —
+  so a push is a deploy, and needs Noj's explicit go like any other push.
 - Secrets: 1Password vault `SlackAgentOS`, item `2026-09-07-slack-agent`,
   fields `signing_secret` and `bot_token`. Reached through a service account
   scoped read-only to that vault; its token is in the macOS Keychain under
@@ -121,6 +123,19 @@ from joestar, first try.
 - `CLAUDE.md` was cut down to always-on rules plus trigger lines in the same
   session; the detail moved to `docs/secrets.md`, `docs/verifying.md` and
   `docs/lessons.md`.
+
+## In progress (2026-09-16, uncommitted)
+
+- `sops/lesson-07/index.html` is **built and validated but not yet approved** —
+  Noj has not said go, so no lesson-07 work has started. The bot is unchanged.
+- Progressive disclosure was tested with three read-only probes, one per
+  `CLAUDE.md` pointer. All three fired. The weak one was `docs/verifying.md`,
+  reached only after nine files because `joestar-agent/README.md` still
+  described the lesson-04 random-number bot; fixing that README moved it to
+  fourth, with no source files read first.
+- Fixed in passing: `joestar-agent/README.md` (stale description, env table, and
+  pointers up to the parent `CLAUDE.md` and `docs/`), and the deploy note below,
+  which wrongly said deploys were CLI-only.
 
 ## Next step
 
