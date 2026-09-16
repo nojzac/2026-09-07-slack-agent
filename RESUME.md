@@ -7,9 +7,9 @@ and it posts a placeholder, boots an E2B sandbox, runs Claude Code headless
 inside it, and edits the placeholder with the answer. Verified working in
 #general and #smoke-test on 2026-09-16.
 
-**Lessons 04 and 05 are both finished**, written up in `sops/lesson-04/` and
-`sops/lesson-05/`. Lesson 04's `index.html` is the agreed template for every
-later lesson page.
+**Lessons 04, 05 and 06 are finished**, written up in `sops/lesson-04/`,
+`sops/lesson-05/` and `sops/lesson-06/`. Lesson 04's `index.html` is the agreed
+template for every later lesson page.
 
 - Code: `joestar-agent/api/slack/events.js` (Vercel function), tests in
   `joestar-agent/test/` — `npm test`, no network.
@@ -104,12 +104,32 @@ the OS user Claude runs as, root-owned config it cannot write, and 1Password's
 own approval dialog. Anything stronger means putting the agent in a separate
 Unix user or container and exposing operations rather than keys.
 
+## Lesson 06, as built
+
+Claude Code can now test the bot itself. The Slack connector is attached to the
+Claude account (claude.ai → Settings → Connectors), pointing at SlackAgentOS, so
+any Claude Code session can post **as Noj** in that workspace — not just in the
+test channel. Verified 2026-09-15: a mention in `#joestar-test` got `4` back
+from joestar, first try.
+
+- Test channel: `#joestar-test` (`C0C1QB5PCNB`), bot `<@U0C1T5AQ0G6>`.
+  Separate from `#bot-smoke`, which is where `bin/smoke` posts.
+- The procedure, including what counts as a pass: `docs/verifying.md`.
+- Ray relaunches Claude Code after attaching the connector and says you must.
+  Here the tools appeared mid-session with no relaunch — so check `/mcp` first,
+  and relaunch only if it comes back empty.
+- `CLAUDE.md` was cut down to always-on rules plus trigger lines in the same
+  session; the detail moved to `docs/secrets.md`, `docs/verifying.md` and
+  `docs/lessons.md`.
+
 ## Next step
 
-Lesson 06. Find it in `course/transcripts/DOWNLOADS.md`, build
-`sops/lesson-06/index.html` from the transcript following
-`course/LESSON-PAGE-RULES.md` and `sops/DESIGN-SPEC.md`, show it, get a yes,
-then do the lesson.
+Lesson 07, "Polishing the Bot" — thread replies without re-mentioning the bot,
+which is the gap Noj noticed on 2026-09-16 ("@joestar does not respond to
+replies to its replies"). Needs the `message.channels` / `message.groups` events
+and the `channels:history` / `groups:history` scopes. Build
+`sops/lesson-07/index.html` from the transcript following `docs/lessons.md`,
+show it, get a yes, then do the lesson.
 
 Open, neither blocking: rotate `claude_code_oauth_token` (about 19 characters
 of it reached a transcript on 2026-09-15; it cannot be revoked, so replacing it

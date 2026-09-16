@@ -56,6 +56,7 @@ Everything below exists and is in use.
 | 1Password service account | read-only on SlackAgentOS only (smartflowllc account) | token in macOS Keychain, service `op-slackagentos`; used by `bin/with-secrets`. **The desktop CLI integration is off and stays off** — it authenticates every shell as the whole account. Service accounts only |
 | E2B | e2b.dev, template `joestar-claude` | 1Password `SlackAgentOS/2026-09-07-slack-agent` field `e2b_api_key`; also a Vercel production env var |
 | Claude Code (headless) | OAuth token from `claude setup-token` | 1Password `SlackAgentOS/2026-09-07-slack-agent` field `claude_code_oauth_token`; also a Vercel production env var. **Cannot be revoked** — replace it rather than revoking |
+| Slack connector for Claude | claude.ai → Settings → Connectors → Slack, attached to SlackAgentOS | no stored credential — an OAuth grant on the Claude account. Lets any Claude Code session **post as Noj** in that workspace, not just in `#joestar-test`. One workspace per Claude account; revoke by removing the connector on claude.ai |
 
 ## Topology
 

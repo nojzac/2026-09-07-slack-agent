@@ -1,0 +1,1373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-06/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 06</p>
+<h1>Close the loop: let Claude Code test the bot itself</h1>
+<p class="standfirst">Until now every test of the real bot has been you, in Slack, typing a mention
+and reading the reply. This lesson hands that job to Claude Code: it posts the message, waits, reads
+what came back, and tells you whether the bot works.</p>
+
+<div class="facts">
+  <span><b>Ray's video:</b> 3 min 45 s</span>
+  <span><b>This page:</b> 20–30 min</span>
+  <span><b>At the end:</b> a bot that tests itself</span>
+</div>
+
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 214" width="100%" height="auto" role="img">
+  <title>The finished result: Claude Code posts a mention in the joestar-test channel on your behalf, the bot replies in the thread, and Claude reads the reply back</title>
+  <rect x="8" y="8" width="684" height="198" rx="10" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <rect x="8" y="8" width="684" height="32" rx="10" fill="#4a154b"/>
+  <rect x="8" y="26" width="684" height="14" fill="#4a154b"/>
+  <text x="26" y="29" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#ffffff"># joestar-test</text>
+
+  <circle cx="38" cy="72" r="13" fill="#c9cfd8"/>
+  <text x="62" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">Noj</text>
+  <rect x="98" y="59" width="90" height="14" rx="3" fill="#e5e8ec"/>
+  <text x="103" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#616a77">SENT USING CLAUDE</text>
+  <rect x="62" y="78" width="132" height="17" rx="4" fill="#e8f0fe"/>
+  <text x="68" y="91" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#1f4fd8">@joestar</text>
+  <text x="200" y="91" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">what is 2 + 2? reply with the number only</text>
+
+  <path d="M38,102 V136 H58" fill="none" stroke="#c9cfd8" stroke-width="2"/>
+
+  <circle cx="78" cy="140" r="11" fill="#4a154b"/>
+  <text x="98" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">joestar</text>
+  <rect x="146" y="128" width="34" height="14" rx="3" fill="#e5e8ec"/>
+  <text x="151" y="139" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#616a77">APP</text>
+  <text x="98" y="160" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" fill="#2b3038">4</text>
+
+  <path d="M330,150 H520" fill="none" stroke="#0b6b3a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="425" y="145" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#0b6b3a">Claude reads this back</text>
+
+  <text x="98" y="187" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">You typed nothing in Slack. Claude Code posted, waited, and checked.</text>
+</svg>
+</div>
+<ul>
+  <li>A channel, <code>#joestar-test</code>, reserved for the Claude Code on your own machine.</li>
+  <li>The Slack connector attached to Claude, so Claude can post as you and read replies.</li>
+  <li>One sentence — "verify the bot end to end" — that runs the whole test.</li>
+  <li>That instruction written into <code>CLAUDE.md</code>, so it survives the session you wrote it in.</li>
+</ul>
+</div>
+
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 05, so mentioning the bot gets a real answer from Claude Code in a sandbox.</p>
+<p>It assumes a <strong>Claude account you can add connectors to</strong> on claude.ai, and that you
+are an admin of the Slack workspace — installing a connector needs someone who can approve an app.
+It does not assume you know what a connector or an MCP server is; both are explained below.</p>
+</div>
+
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
+  <title>Where lesson 06 sits in the course: lessons 1 to 3 make a workspace, lessons 4 and 5 build a bot that thinks, lesson 6 closes the feedback loop, and lessons 7 onward add features</title>
+  <defs>
+    <marker id="arrowArc6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–05</text>
+  <text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">A bot that thinks,</text>
+  <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">tested by hand</text>
+
+  <path d="M194,71 L236,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc6)"/>
+
+  <rect x="242" y="20" width="216" height="102" rx="9" fill="#f3f0f7" stroke="#7a3d9c" stroke-width="2.5"/>
+  <text x="260" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 06 — YOU ARE HERE</text>
+  <text x="260" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#15171c">Close the feedback loop</text>
+  <text x="260" y="90" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Claude posts → bot replies → Claude reads</text>
+  <text x="260" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">no new bot features at all</text>
+
+  <path d="M464,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc6)"/>
+
+  <rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 07–17</text>
+  <text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">Feature after feature,</text>
+  <text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">each one verifiable</text>
+
+  <text x="350" y="141" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">This lesson adds nothing to the bot. It makes everything after it cheap to check.</text>
+</svg>
+</div>
+<p>Every feature from here on is the same shape: change the code, deploy, and find out whether the
+bot still answers. Doing that by hand costs a context switch to Slack, a typed mention, a wait, and
+your attention — each time, for eleven more lessons.</p>
+<p>Giving Claude the ability to run that check itself means it can change something and immediately
+discover whether it worked, without you in the middle. That is what "closing the loop" means: the
+thing making the change can also see the result.</p>
+<div class="metaphor"><b>A cook who can taste.</b> Until now Claude has been cooking blindfolded and
+handing you the spoon. This lesson gives it its own spoon. It doesn't make the cooking better by
+itself — it makes every mistake cheap to find, which over eleven lessons is the same thing.</div>
+</div>
+
+<div class="map">
+<h2>How this page is laid out</h2>
+<p style="color:var(--muted); font-size:15px; margin:6px 0 0;">Same shape as lessons 04 and 05. The
+build is short — five steps, most of them clicks in a browser.</p>
+<ol>
+  <li><span class="badge b-understand">UNDERSTAND</span>
+      <span><a href="#part1">Part 1 · Understand what changes</a>
+      <span class="what">What the existing tests miss, what a connector is, and who Slack thinks is
+      posting.</span></span></li>
+  <li><span class="badge b-do">DO NOW</span>
+      <span><a href="#part2">Part 2 · Build it</a>
+      <span class="what">Five steps: a channel, a connector, a restart, a test, and a note to
+      self.</span></span></li>
+  <li><span class="badge b-ref">REFERENCE</span>
+      <span><a href="#part3">Part 3 · Keep for later</a>
+      <span class="what">The prompt to reuse, what goes wrong, and how to tell which link
+      broke.</span></span></li>
+</ol>
+</div>
+
+<div class="fm" id="before" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<h3>You need</h3>
+<ul>
+  <li><strong>Lesson 05 finished</strong> — mentioning the bot gets a real answer today, not a placeholder.</li>
+  <li><strong>A Claude account with connectors</strong> — claude.ai → Settings → Connectors.</li>
+  <li><strong>Admin rights in the Slack workspace</strong> — installing the Claude app needs approval.</li>
+</ul>
+<div class="callout"><strong>The Slack connector is one workspace at a time.</strong> If your Claude
+account already has Slack connected to a different workspace, connecting this one
+<em>replaces</em> that. Ray hits exactly this in the video and removes his existing connection to
+carry on. If you need both, the only way is a second Claude account. Check what you would be
+disconnecting before you start.</div>
+<div class="danger"><strong>What you are handing over.</strong> The connector asks to "perform
+actions as you" — it can post messages in your name in any channel you can reach, and read
+conversations there. That is not bot access, bounded to one channel; it is your access. Grant it
+knowing that, and keep the testing confined to a channel that exists for testing.</div>
+</div>
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what changes</h2>
+  <p>Three short sections. No code changes in this lesson at all — everything here is about who can
+  see what.</p>
+</div>
+
+<details class="sec" id="ladder-06" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What the tests you already have do not cover<span class="sec-s">Three kinds of test, and the gap at the top that only a human has been able to fill.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>There are already two ways to test this project, and both stop short of the thing you actually
+care about.</p>
+
+<div class="fig">
+<svg viewBox="0 0 700 250" width="100%" height="auto" role="img">
+  <title>Three levels of test: npm test runs the handler with no network, bin/smoke sends a signed payload straight to the deployed endpoint, and a real mention travels through Slack itself — only the third proves the bot works</title>
+
+  <rect x="8" y="10" width="684" height="66" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="26" y="34" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" font-weight="700" fill="#15171c">npm test</text>
+  <text x="26" y="54" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Calls the handler directly, in this repo. No network at all.</text>
+  <text x="26" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#a32020">Blind to: the deployment, the secrets, Slack, the sandbox.</text>
+
+  <rect x="8" y="86" width="684" height="66" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="26" y="110" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" font-weight="700" fill="#15171c">bin/smoke</text>
+  <text x="26" y="130" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Signs a fake Slack payload and posts it to the live endpoint.</text>
+  <text x="26" y="146" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#a32020">Blind to: whether Slack actually delivers a real mention to you.</text>
+
+  <rect x="8" y="162" width="684" height="76" rx="9" fill="#eefaf2" stroke="#0b6b3a" stroke-width="2.5"/>
+  <text x="26" y="186" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" font-weight="700" fill="#0b6b3a">LESSON 06 — a real mention</text>
+  <text x="26" y="206" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">A person posts in Slack; Slack decides to send the event; the bot replies in the thread.</text>
+  <text x="26" y="228" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#0b6b3a">Until today only you could run this one. After today, Claude can.</text>
+</svg>
+</div>
+
+<p><code>npm test</code> proves the logic is right. <code>bin/smoke</code> proves the deployment is
+alive and the signing secret matches. Neither proves that <em>Slack</em> will send the event: event
+subscriptions can be off, the scope can be missing, the bot can be out of the channel, the saved URL
+can point at an old deployment. Every one of those passes both tests and produces a bot that says
+nothing.</p>
+
+<details class="sub">
+<summary>Why the smoke test cannot be fixed to cover this</summary>
+<p><code>bin/smoke</code> builds a payload itself and signs it with the signing secret, then posts it
+straight to the Vercel URL. It is deliberately impersonating Slack. That is what makes it fast and
+free of side effects — and it is exactly why it can never tell you whether the real Slack would have
+sent that payload. The only way to test delivery is to make Slack do the delivering.</p>
+</details>
+
+<div class="ray"><b>Where this differs from Ray.</b> Ray has no smoke script and no unit tests at
+this point, so for him this lesson is the first automated test of any kind. Here it is the third and
+outermost, and the other two stay: they are seconds to run and do not post anything in Slack.</div>
+</details>
+
+<details class="sec" id="connector-06" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What a connector is, and how it reaches Claude Code<span class="sec-s">You attach it on the website; it shows up in the terminal. That surprises people.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>A <strong>connector</strong> is a set of tools Claude can call on some other service — read a
+Google Doc, search the web, post to Slack. Under the hood it is an <strong>MCP server</strong>: a
+standard way of describing "here are the actions available, here is what each one needs".</p>
+
+<p>The part that catches people out: you attach the Slack connector to your <em>Claude account</em>
+on claude.ai, and it then appears in <em>Claude Code in your terminal</em>, because both are signed
+in as you. You do not install anything locally and there is nothing to configure in this repo.</p>
+
+<div class="metaphor"><b>A keyring, not a key cut per door.</b> The connector goes on your account's
+keyring. Every place you are signed in — the website, the terminal — reaches for the same ring, so
+adding a key in one place makes it available in the other.</div>
+
+<p>Two consequences worth knowing before you get to step 3:</p>
+<ul>
+  <li><strong>A running Claude Code session will not see it.</strong> Connectors are read at launch.
+  You have to quit and relaunch — this is step 3, and it is the most commonly missed one.</li>
+  <li><strong>It is account-wide, not project-wide.</strong> Any Claude Code session you start, in
+  any repo, can now post to that Slack workspace as you. Nothing scopes it to this project.</li>
+</ul>
+</details>
+
+<details class="sec" id="whoposts-06" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Who Slack thinks is posting, and why it has to be you<span class="sec-s">The bot cannot summon itself. The test message has to come from a person.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>The handler in <code>api/slack/events.js</code> answers <code>app_mention</code> events, and
+deliberately ignores any that carry a <code>bot_id</code>:</p>
+<pre><code>if (event?.type === 'app_mention' &amp;&amp; !event.bot_id) {</code></pre>
+<p>That guard exists so the bot cannot answer itself into an infinite loop. It also means a test
+message posted <em>by the bot's own token</em> would be ignored — so the test has to be posted by a
+human account. That is precisely what the connector gives Claude: the ability to post as you.</p>
+
+<p>In Slack, those messages carry a small <b>sent using Claude</b> label. They are your messages,
+posted by an app acting for you — not messages from the bot.</p>
+
+<div class="callout"><strong>This is why the connector wants such broad permission.</strong> Posting
+as you is not a privilege Slack scopes down to one channel. It is the same access you have. Keeping
+the testing in a dedicated channel is a convention you hold to, not a boundary Slack enforces.</div>
+</details>
+
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Five steps. Steps 1 to 3 are setup you do once; steps 4 and 5 are the loop you will run for the
+  rest of the course.</p>
+</div>
+
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 1 of 5 — Create the test channel and invite the bot<span class="sec-s">A room Claude can make a mess in, so the noise stays out of the channels people read.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 5</title>
+  <rect x="8" y="10" width="130" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="73" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">1 · Test channel</text>
+  <rect x="146" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="211" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">2 · Connector</text>
+  <rect x="284" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="349" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · Check /mcp</text>
+  <rect x="422" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="487" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · First test</text>
+  <rect x="560" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="625" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · CLAUDE.md</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Create the channel.</strong></p>
+  <p class="where">Where: Slack → channel list → <b>+</b> → <b>Create a channel</b></p>
+  <p>Name it <code>joestar-test</code>. Public is fine and slightly better — a private channel needs
+  the bot explicitly added and uses a different Slack scope if you ever read it programmatically.
+  Click <b>Next</b>, then <b>Create</b>.</p>
+</li>
+<li>
+  <p><strong>Invite the bot into it.</strong></p>
+  <p>In the new channel, type <code>/invite</code> and pick <b>@joestar</b>, then press enter.</p>
+  <div class="callout"><strong>Do not skip this.</strong> Ray's first test fails for exactly this
+  reason: the message posts, but the bot is not in the channel, so nothing happens. A bot only
+  receives mentions in channels it is a member of.</div>
+</li>
+<li>
+  <p><strong>Decide what this channel is for, and keep to it.</strong></p>
+  <p>This channel belongs to the Claude Code running on your own machine. Everything it posts while
+  testing goes here, so <code>#general</code> stays readable and you can tell a real conversation
+  from a robot talking to itself.</p>
+  <div class="ray"><b>Where this differs from Ray.</b> This workspace already has
+  <code>#bot-smoke</code>, which <code>bin/smoke</code> posts into. Keep them separate:
+  <code>#bot-smoke</code> is for the scripted probes, <code>#joestar-test</code> is for Claude's
+  conversational tests. Two channels, two audiences, neither cluttering the other.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A channel called <code>#joestar-test</code> exists, and
+<b>joestar</b> appears in its member list.</div>
+</section>
+
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 2 of 5 — Connect Slack to your Claude account<span class="sec-s">Browser work. This is the step that grants Claude the ability to post as you.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 5</title>
+  <rect x="8" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="73" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">1 · Test channel</text>
+  <rect x="146" y="10" width="130" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="211" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">2 · Connector</text>
+  <rect x="284" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="349" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · Check /mcp</text>
+  <rect x="422" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="487" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · First test</text>
+  <rect x="560" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="625" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · CLAUDE.md</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Open your connectors.</strong></p>
+  <p class="where">Where: <a href="https://claude.ai/settings/connectors">claude.ai</a> → your name
+  → <b>Settings</b> → <b>Connectors</b></p>
+  <p>Ray reaches the same place through <b>Customize → Connectors</b>; the menu has moved around
+  over time. If the wording differs, look for the page listing Google Drive, Gmail and similar.</p>
+</li>
+<li>
+  <p><strong>Check whether Slack is already connected somewhere else.</strong></p>
+  <p>If Slack appears as connected to a different workspace, you have to <b>remove</b> it first —
+  one Slack workspace per Claude account. Be sure you know what that disconnects before you do it.</p>
+  <div class="callout"><strong>This is a real cost, not a formality.</strong> If you use the Slack
+  connector with a work workspace day to day, connecting this one takes that away. Ray accepts the
+  trade in the video and mentions the alternative: a separate Claude account for the agent work.</div>
+</li>
+<li>
+  <p><strong>Add the Slack connector.</strong></p>
+  <p>Click <b>Add</b> → <b>Browse connectors</b> → choose <b>Slack</b> → <b>Connect</b>. Slack's own
+  authorisation page opens.</p>
+</li>
+<li>
+  <p><strong>Pick the right workspace, then approve.</strong></p>
+  <p>Top right of the Slack page, confirm it says <b>SlackAgentOS</b> — not another workspace you
+  happen to be signed into. Read what it asks for: it will say Claude may <em>perform actions as
+  you</em>, including sending messages on your behalf. Click <b>Allow</b>.</p>
+  <div class="danger"><strong>Last chance to think about it.</strong> After this click, anything
+  signed into your Claude account can post in your name in that workspace. That is the feature. It
+  is also the whole risk, and it is not limited to <code>#joestar-test</code>.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>claude.ai → Settings → Connectors lists <b>Slack</b> as
+connected, showing the SlackAgentOS workspace.</div>
+</section>
+
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 3 of 5 — Confirm Claude Code can see Slack<span class="sec-s">Check before you restart anything. On this machine it arrived without a relaunch.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 5</title>
+  <rect x="8" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="73" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">1 · Test channel</text>
+  <rect x="146" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="211" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">2 · Connector</text>
+  <rect x="284" y="10" width="130" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="349" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">3 · Check /mcp</text>
+  <rect x="422" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="487" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · First test</text>
+  <rect x="560" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="625" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · CLAUDE.md</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask the running session first.</strong></p>
+  <p>Run:</p>
+  <pre><code>/mcp</code></pre>
+  <p>The list should include an entry for the Claude.ai Slack connector. Do this before restarting
+  anything — you may already be finished.</p>
+  <div class="win"><strong>What happened here.</strong> On 15 September 2026 the Slack tools appeared
+  in a session that had been running since before the connector was attached, with no relaunch and
+  nothing typed. So "you must restart" is not a rule you can rely on in either direction: check, and
+  let the answer decide.</div>
+  <div class="ray"><b>Where this differs from Ray.</b> Ray quits and relaunches Claude Code before
+  running <code>/mcp</code>, and describes that as necessary. It was not necessary on this machine.
+  Relaunching is harmless, so it remains the fix if the check comes back empty — just not the first
+  thing to do.</div>
+</li>
+<li>
+  <p><strong>If it is not there, relaunch and check again.</strong></p>
+  <p>Exit the session, start it again in the project folder, and run <code>/mcp</code> once more. If
+  it is still missing, the connector did not attach in step 2 — go back to claude.ai and confirm
+  Slack is listed as connected, to the workspace you meant.</p>
+  <details class="sub">
+  <summary>What <code>/mcp</code> is showing you</summary>
+  <p>It lists the MCP servers this session can call, connectors included, and their connection
+  status. It is the fastest way to tell "Claude cannot do this" apart from "Claude can do this and
+  it failed" — the first shows up as a missing entry, the second as an error when the tool runs.</p>
+  </details>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>/mcp</code> lists the Slack connector as connected.</div>
+</section>
+
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 4 of 5 — Run the first end-to-end test<span class="sec-s">Ask Claude to post, wait, and read the reply. Watch it happen in Slack as it goes.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 5</title>
+  <rect x="8" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="73" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">1 · Test channel</text>
+  <rect x="146" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="211" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">2 · Connector</text>
+  <rect x="284" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="349" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · Check /mcp</text>
+  <rect x="422" y="10" width="130" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="487" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">4 · First test</text>
+  <rect x="560" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="625" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">5 · CLAUDE.md</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask for the test, spelling out the three parts.</strong></p>
+  <p>Paste this into Claude Code:</p>
+  <pre><code>Post a message in the #joestar-test channel on Slack that tags @joestar and
+asks it what 2 + 2 is. Wait about 60 seconds, then read the thread and tell me
+whether joestar replied and what it said.</code></pre>
+  <div class="ray"><b>Where this differs from Ray.</b> Ray's first attempt is just "send a message to
+  the joestar-test channel and see if Joestar responds" — and Claude sends a message that does not
+  tag the bot, so nothing happens. Saying <em>tag @joestar</em> explicitly avoids that. Ray also
+  waits 30 seconds; 60 is safer here, because a cold Vercel function plus a fresh E2B sandbox took
+  about 15 seconds on a good run and can take longer.</div>
+</li>
+<li>
+  <p><strong>Watch it in Slack while it runs.</strong></p>
+  <p>Open <code>#joestar-test</code>. You should see, in order: your message with a <b>sent using
+  Claude</b> label, the bot's <em>thinking…</em> placeholder in a thread under it, and then that
+  placeholder being replaced by the answer.</p>
+  <div class="win"><strong>Seeing the placeholder turn into an answer is the proof.</strong> It means
+  Slack delivered the event, the function ran, the sandbox booted, Claude answered, and the reply got
+  edited back in — the entire chain from lessons 04 and 05, in one observation.</div>
+</li>
+<li>
+  <p><strong>Read what Claude reports back.</strong></p>
+  <p>Claude should tell you the bot replied and quote the answer. If it says there was no reply, go
+  to <a href="#broken-06">When the test says nothing came back</a> in part 3 — the failure is
+  informative, and Claude can usually diagnose it itself if you ask it to check the Vercel logs.</p>
+</li>
+</ol>
+<div class="callout"><strong>You cannot read the timing off the thread.</strong> The answer
+<em>replaces</em> the placeholder rather than following it, and an edit keeps the original message's
+timestamp. So the reply will appear to have arrived a second after your mention however long Claude
+actually took. For the real figure, watch the placeholder change, or read
+<code>[claude] answered in X ms</code> in the Vercel logs.</div>
+
+<div class="win"><strong>What happened here.</strong> On 15 September 2026, asking "what is 2 + 2?"
+in <code>#joestar-test</code> produced a reply of <code>4</code> from <b>joestar</b>, in the thread,
+first try. The parent message carried the <b>sent using Claude</b> label; nothing was typed in Slack
+by hand.</div>
+
+<div class="checkpoint"><b>CHECKPOINT</b>Claude reports that joestar replied, and quotes the answer —
+and you can see the same exchange in <code>#joestar-test</code>.</div>
+</section>
+
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 5 of 5 — Write the verification step into CLAUDE.md<span class="sec-s">So the loop survives this session. A capability nobody remembers is not a capability.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 5</title>
+  <rect x="8" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="73" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">1 · Test channel</text>
+  <rect x="146" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="211" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">2 · Connector</text>
+  <rect x="284" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="349" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">3 · Check /mcp</text>
+  <rect x="422" y="10" width="130" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="487" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#8f98a3">4 · First test</text>
+  <rect x="560" y="10" width="130" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="625" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#fff">5 · CLAUDE.md</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask for the rule to be recorded.</strong></p>
+  <pre><code>Add a verification step to CLAUDE.md: after any change to the bot, post in
+the #joestar-test Slack channel tagging @joestar, wait, and read the thread to
+confirm it replied properly. Say what counts as a pass and what to do on a fail.</code></pre>
+</li>
+<li>
+  <p><strong>Read what it wrote, and make it specific.</strong></p>
+  <p>A vague instruction produces a vague habit. The rule should name the channel, name the bot, give
+  a wait long enough for a cold start, and say what a pass looks like — a real answer replacing the
+  placeholder, not merely "the bot said something".</p>
+  <div class="callout"><strong>Say when <em>not</em> to run it.</strong> This test costs a real
+  sandbox and real Claude usage every time. It belongs after a deploy that changes behaviour, not
+  after every edit — <code>npm test</code> and <code>bin/smoke</code> are the cheap checks that come
+  first.</div>
+</li>
+<li>
+  <p><strong>Commit it.</strong></p>
+  <p>Commit <code>CLAUDE.md</code> along with the lesson page. The instruction is the deliverable of
+  this lesson — everything else was configuration in other people's systems.</p>
+  <div class="ray"><b>Where this differs from Ray.</b> Ray adds the step and moves on. Here
+  <code>CLAUDE.md</code> already carries the project's hard rules, so the verification step joins
+  them rather than starting a new file — and the existing rule about never pushing without explicit
+  go still applies to the commit.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>CLAUDE.md</code> contains a verification step naming
+<code>#joestar-test</code> and <code>@joestar</code>, and it is committed.</div>
+</section>
+
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>The prompt to reuse, the failures worth recognising, and where everything lives.</p>
+</div>
+
+<details class="sec" id="prompt-06" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">The verification prompt, to reuse<span class="sec-s">One line for every lesson from here on.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<p>The channel is <code>#joestar-test</code> (<code>C0C1QB5PCNB</code>) and the bot is <code>&lt;@U0C1T5AQ0G6&gt;</code>. Once the rule is in <code>CLAUDE.md</code>, this is all it takes:</p>
+<pre><code>Verify the change end to end on #joestar-test.</code></pre>
+<p>When something is wrong and you want the diagnosis too:</p>
+<pre><code>Verify end to end on #joestar-test. If the bot doesn't reply, check the Vercel
+logs for the function and tell me which link in the chain broke.</code></pre>
+<p>And the cheap checks that should come first, neither of which posts anything in Slack:</p>
+<pre><code>npm test            # the handler's logic, no network
+bin/smoke           # the deployed endpoint, a signed payload, #bot-smoke</code></pre>
+</details>
+
+<details class="sec" id="broken-06" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When the test says nothing came back<span class="sec-s">Five failures, in the order they are worth checking.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+  <tr><th>What you see</th><th>Almost always</th></tr>
+  <tr><td class="who">Claude has no Slack tool at all</td><td>The session started before the connector was attached. Quit and relaunch, then <code>/mcp</code>.</td></tr>
+  <tr><td class="who">Message posts, bot silent, no placeholder</td><td>The bot is not in the channel. <code>/invite @joestar</code>. This is Ray's failure in the video.</td></tr>
+  <tr><td class="who">Message posts but does not tag the bot</td><td>The prompt did not say to tag it. Slack sends <code>app_mention</code> only for an actual mention — a message merely containing the word "joestar" is not one.</td></tr>
+  <tr><td class="who">Placeholder appears, then never changes</td><td>The sandbox or Claude failed after the 200 was sent. Vercel's logs for the function will show <code>[claude] failed:</code> with the reason.</td></tr>
+  <tr><td class="who">Claude reports no reply, but Slack shows one</td><td>It read the thread too early. Increase the wait; a cold start plus a sandbox boot can outrun 30 seconds comfortably.</td></tr>
+</table>
+<div class="callout"><strong>A failed test that names the broken link is worth more than a passing
+one.</strong> That is the point of having levels: if <code>npm test</code> passes and
+<code>bin/smoke</code> passes and this fails, the fault is in Slack's delivery or the sandbox — not
+in the handler, which the first two just proved.</div>
+</details>
+
+<details class="sec" id="done-06" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">You're done when<span class="sec-s">Four things work, and two things you can explain.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<ul class="check">
+  <li><code>#joestar-test</code> exists and the bot is a member.</li>
+  <li><code>/mcp</code> in a fresh Claude Code session lists the Slack connector.</li>
+  <li>Asking Claude to verify end to end produces a real exchange in that channel, and a report back.</li>
+  <li><code>CLAUDE.md</code> carries the verification step, committed.</li>
+  <li>You can say why the test message has to come from you and not from the bot.</li>
+  <li>You can say what this test catches that <code>npm test</code> and <code>bin/smoke</code> cannot.</li>
+</ul>
+</details>
+
+<details class="sec" id="where-06" style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where everything lives<span class="sec-s">Sources, the code this leans on, and what changed in the repo.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+  <tr><th>Thing</th><th>Where</th></tr>
+  <tr><td class="who">Ray's video</td><td><a href="https://www.agenticcoding.school/v/hxxcI55v">agenticcoding.school</a> · transcript at <code>course/transcripts/06-0-to-1--end-to-end-testing.md</code></td></tr>
+  <tr><td class="who">Claude connectors</td><td><a href="https://claude.ai/settings/connectors">claude.ai → Settings → Connectors</a></td></tr>
+  <tr><td class="who">The verification step</td><td><code>CLAUDE.md</code> at the repo root — the only file this lesson changes</td></tr>
+  <tr><td class="who">The mention guard</td><td><code>joestar-agent/api/slack/events.js</code> — the <code>!event.bot_id</code> check</td></tr>
+  <tr><td class="who">The scripted probes</td><td><code>bin/smoke</code> and <code>bin/smoke.mjs</code></td></tr>
+  <tr><td class="who">Lesson 05</td><td><a href="../lesson-05/index.html">sops/lesson-05/index.html</a> — the bot this tests</td></tr>
+  <tr><td class="who">Traps, all lessons</td><td><code>TRAPS.md</code> at the repo root</td></tr>
+</table>
+</details>
+
+
+<footer>
+Written from Ray's transcript, then revised on 15 September 2026 with what actually happened:
+the connector appeared without a relaunch, and the first end-to-end test passed on the first attempt.
+Steps 1 to 3 are one-time setup; steps 4 and 5 are the loop you keep.
+</footer>
+
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l6-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l6-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l6-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l6-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>
