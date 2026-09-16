@@ -7,8 +7,25 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
 ## Hard rules
 - Secrets live in 1Password only. Never write a `.env` file or any file with a
   secret value. `.env.op` holds `op://` references and is committed. Run
-  anything that needs secrets through `op run --env-file=.env.op -- <command>`.
+  anything that needs secrets through `op run --env-file=.env.op -- <command>`,
+  or the wrapper `bin/with-secrets <command>`.
   Vercel's environment variables are the deploy-side copy; set them in Vercel's UI.
+- **Service accounts only. Never the 1Password desktop CLI integration.**
+  The integration signs in *every* shell on the machine as the whole account,
+  agent shells included — on 2026-09-15 it gave Claude read access to five
+  vaults, including a client's, when one was intended. It is a single switch
+  with no way to separate a human's terminal from an agent's. Keep it off.
+  Access is a service account scoped read-only to `SlackAgentOS`, and nothing
+  else. See `~/.claude/instructions/onepassword-access.md`.
+- Claude never reads a secret's value — not the value, not a prefix, not a
+  length, not a byte dump. To prove a credential works, run the real command
+  through `bin/with-secrets` and report the exit code. Writing to the vault is
+  Noj's job, in the 1Password app.
+- **1Password is a convenience here, not a dependency.** The deployed bot reads
+  its secrets from Vercel environment variables and never contacts 1Password.
+  Only local tooling needs it: `bin/preflight`, `bin/smoke`, and
+  `e2b/build.mjs`. If it is ever more trouble than it is worth, set the values
+  by hand in Vercel's dashboard and the bot runs unchanged.
 - Never commit a file over 10 MB. The pre-commit hook enforces this.
 - No push to any remote without Noj's explicit go.
 - Course inputs live in `course/` (transcripts, downloads, lesson-page rules).

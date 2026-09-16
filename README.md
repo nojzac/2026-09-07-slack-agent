@@ -53,7 +53,7 @@ Everything below exists and is in use.
 | Slack app | joestar (api.slack.com/apps) | signing secret and bot token → 1Password `SlackAgentOS/2026-09-07-slack-agent` |
 | Vercel project | smartflowconsultants/joestar-agent → joestar-agent-five.vercel.app | Vercel account login; env vars set in Vercel are the deploy-side copy of the 1Password values |
 | GitHub repo (private) | nojzac/2026-09-07-slack-agent | `gh` CLI login |
-| 1Password service account | slack-agent-2 (smartflowllc account, read-only on SlackAgentOS) | token in macOS Keychain, service `op-slackagentos`; used by `bin/with-secrets` |
+| 1Password service account | read-only on SlackAgentOS only (smartflowllc account) | token in macOS Keychain, service `op-slackagentos`; used by `bin/with-secrets`. **The desktop CLI integration is off and stays off** — it authenticates every shell as the whole account. Service accounts only |
 | E2B | e2b.dev, template `joestar-claude` | 1Password `SlackAgentOS/2026-09-07-slack-agent` field `e2b_api_key`; also a Vercel production env var |
 | Claude Code (headless) | OAuth token from `claude setup-token` | 1Password `SlackAgentOS/2026-09-07-slack-agent` field `claude_code_oauth_token`; also a Vercel production env var. **Cannot be revoked** — replace it rather than revoking |
 

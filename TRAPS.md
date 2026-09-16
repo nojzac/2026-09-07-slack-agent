@@ -118,6 +118,33 @@ deployed endpoint: a POST-only function should answer 405. Anything else, and
 `vercel logs <url>` names the failing module in one line. Preflight already
 does this check — it is what caught it.
 
+## The 1Password desktop CLI integration hands an agent your whole account
+
+**Symptom.** Nothing looks wrong. `op run` works, the vault-scoped service
+account exists, the project rules say read-only on one vault — and an agent
+shell can still run `op vault list` and see every vault in the account.
+
+**Cause.** "Integrate with 1Password CLI" in the desktop app's Developer
+settings. It authenticates *every* shell on the machine as the signed-in human:
+interactive, non-interactive, scripts, agents. It ignores service-account
+scoping entirely, because it is a different authentication path. Having a
+scoped service account changes nothing while the integration is on — the wide
+door is still there, and it is the one `op` reaches for first.
+
+**Fix.** Turn it off, and authenticate with `OP_SERVICE_ACCOUNT_TOKEN` only.
+`op vault list` should then return exactly the vaults that account was granted.
+That single check is the whole verification.
+
+**Consequence to expect.** It narrows your own terminal too, not just the
+agent's. The 1Password app and browser extension are unaffected; only the CLI
+changes. If you need full-account CLI again, sign in for that one session
+rather than leaving the integration on.
+
+**The wider lesson.** Scoping a credential is worthless while a broader
+credential for the same store is also reachable. Check what the shell can
+actually see, rather than what it was configured to see — and have the agent
+run that check from *its own* shell, since that is the one in question.
+
 ## Where the time actually went
 
 | Cause | Roughly |

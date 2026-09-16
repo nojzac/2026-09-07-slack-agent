@@ -71,16 +71,38 @@ page template is `sops/lesson-04/index.html`.
 
 ## Security posture (changed 2026-09-16)
 
-Claude must never read a secret's value. Enforced by, in order: auto-mode's
-classifier, `permissions.deny` rules in `~/.claude/settings.json`, and the hook
-`~/.claude/hooks/block-secret-reads.py`. Guidance in
-`~/.claude/instructions/onepassword-access.md`.
+**The 1Password desktop CLI integration is off, and must stay off.** It signs
+in every shell on the machine as the whole account, agent shells included. With
+it on, Claude could reach five vaults — Employee, Developer, Shared,
+SlackAgentOS and UUAC — when one was intended. It is a single switch covering
+both a human's terminal and an agent's; there is no way to split them.
 
-The 1Password desktop app's CLI integration is **off**, so no shell inherits
-Noj's whole account. Claude reaches exactly one vault, read-only, via the
-service-account token that `bin/with-secrets` reads from the Keychain. Register
-hooks with absolute paths: `$CLAUDE_CONFIG_DIR` is unset, and a hook whose
-script is missing fails open silently.
+**Access is a service account, scoped read-only to `SlackAgentOS`, and nothing
+else.** Its token is in the login Keychain under service `op-slackagentos`, and
+`bin/with-secrets` reads it for one command at a time. Claude can run that
+wrapper, so Claude does have that one vault, read-only, without prompting —
+state it that way, not as "no access".
+
+**Claude never reads a secret's value.** Enforced in order by auto-mode's
+classifier, `permissions.deny` in `~/.claude/settings.json`, and the hook
+`~/.claude/hooks/block-secret-reads.py`. Guidance:
+`~/.claude/instructions/onepassword-access.md`. Register hooks with absolute
+paths — `$CLAUDE_CONFIG_DIR` is unset, and a hook whose script is missing fails
+open silently, which is how the first version of that hook did nothing while
+appearing installed.
+
+**1Password is not on the critical path.** The deployed bot reads
+`SLACK_SIGNING_SECRET`, `SLACK_BOT_TOKEN`, `E2B_API_KEY` and
+`CLAUDE_CODE_OAUTH_TOKEN` from Vercel's own environment variables and never
+contacts 1Password. The vault serves only local tooling — `bin/preflight`,
+`bin/smoke`, `e2b/build.mjs`. Set the four values by hand in Vercel's dashboard
+and the bot runs with no vault, no service account and no `op` installed.
+
+**What this does not do.** All of it assumes a careless agent, not a hostile
+one. Deny rules and hooks are files Claude can edit; the real boundaries are
+the OS user Claude runs as, root-owned config it cannot write, and 1Password's
+own approval dialog. Anything stronger means putting the agent in a separate
+Unix user or container and exposing operations rather than keys.
 
 ## Next step
 
