@@ -48,8 +48,7 @@ Slack's three-second window and edits it with the answer via `waitUntil`.
 | `e2b_api_key` | e2b.dev → sign up → Dashboard → API Keys → Create |
 | `claude_code_oauth_token` | `claude setup-token` in a terminal (needs a Claude subscription; cannot be revoked afterwards) |
 
-Then, in order: uncomment the two lines in `.env.op`; `bin/with-secrets npx e2b
-template build`; pipe both into Vercel with `op read … | vercel env add …
+Then, in order: uncomment the two lines in `.env.op`; `bin/with-secrets node e2b/build.mjs`; pipe both into Vercel with `op read … | vercel env add …
 production`; push; mention the bot. Steps 3–6 of the lesson 05 page.
 
 Known unknown: Claude runs for minutes and the function is capped at
@@ -80,7 +79,7 @@ space; Noj removed it, and the fix is unverified because verification now goes
 through `op run`, not `op read`.
 
 Next, in order:
-1. `op run --env-file=.env.op -- npx e2b template build` (from `joestar-agent/`)
+1. `bin/with-secrets node e2b/build.mjs` (from `joestar-agent/`) — DONE
 2. Pipe both keys into Vercel production
 3. Push, then mention `@joestar` in `#bot-smoke`
 Steps 3–6 of `sops/lesson-05/index.html`.

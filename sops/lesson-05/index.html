@@ -916,7 +916,7 @@ has touched a file.</div>
 </li>
 <li>
   <p><strong>Build it, with the key injected from 1Password.</strong></p>
-  <pre>bin/with-secrets npx e2b template build</pre>
+  <pre>bin/with-secrets node e2b/build.mjs</pre>
   <p>This uploads the definition to E2B and builds the image there. It takes a few minutes the first
   time. It prints a template ID when it finishes — that is what the code asks for by name.</p>
   <div class="callout"><strong>A stale template is the trap here.</strong> Ray hits it in the video:
