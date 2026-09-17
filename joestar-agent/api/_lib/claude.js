@@ -240,11 +240,6 @@ export async function runClaude({
       { timeoutMs: runTimeoutMs, envs },
     );
 
-    // Commit and push whatever the model wrote into memory, before uploads —
-    // this is the only place a memory-on run persists anything, since the
-    // sandbox is destroyed the moment this function returns.
-    if (memoryActive) await pushMemory(sandbox, { envs, channelId });
-
     // Uploads happen here, inside the try, while the sandbox is still up —
     // collectOutputs streams bytes from inside the sandbox to Slack. Moving
     // this into the `finally` or into the caller would run it after
@@ -254,6 +249,19 @@ export async function runClaude({
       files: await collectOutputs(sandbox, slackToken, UPLOAD_BUDGET_MS),
     };
   } finally {
+    // Commit and push whatever the model wrote into memory, even if the
+    // claude command above threw or timed out — otherwise a crash mid-run
+    // loses memory that would otherwise have been pushed. A push failure
+    // here must never mask the original error, so it is swallowed rather
+    // than logged with err.message (see pushMemory's own try/catch for why
+    // that field specifically is never logged).
+    if (memoryActive) {
+      try {
+        await pushMemory(sandbox, { envs, channelId });
+      } catch {
+        console.warn('[memory] push failed');
+      }
+    }
     // Always kill it: a sandbox left running is a sandbox still being billed.
     await sandbox.kill().catch(() => {});
   }
