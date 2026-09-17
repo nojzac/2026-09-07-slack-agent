@@ -10,6 +10,7 @@ import {
   signAppJwt,
   isGitHubConfigured,
   mintInstallationToken,
+  repoFromTopic,
 } from '../api/_lib/github.js';
 import { HOOK_SOURCE, HOOK_SETTINGS, gitSetupScript } from '../api/_lib/git-guard.js';
 
@@ -47,6 +48,27 @@ test('iat is backdated and exp stays inside the ten-minute ceiling', () => {
 });
 
 // --- configuration and failure -----------------------------------------------
+
+// --- channel topic -> repo ----------------------------------------------------
+
+test('repoFromTopic reads a bare owner/repo', () => {
+  assert.equal(repoFromTopic('nojzac/2026-09-07-slack-agent'), 'nojzac/2026-09-07-slack-agent');
+});
+
+test('repoFromTopic reads owner/repo inside a longer topic', () => {
+  assert.equal(repoFromTopic('🤖 bot playground — nojzac/joestar-sandbox — ask away'), 'nojzac/joestar-sandbox');
+});
+
+test('repoFromTopic reads a github.com URL', () => {
+  assert.equal(repoFromTopic('https://github.com/nojzac/joestar-sandbox'), 'nojzac/joestar-sandbox');
+  assert.equal(repoFromTopic('repo: github.com/nojzac/joestar-sandbox.git'), 'nojzac/joestar-sandbox');
+});
+
+test('repoFromTopic returns null for a topic with no repo in it', () => {
+  assert.equal(repoFromTopic('just a normal channel topic'), null);
+  assert.equal(repoFromTopic(''), null);
+  assert.equal(repoFromTopic(undefined), null);
+});
 
 test('a GitHub App that is not configured is off, not broken', () => {
   const saved = { ...process.env };

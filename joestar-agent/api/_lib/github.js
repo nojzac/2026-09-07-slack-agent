@@ -25,6 +25,26 @@ const JWT_LIFETIME_SECONDS = 9 * 60;
 const JWT_BACKDATE_SECONDS = 60;
 
 /**
+ * Pull an `owner/repo` out of a channel topic.
+ *
+ * Accepts a bare `owner/repo`, a github.com URL, or either sitting anywhere
+ * inside a longer topic string (topics carry other things too — an emoji, a
+ * one-line description). Returns null rather than guessing when nothing
+ * matches, so a channel with an unrelated topic gets no GitHub access instead
+ * of a wrong repo.
+ */
+export function repoFromTopic(topic) {
+  const text = String(topic ?? '');
+  const urlMatch = text.match(/github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?=[/\s)]|$)/i);
+  if (urlMatch) return `${urlMatch[1]}/${urlMatch[2]}`;
+
+  const bareMatch = text.match(/(?:^|\s)([\w.-]+)\/([\w.-]+)(?=\s|$)/);
+  if (bareMatch) return `${bareMatch[1]}/${bareMatch[2]}`;
+
+  return null;
+}
+
+/**
  * Is a GitHub App configured at all?
  *
  * This distinguishes "the feature is off" from "the feature is broken", which
@@ -94,11 +114,16 @@ export function signAppJwt({ appId, privateKey, now = Math.floor(Date.now() / 10
  * minutes. The token is never logged and its format is never parsed; treat it
  * as an opaque string.
  */
-export async function mintInstallationToken({ fetchImpl = fetch } = {}) {
+export async function mintInstallationToken({ fetchImpl = fetch, repo = null } = {}) {
   const appId = process.env.GITHUB_APP_ID;
   const installationId = process.env.GITHUB_INSTALLATION_ID;
 
   const jwt = signAppJwt({ appId, privateKey: readPrivateKey() });
+
+  // With no repo, the token reaches every repository the App is installed on
+  // (today's behaviour). With one, GitHub scopes the token down to just it —
+  // the channel's topic becomes an access boundary, not just a label.
+  const repoName = repo && repo.includes('/') ? repo.split('/')[1] : null;
 
   const res = await fetchImpl(
     `https://api.github.com/app/installations/${installationId}/access_tokens`,
@@ -108,7 +133,9 @@ export async function mintInstallationToken({ fetchImpl = fetch } = {}) {
         authorization: `Bearer ${jwt}`,
         accept: 'application/vnd.github+json',
         'x-github-api-version': API_VERSION,
+        'content-type': 'application/json',
       },
+      body: repoName ? JSON.stringify({ repositories: [repoName] }) : undefined,
     },
   );
 
@@ -138,11 +165,11 @@ export async function mintInstallationToken({ fetchImpl = fetch } = {}) {
  * because an unrelated credential expired is worse than one that answers and
  * says GitHub is unavailable.
  */
-export async function tryMintInstallationToken() {
+export async function tryMintInstallationToken({ repo = null } = {}) {
   if (!isGitHubConfigured()) return { token: null, reason: null };
   try {
-    const { token, expiresAt } = await mintInstallationToken();
-    console.log('[github] minted installation token, expires', expiresAt);
+    const { token, expiresAt } = await mintInstallationToken({ repo });
+    console.log('[github] minted installation token, expires', expiresAt, repo ? `scoped to ${repo}` : '(all installed repos)');
     return { token, expiresAt };
   } catch (err) {
     // The message is safe to log: it is GitHub's status and message, never the
