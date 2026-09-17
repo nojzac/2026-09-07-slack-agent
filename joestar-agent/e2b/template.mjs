@@ -1,5 +1,5 @@
 import { Template } from 'e2b/dist/index.mjs'; // see api/_lib/claude.js
-import { PLAYWRIGHT_VERSION } from '../api/_lib/versions.js';
+import { PLAYWRIGHT_VERSION, POSTGRES_MAJOR } from '../api/_lib/versions.js';
 
 /**
  * The machine Claude Code runs on. Node 24 plus the three tools Claude reaches
@@ -64,4 +64,30 @@ export const template = Template()
   // --with-deps pulls in Chromium's system libraries itself, instead of this
   // template hand-maintaining that list.
   .runCmd('playwright install --with-deps chromium', { user: 'root' })
-  .runCmd('chmod -R a+rX /opt/ms-playwright', { user: 'root' });
+  .runCmd('chmod -R a+rX /opt/ms-playwright', { user: 'root' })
+  // Lesson 12: a throwaway local Postgres and Redis, installed but NOT started.
+  .aptInstall([`postgresql-${POSTGRES_MAJOR}`, 'redis-server'])
+  // The postgresql-<v> postinst runs pg_createcluster and leaves cluster
+  // <v>/main running on port 5432 under /var/lib/postgresql. If it's still up
+  // when the build reaches the initdb/pg_ctl step below, that step can't bind
+  // 5432 and the build fails. Drop it now — also removes a second, unused data
+  // directory from the image.
+  .runCmd(`pg_dropcluster --stop ${POSTGRES_MAJOR} main || true`, { user: 'root' })
+  // Debian hides the server binaries in /usr/lib/postgresql/<v>/bin and wraps only
+  // the client tools. Symlink the three the run needs so `pg_ctl` works as `user`.
+  .runCmd(
+    `ln -sf /usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_ctl /usr/local/bin/pg_ctl` +
+      ` && ln -sf /usr/lib/postgresql/${POSTGRES_MAJOR}/bin/initdb /usr/local/bin/initdb` +
+      ` && ln -sf /usr/lib/postgresql/${POSTGRES_MAJOR}/bin/postgres /usr/local/bin/postgres`,
+    { user: 'root' },
+  )
+  // Initialise the cluster at BUILD time, as `user`, so a run only has to start it.
+  // Socket in /tmp because /var/run/postgresql is root-owned. Trust auth: the
+  // server is loopback-only inside a machine that dies with the run.
+  .runCmd(
+    'initdb -D /home/user/pgdata -U user --auth=trust' +
+      ' && pg_ctl -D /home/user/pgdata -o "-k /tmp -c listen_addresses=127.0.0.1" -w start' +
+      ' && createdb -h /tmp -U user user' +
+      ' && pg_ctl -D /home/user/pgdata -w stop',
+    { user: 'user' },
+  );

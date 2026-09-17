@@ -57,6 +57,12 @@ const UPLOAD_BUDGET_MS = 30_000;
 export const SANDBOX_RUNTIME_ENVS = {
   PLAYWRIGHT_BROWSERS_PATH: '/opt/ms-playwright',
   NODE_PATH: '/usr/local/lib/node_modules',
+  // These are what let plain `psql` and `pg_ctl` work against the build-time
+  // cluster with no flags, instead of every command needing -h/-U/-d/-D.
+  PGDATA: '/home/user/pgdata',
+  PGHOST: '/tmp',
+  PGUSER: 'user',
+  PGDATABASE: 'user',
 };
 
 /**
