@@ -1,4 +1,5 @@
 import { Template } from 'e2b/dist/index.mjs'; // see api/_lib/claude.js
+import { PLAYWRIGHT_VERSION } from '../api/_lib/versions.js';
 
 /**
  * The machine Claude Code runs on. Node 24 plus the three tools Claude reaches
@@ -59,7 +60,7 @@ export const template = Template()
   })
   // Pinned, not `@latest`: the playwright npm package and the Chromium build
   // it downloads are versioned together, so they have to move in lockstep.
-  .npmInstall('playwright@1.63.0', { g: true })
+  .npmInstall(`playwright@${PLAYWRIGHT_VERSION}`, { g: true })
   // --with-deps pulls in Chromium's system libraries itself, instead of this
   // template hand-maintaining that list.
   .runCmd('playwright install --with-deps chromium', { user: 'root' })

@@ -27,7 +27,7 @@ export const OUTPUT_DIR = '/tmp/outputs';
 // Slack is not a file server and this is a 300-second function. Caps keep a
 // model that decides to write a hundred files from turning into a hundred
 // uploads.
-const MAX_OUTPUT_FILES = 5;
+export const MAX_OUTPUT_FILES = 5;
 
 // Ours, not Slack's or E2B's — nothing platform-side forces this number. Now
 // that output files stream from the sandbox straight to Slack's upload URL
@@ -36,7 +36,7 @@ const MAX_OUTPUT_FILES = 5;
 // alive, inside the 300-second function budget, alongside everything else
 // runClaude does. 64 MiB is a guess at what a slow upload can clear in that
 // window; raise it only alongside runClaude's timeout math.
-const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
+export const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
 // Carved out of the sandbox's own lifetime, not the function's 300s. Uploads
 // now run inside the sandbox, after the claude command returns but before

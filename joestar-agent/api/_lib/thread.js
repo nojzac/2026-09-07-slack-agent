@@ -1,3 +1,6 @@
+import { MAX_OUTPUT_BYTES, MAX_OUTPUT_FILES } from './claude.js';
+import { PLAYWRIGHT_VERSION } from './versions.js';
+
 // Transcript replay.
 //
 // The sandbox is destroyed at the end of every run, so there is no session to
@@ -85,11 +88,12 @@ export function renderTranscript({ messages, botUserId, skipTs }) {
  * five-minute budget; with it, that time goes to using the thing instead.
  */
 export function browserCapabilities() {
+  const maxOutputMiB = MAX_OUTPUT_BYTES / (1024 * 1024);
   return [
-    'You have a headless browser in this sandbox: Playwright, pinned at 1.63.0, Chromium only — no Firefox, no WebKit.',
+    `You have a headless browser in this sandbox: Playwright, pinned at ${PLAYWRIGHT_VERSION}, Chromium only — no Firefox, no WebKit.`,
     'Chromium is already installed at /opt/ms-playwright, and PLAYWRIGHT_BROWSERS_PATH and NODE_PATH are already set in the environment — do not hunt for the browser or reinstall it.',
     'Video is only written once the browser context is closed. Call context.close() explicitly before the run ends, or nothing is saved.',
-    'To send a file to Slack, write it into /tmp/outputs, same as any other output. Cap is 64 MiB per file, 5 files per run.',
+    `To send a file to Slack, write it into /tmp/outputs, same as any other output. Cap is ${maxOutputMiB} MiB per file, ${MAX_OUTPUT_FILES} files per run.`,
     'Playwright dispatches events rather than moving a pointer, so recordings show no cursor. That is expected, not broken.',
   ].join('\n');
 }
