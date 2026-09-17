@@ -37,6 +37,7 @@ Files here:
 | `GITHUB_APP_PRIVATE_KEY` | the App's `.pem`, **base64-encoded, single line** — see below |
 | `EXA_API_KEY` | exa.ai dashboard → API keys. Optional — see below |
 | `CODEX_AUTH_JSON` | whole contents of a local `~/.codex/auth.json` from `codex login`. Optional — powers the Codex CLI second-opinion reviewer |
+| `ELEVENLABS_API_KEY` | elevenlabs.io dashboard → API keys. Optional, Vercel only — the voice-notes skill's script reads it from the environment |
 
 ## The browser, and how files get out
 
