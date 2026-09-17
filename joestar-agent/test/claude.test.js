@@ -327,7 +327,7 @@ test('ELEVENLABS_API_KEY unset: absent from the claude command envs', async () =
 // ---------------------------------------------------------------------------
 
 const MEMORY_DIR = '/home/user/memory'; // must match MEMORY_DIR in claude.js
-const MEMORY_BUDGET_MS = 20_000; // must match MEMORY_BUDGET_MS in claude.js
+const MEMORY_BUDGET_MS = 25_000; // must match MEMORY_BUDGET_MS in claude.js
 
 /** A runClaude-ready sandbox that also serves a fake memory repo and one output file. */
 function makeMemorySandbox({ cloneExitCode = 0, outputs = [] } = {}) {
