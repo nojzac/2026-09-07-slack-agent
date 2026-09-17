@@ -348,6 +348,16 @@ count rises when a run starts and never again.
   `main` runs `test.yml`, which tests and then deploys.
 
 ## Open, not blocking
+- **Recordings accumulate in Slack and nothing prunes them.** Output files go
+  sandbox → Slack directly and stay there; the sandbox copy dies with the
+  machine, so Slack's file store is the only copy. The cap is now 64 MiB per
+  file and 5 files per run, and Ray's framing for this feature is that *every*
+  task ends with a recording — so this is unbounded growth driven by anyone who
+  can message the bot. As of 2026-09-17 the bot has uploaded 6 files totalling
+  19.2 MiB, of which one 19.1 MiB test artefact is 99.4%. No retention policy,
+  no cleanup, and the course never raises it. Worth a decision before
+  recordings become routine.
+
 - **The browser briefing duplicates one line the prompt already has.**
   `browserCapabilities()` says "write it into /tmp/outputs" and the `outputDir`
   block below it says the same thing. Costs ~15 words of context on every run.
