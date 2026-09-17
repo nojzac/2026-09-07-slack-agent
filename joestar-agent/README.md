@@ -38,6 +38,7 @@ Files here:
 | `EXA_API_KEY` | exa.ai dashboard → API keys. Optional — see below |
 | `CODEX_AUTH_JSON` | whole contents of a local `~/.codex/auth.json` from `codex login`. Optional — powers the Codex CLI second-opinion reviewer |
 | `ELEVENLABS_API_KEY` | elevenlabs.io dashboard → API keys. Optional, Vercel only — the voice-notes skill's script reads it from the environment |
+| `AGENT_MEMORY_REPO` | `owner/repo` of the channel-memory git repo. Optional, Vercel only — unset = memory off |
 
 ## The browser, and how files get out
 
