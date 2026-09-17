@@ -201,6 +201,52 @@ goes private**; **PreToolUse hooks do fire** under
 `--dangerously-skip-permissions` on claude-code 2.1.274; and the **PR** author is
 the App while the **commit** author is whatever `git config user.name` says.
 
+## Lesson 09, as built
+
+Dogfooding works: the bot now changes its own code on request, opens a PR, takes
+review feedback, and fixes what it got wrong. Done in `#joestar-dev`
+(`C0C2FES3UGJ`), whose **topic names the repo** — that topic is now an access
+boundary, not a label.
+
+- **Shipped by the bot itself:** channel topic → repo. `repoFromTopic` parses
+  `owner/repo` or a github.com URL from the topic; the installation token is
+  minted **scoped to that one repo**; no repo in the topic means **no GitHub
+  access at all**, even though the App is installed on two repos. Verified:
+  `gh repo list` inside the sandbox returns exactly one repo.
+- **It also took a code review.** First version discarded the owner half of
+  `owner/repo` when scoping, so another account's repo name would have minted a
+  token for ours. Asked in-thread to fix it; it now looks up the installation's
+  account and refuses to mint on mismatch, with tests. 49 tests pass.
+- **`main` is protected and the bot cannot merge.** `protect-main`: PR + 1
+  approval, force-push blocked, deletions restricted, bypass = Repository admin
+  only. Noj merges with `gh pr merge N --squash --admin`; the App has no bypass
+  and cannot approve its own PR. **Nobody can push to main any more, including
+  Claude** — every change is a branch and a PR.
+- The repo is **public** for the rest of the course, so that ruleset enforces.
+
+### The bottleneck dogfooding found immediately
+
+The first two requests both died at the sandbox timeout while Claude was still
+working. Raising `runClaude`'s default from 240s to 285s, plus telling the model
+its budget (shallow clone, skip `sops/` and `course/`, push partial work), was
+enough — the retry succeeded.
+
+**The real limit is unchanged and now proven:** `maxDuration = 300` is a hard
+ceiling, so work needing more than five minutes cannot run inside the Vercel
+function. This was the lesson-05 "known unknown"; it does not truncate, it fails
+outright. Moving the work out is a deliberate architectural decision, not
+another constant to bump.
+
+## Known and unfixed
+
+- **Bolded URLs come out broken.** `toMrkdwn` turns `**https://…**` into
+  `*https://…*` and Slack swallows the asterisk into the link, so PR links the
+  bot posts do not open. Ray hits the same bug in his video. It is our
+  `api/_lib/mrkdwn.js`, and a good dogfooding request.
+- **`#joestar-test` has no topic, so the bot now has no GitHub access there.**
+  Intended, and stricter than before, but any GitHub test must happen in a
+  channel whose topic names a repo.
+
 ## Also done 2026-09-16
 
 - **Progressive disclosure verified.** Three read-only probes, one per `CLAUDE.md`
