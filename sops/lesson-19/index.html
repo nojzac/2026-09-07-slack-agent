@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-19/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "USING YOUR AGENT" · LESSON 19</p>
+<h1>On-call agents: let a channel trigger the bot</h1>
+<p class="standfirst">Anthropic put Claude on the front of their CI/CD alerts: an alert lands in a Slack channel, Claude investigates it before a human reads it, and only pages a person when it decides a person is needed. Ray walks through their write-up and then asks his own agent what abilities it would need to do the same. Nothing is built here — because for this bot the pattern is not an addition, it is the deliberate removal of two loop guards.</p>
+<div class="facts">
+  <span><b>Ray's video:</b> 6 min 28 s</span>
+  <span><b>This page:</b> 25 min</span>
+  <span><b>At the end:</b> a decision on whether Joestar reacts to an alert channel, and the exact guard changes it would take</span>
+</div>
+<div class="fm" style="--fc:#0b6b3a"><h2>What you'll have at the end</h2>
+<div class="fig"><svg viewBox="0 0 700 250" width="100%" height="auto" role="img"><title>An on-call agent: an alert from a monitoring service lands in a Slack channel, the bot runs without being mentioned, investigates in a sandbox, and either posts a finding or pages a human</title><defs><marker id="arrow19a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="16" width="150" height="80" rx="9" fill="#ffffff" stroke="#a32020" stroke-width="1.5"/><text x="24" y="38" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#a32020">MONITORING</text><text x="24" y="60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Sentry, Vercel, CI</text><text x="24" y="78" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">posts as an app</text><path d="M164,56 L208,56" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow19a)"/><rect x="214" y="16" width="190" height="80" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/><text x="230" y="38" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#4a154b">#alerts — ALLOWLISTED</text><text x="230" y="60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">nobody mentions the bot</text><text x="230" y="78" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">the message itself is the trigger</text><path d="M410,56 L454,56" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow19a)"/><rect x="460" y="16" width="232" height="80" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/><text x="476" y="38" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX — DESTROYED AFTER</text><text x="476" y="60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">investigates, reads logs</text><text x="476" y="78" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">opens a PR, never merges one</text><rect x="214" y="112" width="478" height="60" rx="9" fill="#fff8e8" stroke="#8a5a00" stroke-width="1.5"/><text x="232" y="134" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#8a5a00">The judgement call, written down in advance</text><text x="232" y="154" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">page a human now · post a finding and wait until morning · say nothing, it self-healed</text><rect x="8" y="188" width="684" height="54" rx="9" fill="#fdeeee" stroke="#a32020" stroke-width="1.5"/><text x="26" y="209" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">What this costs: the two guards that stop Joestar answering itself</text><text x="26" y="229" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">"never answer a bot" and "channel chatter is not addressed to us" must both gain an exception.</text></svg><p class="cap">The pattern in one picture. The red band is the part Ray's video does not have to think about and this bot does.</p>
+</div>
+<ul>
+  <li><strong>The pattern named exactly</strong>: the trigger moves from a human mention to a message arriving.</li>
+  <li><strong>The two guard exceptions written out</strong>, so if you build it you cut a narrow hole rather than a wide one.</li>
+  <li><strong>A written answer on the Sentry-style MCP question</strong>, which this project's rules settle before it is asked.</li>
+  <li><strong>A decision recorded in <code>RESUME.md</code></strong>. For this workshop, that decision is "understood, deferred" — there is no alert stream yet.</li>
+</ul>
+</div>
+<div class="fm" style="--fc:#4a5766"><h2>Who this is for, and what it assumes</h2>
+<p>You have a bot that already hears every message in the channels it is in and deliberately ignores almost all of them — that behaviour arrived in <a href="../lesson-07/index.html">lesson 07</a>. You know how a GitHub token is minted per channel from the channel topic (<a href="../lesson-08/index.html">lesson 08</a>) and how an MCP server was assessed before being added (<a href="../lesson-10/index.html">lesson 10</a>). You do not need an alert stream to read this page; you need one to build it.</p>
+</div>
+<div class="fm" style="--fc:#7a3d9c"><h2>Why this lesson exists</h2>
+<div class="fig"><svg viewBox="0 0 700 148" width="100%" height="auto" role="img"><title>Where lesson 19 sits: lesson 18 opened the chapter, lesson 19 changes what triggers a run, and lesson 20 changes what the run is responsible for</title><defs><marker id="arrowArc19" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSON 18</text><text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">The chapter opens</text><text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">you are the only trigger</text><path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc19)"/><rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/><text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 19 — YOU ARE HERE</text><text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">The channel is the trigger</text><text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">an alert arrives and a run</text><text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">starts with nobody asking</text><path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc19)"/><rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSON 20</text><text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">Ownership</text><text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">the run has a standing job</text></svg><p class="cap">Lesson 19 changes <em>what starts a run</em>. Lesson 20 changes <em>what a run is for</em>. They are usually built together.</p>
+</div>
+<p><strong>The gap this closes.</strong> Ray shows himself typing "Percy, investigate this" under an alert and getting a good answer — and then says the quiet part: "the problem here is I have to manually tag my agent". A first responder that needs to be summoned is not a first responder.</p>
+</div>
+<div class="fm" style="--fc:#1f4fd8"><h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span> <span class="what">Anthropic's pattern as Ray relays it, what it would cost this bot specifically, and the two abilities in it that this project's rules already refuse. ~15 min.</span></li>
+<li><a href="#part2">Part 2 · Decide</a> <span class="badge b-do">DO NOW</span> <span class="what">Four steps ending in a written decision and, if you go ahead, a scoped prompt. No code was written here.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span> <span class="what">Done checklist, departures from Ray, sources, and where the pieces would live.</span></li>
+</ol>
+</div>
+<div class="fm" style="--fc:#a32020"><h2>Before you begin</h2>
+<div class="danger"><strong>An unprompted reply loop is the one failure this bot has an emergency procedure for.</strong> <code>RESUME.md</code>: a second unprompted reply means turning off the <code>message.channels</code> subscription in Slack immediately, then fixing the guard. Everything in this lesson pushes in that direction, so nothing here ships without a test that proves the bot ignores its own posts in the allowlisted channel.</div>
+<ul>
+  <li><strong>Ray's two sources</strong>: Anthropic's post at <code>claude.com/blog/ai-ci-cd-on-call</code> and the starter kit at <code>github.com/anthropics/oncall-kit</code>.</li>
+  <li><strong>An honest answer to "what pages me today?"</strong> — if the answer is nothing, this lesson ends at a written deferral.</li>
+</ul>
+</div>
+<div class="part" id="part1" style="--pc:var(--understand)"><span class="pn">PART 1</span><h2>Understand what you're building</h2>
+  <p>Three things: the pattern itself, the parts of it that are about detection rather than response, and what it would cost this particular bot to adopt.</p>
+</div>
+<details class="sec" id="pattern" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">The pattern: the message is the trigger<span class="sec-s">What Anthropic run internally, as Ray summarises it.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Alerts already land in Slack — every hosting, error-tracking and CI service offers it, and Ray demonstrates the setup on Trigger.dev in about thirty seconds. The pattern adds one thing: the agent watches a nominated channel and runs its triage prompt on <em>every</em> message that arrives, instead of waiting to be tagged.</p>
+<div class="metaphor"><strong>A duty nurse, not a doctor you phone.</strong> Nobody decides the patient is worth a doctor's time; the patient walking in is the decision. Triage is the job, and escalation is one of its outcomes rather than its precondition.</div>
+<h3>The three parts worth stealing</h3>
+<table><thead><tr><th>Part</th><th>What it means</th></tr></thead><tbody>
+<tr><td>A written escalation rule</td><td>An <code>on-call.md</code> the agent reads: when to page a human now, when to investigate and leave a summary for the morning. The judgement is made once, in advance, not per incident</td></tr>
+<tr><td>Parallel investigation</td><td>Fan out subagents across logs, metrics and recent changes at once rather than in sequence, because the clock is running</td></tr>
+<tr><td>Provisioning a space</td><td>Anthropic's agent creates a channel for an incident, posts its report there, and invites the people whose change is implicated</td></tr>
+</tbody></table>
+<div class="win"><strong>Ray's second, less obvious point: this changes detection, not only response.</strong> "Claude doesn't just transform how you respond to incidents, it transforms how you detect them." Thresholds nobody could set correctly — is a 1% error rate bad? — can be derived from your own history and re-tuned as it moves. That is an ownership job, which is <a href="../lesson-20/index.html">lesson 20</a>.</div>
+<div class="ray"><strong>Ray's method for the whole chapter:</strong> paste the article or the video transcript to your agent and ask it what abilities it would need. His came back asking to create channels, to reply without a mention, for a webhook on channel messages, for read access to several services, and to write itself a triage skill. That list is a good starting point and a terrible finishing point — every item on it is a capability granted to everyone who can message the bot.</div></details>
+<details class="sec" id="cost-here" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">What this would cost Joestar, line by line<span class="sec-s">Four concrete obstacles, three of them specific to how this bot was built.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<h3>1 · Alerts trip both loop guards</h3>
+<p>A monitoring alert is posted by an app, in a channel, addressed to nobody. <code>classifyEvent()</code> skips it twice over: <em>"posted by a bot — never answer ourselves"</em> and <em>"channel chatter, not addressed to us"</em>. An on-call reflex needs both relaxed, and the narrow version is an allowlist: a named set of channels in which channel chatter runs, plus a named set of <em>app ids</em> whose posts are allowed to trigger — never a blanket "answer bots", which is how a bot ends up in conversation with itself.</p>
+<div class="danger"><strong>The self-reply check must survive whatever you change.</strong> Joestar posts its own findings into the same channel. If the exception is written as "allow bot messages in <code>#alerts</code>", the bot's own message qualifies. The check on its own user id stays unconditional; only other, named apps get through.</div>
+<h3>2 · The sandbox is destroyed, so nothing accumulates</h3>
+<p>Every run gets a fresh E2B machine and there is no session to resume — context comes from replaying the Slack thread as untrusted data. "The same error showed up three times today" is therefore not something the bot knows; it is something it must be able to look up, in the thread, in the memory repo from lesson 15, or in the alerting service itself.</p>
+<h3>3 · An alerts channel has no repo in its topic, so there is no token</h3>
+<p>This bot mints a GitHub token per channel, scoped to the repository named in the channel topic. An <code>#alerts</code> channel with no topic gets no token — the investigation can read Slack and think, but cannot read the code or open the fix PR. Setting the topic is the fix, and it is also the moment to notice you have just granted write access to that repo to everyone who can post in the alerts channel.</p>
+<h3>4 · Every message becomes a run, and runs cost</h3>
+<p>The acknowledgement path already makes up to four Slack calls before returning 200, inside Slack's ~3-second window, and each run boots a sandbox and a model. Turning a busy alerts channel into a trigger multiplies that by the alert volume. A filter — severity, or first occurrence only — belongs in the guard, not in the prompt, because a prompt-level filter has already paid for the run.</p></details>
+<details class="sec" id="refused" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">Two abilities on Ray's list this project's rules already refuse<span class="sec-s">Decided in advance, so they are not re-argued at the moment they seem convenient.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<div class="danger"><strong>A production monitoring MCP server — Sentry, Datadog, the hosting dashboard.</strong> <code>CLAUDE.md</code>: an MCP server is added only if handing its full capability to any workspace member would be acceptable. Production error data is not read-only public data, and being read-only does not rescue it: every member who can message the bot would get the same view. Until per-user scoping exists, the investigation reads what arrives in the alert message, or it happens by hand.</div>
+<div class="callout"><strong>Creating channels and inviting people.</strong> Anthropic's version provisions a channel per incident. That needs <code>conversations:write</code> and the ability to invite members — which means anyone who can message the bot can have channels created and people pulled into them. Not forbidden by any existing rule, but it is a real grant, and it earns its own decision rather than riding along in an "on-call abilities" pull request.</div>
+<div class="win"><strong>What survives the rules comfortably.</strong> Reading the alert text, reasoning about it, reading the repo named in the channel topic, opening a pull request with a proposed fix, and posting a summary that tags a human. That is most of the value, and it is all inside what Joestar can already do.</div></details>
+<div class="checkpoint"><b>WHAT PART 1 SETTLED</b>On-call is a guard change plus an escalation rule, not a new feature. Two of the abilities the agent would ask for are refused here before it asks.</div>
+<div class="part" id="part2" style="--pc:var(--do)"><span class="pn">PART 2</span><h2>Decide</h2>
+  <p>No code was written for this lesson in this workshop. These are the steps you run when there is an alert stream worth reacting to.</p>
+</div>
+<section class="sec" id="step-oncall" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Work out whether you have an alert stream, then scope the hole in the guard<span class="sec-s">Four steps, in order. Step 1 ends the lesson for most people, honestly.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<ol class="steps">
+<li><p><strong>List what actually alerts you today.</strong> Hosting failures, CI runs, error tracking, inbound leads, support mail. If the list is empty — as it is for this workshop, where nothing is in production — write "understood, deferred, revisit when anything is live" in <code>RESUME.md</code> and stop. That is a finished lesson.</p>
+<div class="ray"><strong>Where this departs from Ray.</strong> Ray has Sentry and Trigger.dev posting continuously, so he can skip this step. Building the reflex first and hoping for traffic means testing it with fake alerts, which tests the plumbing and none of the judgement.</div></li>
+<li><p><strong>Pick one channel and one app, not "bots".</strong> The design is an explicit allowlist of channel ids, and an explicit allowlist of the app ids whose messages may trigger a run. Write both lists down before prompting; they are the whole security story of this feature.</p></li>
+<li><p><strong>Write the escalation rule before the ability.</strong> An <code>on-call.md</code>, or a skill in the toolkit from <a href="../lesson-14/index.html">lesson 14</a>: what counts as page-a-human-now, what counts as investigate-and-report, and what counts as ignore. A bot given a trigger and no escalation rule pages you for everything, which is the situation you were trying to leave.</p></li>
+<li><p><strong>Ask for it as one narrow pull request, and review it against the checklist.</strong> Does the bot still refuse its own messages unconditionally? Is the channel list explicit rather than "any channel I am in"? Does the run still stop at a pull request rather than merging? Does anything new reach for a credential that is not in 1Password? Merge only when all four are yes.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Either <code>RESUME.md</code> records a deferral with a trigger, or a merged pull request contains an explicit channel allowlist, an explicit app allowlist, an escalation rule, and a test proving the bot ignores its own posts in the allowlisted channel.</div></section>
+<div class="part" id="part3" style="--pc:var(--ref)"><span class="pn">PART 3</span><h2>Keep for later</h2>
+  <p>The checklist, the departures, the sources, and where the pieces would live.</p>
+</div>
+<details class="sec" id="done" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Done checklist<span class="sec-s">What finishing this lesson means.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<ul class="check">
+<li>You can state the pattern in one sentence: the message arriving is the trigger.</li>
+<li>You can name the two guards in <code>classifyEvent()</code> an on-call reflex must pierce, and the narrow way to pierce them.</li>
+<li>You have decided, in writing, about a monitoring MCP server and about channel creation.</li>
+<li><code>RESUME.md</code> records the decision — built, or deferred with a trigger.</li>
+</ul></details>
+<details class="sec" id="departures" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where this workshop departs from Ray<span class="sec-s">Three differences, all of them about what a granted ability means here.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Ray</th><th>Here</th><th>Why</th></tr></thead><tbody>
+<tr><td>"Just say: add a feature where I select channels and you auto-run a prompt"</td><td>An explicit channel allowlist plus an explicit app allowlist, reviewed as its own pull request</td><td>The feature is a hole in the guard that prevents reply loops — the one failure with a standing emergency procedure</td></tr>
+<tr><td>Gives the agent read access to his monitoring services</td><td>Refused until per-user scoping exists</td><td>The <code>CLAUDE.md</code> MCP rule. Production error data handed to the bot is handed to every workspace member</td></tr>
+<tr><td>Agent creates incident channels and invites people</td><td>Not granted; needs its own decision</td><td>Same rule, different scope. Anyone messaging the bot could then create channels and pull people in</td></tr>
+<tr><td>Investigation can end in an automatic PR</td><td>Same — and still never a merge</td><td>Unchanged from <a href="../lesson-08/index.html">lesson 08</a>: the bot proposes, a human merges</td></tr>
+</tbody></table></details>
+<details class="sec" id="where-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where everything lives<span class="sec-s">Sources, and the files this would touch.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Thing</th><th>Where</th></tr></thead><tbody>
+<tr><td>Anthropic's write-up Ray is summarising</td><td><code>claude.com/blog/ai-ci-cd-on-call</code> — not read for this page; Ray's account of it is what is reported here</td></tr>
+<tr><td>Their starter kit</td><td><code>github.com/anthropics/oncall-kit</code> — likewise unread here</td></tr>
+<tr><td>The guards that would change</td><td><code>classifyEvent()</code> in <code>joestar-agent/api/slack/events.js</code></td></tr>
+<tr><td>Where an escalation rule would live</td><td>A skill in <code>joestar-agent/toolkit/skills/</code> (<a href="../lesson-14/index.html">lesson 14</a>), shipped to every sandbox</td></tr>
+<tr><td>The per-channel GitHub token</td><td>Minted from the channel topic — <a href="../lesson-08/index.html">lesson 08</a></td></tr>
+<tr><td>The emergency procedure for an unprompted reply loop</td><td><code>RESUME.md</code>, lesson 07 section</td></tr>
+<tr><td>The rule that refuses a monitoring MCP server</td><td>The project's <code>CLAUDE.md</code></td></tr>
+</tbody></table>
+<div class="callout"><strong>Unverified, and marked as such.</strong> Nothing on this page was tested against a live alert stream, and neither Anthropic source was opened while writing it. Everything attributed to Anthropic is Ray's summary of them, at one remove.</div></details>
+<footer>Lesson 19 of Ray Amjad's "Slack agents". Conceptual lesson — nothing was built here. Next: <a href="../lesson-20/index.html">lesson 20, task versus ownership delegation</a>.</footer>
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l19-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l19-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l19-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l19-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>

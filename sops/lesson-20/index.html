@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-20/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "USING YOUR AGENT" · LESSON 20</p>
+<h1>Delegate ownership, not tasks</h1>
+<p class="standfirst">Look back through your threads with the bot and one shape repeats: you notice a problem, you describe it, the bot fixes it, the thread goes quiet. Ray's point is that this makes you the trigger for every piece of work the agent ever does — so when you go on holiday, your agent goes on holiday. The alternative is to hand it a territory, a stream to watch, a standing mandate and a boundary, and stop typing.</p>
+<div class="facts">
+  <span><b>Ray's video:</b> 8 min 45 s</span>
+  <span><b>This page:</b> 25 min</span>
+  <span><b>At the end:</b> the four-part shape of an ownership prompt, and an honest answer about whether Joestar can hold one yet</span>
+</div>
+<div class="fm" style="--fc:#0b6b3a"><h2>What you'll have at the end</h2>
+<div class="fig"><svg viewBox="0 0 700 262" width="100%" height="auto" role="img"><title>Task delegation has an end state and you are the trigger; ownership delegation names a territory, an input stream, a standing mandate and a boundary, and has no end state</title><rect x="8" y="8" width="332" height="118" rx="9" fill="#ffffff" stroke="#8f98a3" stroke-width="1.5"/><text x="26" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">TASK DELEGATION</text><text x="26" y="54" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"P95 is 400 ms here, this bug causes it, fix it"</text><text x="26" y="76" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">you notice · you describe · it fixes · thread goes quiet</text><text x="26" y="100" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">has an end state — and it comes back in five weeks</text><text x="26" y="118" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">when a customer complains</text><rect x="360" y="8" width="332" height="118" rx="9" fill="#eefaf2" stroke="#0b6b3a" stroke-width="1.5"/><text x="378" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#0b6b3a">OWNERSHIP DELEGATION</text><text x="378" y="54" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"you are responsible for this P95 never</text><text x="378" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">exceeding 100 ms. Use the logs. Act."</text><text x="378" y="96" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">no end state — the stream never stops</text><text x="378" y="116" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">so neither does the responsibility</text><rect x="8" y="140" width="164" height="112" rx="9" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/><text x="24" y="162" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#1f4fd8">1 · TERRITORY</text><text x="24" y="186" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"you own the</text><text x="24" y="204" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">payments module"</text><text x="24" y="230" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a named space, not</text><text x="24" y="246" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a named task</text><rect x="180" y="140" width="164" height="112" rx="9" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/><text x="196" y="162" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#1f4fd8">2 · INPUT STREAM</text><text x="196" y="186" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"watch the payment</text><text x="196" y="204" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">errors channel"</text><text x="196" y="230" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">something that keeps</text><text x="196" y="246" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">producing events</text><rect x="352" y="140" width="164" height="112" rx="9" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/><text x="368" y="162" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#1f4fd8">3 · MANDATE</text><text x="368" y="186" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"seen twice in a day:</text><text x="368" y="204" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">reproduce, open a PR"</text><text x="368" y="230" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">what it does without</text><text x="368" y="246" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">asking again</text><rect x="524" y="140" width="168" height="112" rx="9" fill="#fff8e8" stroke="#8a5a00" stroke-width="1.5"/><text x="540" y="162" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#8a5a00">4 · BOUNDARY</text><text x="540" y="186" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"anything touching</text><text x="540" y="204" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">refunds: ask first"</text><text x="540" y="230" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">the part of the territory</text><text x="540" y="246" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">it may not act on alone</text></svg><p class="cap">Ray's worked example, taken apart. Every ownership prompt is some variation on these four parts; drop the fourth and you have delegated more than you meant to.</p>
+</div>
+<ul>
+  <li><strong>The distinction, in a form you can apply</strong> — task prompts have an end state, ownership prompts do not.</li>
+  <li><strong>The four parts of an ownership prompt</strong>, with the question to ask the agent before you write one.</li>
+  <li><strong>A clear-eyed answer about this bot</strong>: Joestar cannot hold a standing mandate today, and the two missing pieces are named.</li>
+  <li><strong>A shortlist of territories</strong> worth delegating first, chosen by how cheaply the result can be verified.</li>
+</ul>
+</div>
+<div class="fm" style="--fc:#4a5766"><h2>Who this is for, and what it assumes</h2>
+<p>You are using the bot daily and it works. You have merged pull requests it opened, it has a persona file (<a href="../lesson-13/index.html">lesson 13</a>), skills (<a href="../lesson-14/index.html">lesson 14</a>) and a memory repo (lesson 15). Nothing here needs new code to understand; it needs you to look honestly at who starts every run.</p>
+</div>
+<div class="fm" style="--fc:#7a3d9c"><h2>Why this lesson exists</h2>
+<div class="fig"><svg viewBox="0 0 700 148" width="100%" height="auto" role="img"><title>Where lesson 20 sits: lesson 19 changed what triggers a run, lesson 20 changes what a run is responsible for, and lesson 21 gives the agent a way to ask for what it lacks</title><defs><marker id="arrowArc20" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSON 19</text><text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">A channel triggers it</text><text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">but each run still ends</text><path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc20)"/><rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/><text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 20 — YOU ARE HERE</text><text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">It owns a territory</text><text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">the responsibility outlives</text><text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">any single run</text><path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc20)"/><rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSON 21</text><text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">It asks for tools</text><text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">ownership makes it need them</text></svg><p class="cap">Ray: "you tagging your agent and giving it a task is no different from you just using this as a glorified Claude Code inside of Slack."</p>
+</div>
+<p><strong>The gap this closes.</strong> Parallel task delegation feels like leverage — several threads running at once, all of them yours. It is not leverage, it is a wider attention surface. The test is simple: if you stop typing for a week, what does the agent do?</p>
+</div>
+<div class="fm" style="--fc:#1f4fd8"><h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span> <span class="what">The two mindsets, the anatomy of an ownership prompt, what to delegate first, and the two capabilities Joestar is missing. ~15 min.</span></li>
+<li><a href="#part2">Part 2 · Decide</a> <span class="badge b-do">DO NOW</span> <span class="what">Four steps: find the repeat, write the four parts, ask the agent what it needs, and set the review gate. No code was written here.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span> <span class="what">Done checklist, departures from Ray, and where a mandate would live in this repository.</span></li>
+</ol>
+</div>
+<div class="fm" style="--fc:#a32020"><h2>Before you begin</h2>
+<div class="callout"><strong>Ownership is the most expensive idea in the chapter, and this bot cannot hold one yet.</strong> A standing mandate needs something that runs without a Slack message, and somewhere the mandate survives between runs. Joestar has neither: the Vercel function only wakes on a Slack event, and its sandbox is destroyed after every run. Part 1 names what would have to exist.</div>
+<ul>
+  <li><strong>Your own thread history with the bot</strong>, which is the evidence this lesson turns on.</li>
+  <li><strong>A willingness to delegate something you would rather keep</strong>, because the territories that stay yours are the ones where the pattern pays.</li>
+</ul>
+</div>
+<div class="part" id="part1" style="--pc:var(--understand)"><span class="pn">PART 1</span><h2>Understand what you're building</h2>
+  <p>The distinction, the prompt anatomy, the choice of territory, and what this particular bot lacks.</p>
+</div>
+<details class="sec" id="two-modes" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">Task delegation and ownership delegation<span class="sec-s">The difference is whether the prompt has an end state.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>A task prompt names a defect and finishes when the defect is gone. An ownership prompt names a condition that must keep being true, attached to a stream of events that never stops arriving — so there is nothing for "done" to mean.</p>
+<div class="metaphor"><strong>Hiring a contractor versus hiring a caretaker.</strong> The contractor fixes the leak you found and leaves; the same leak in a different room is a new job you have to notice and commission. The caretaker is responsible for the building being dry, and you find out about leaks because they tell you, not because the ceiling did.</div>
+<table><thead><tr><th></th><th>Task</th><th>Ownership</th></tr></thead><tbody>
+<tr><td class="who">Trigger</td><td>You noticed something</td><td>An event arrived</td></tr>
+<tr><td class="who">Prompt names</td><td>A defect</td><td>A territory and a condition</td></tr>
+<tr><td class="who">Ends when</td><td>The fix lands</td><td>Never — the stream continues</td></tr>
+<tr><td class="who">If you go on holiday</td><td>Nothing happens</td><td>It keeps going</td></tr>
+<tr><td class="who">Failure mode</td><td>The same problem returns unnoticed</td><td>It acts on something it should have asked about</td></tr>
+</tbody></table>
+<div class="ray"><strong>Ray:</strong> "if you were to go on holiday, then your agent is doing nothing. And this is essentially the same as having an employee who's only working when you're standing right next to them."</div></details>
+<details class="sec" id="anatomy" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">The four parts of an ownership prompt, and what to put in each<span class="sec-s">Territory, input stream, standing mandate, boundary — and the question that catches what you forgot.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Ray's worked example carries all four in three sentences: <em>"You own the payments module. Watch the payment-errors channel; when the same error shows up more than twice in a day, reproduce it, open a fix PR and post a summary in this thread. Anything that touches billing amounts or refunds — propose the change first and wait for my sign-off."</em></p>
+<div class="win"><strong>The boundary is the part people drop, and it is the part that makes the rest safe.</strong> Without it you have not said what the agent may not do alone, and "use your judgement" is not a boundary — it is the absence of one.</div>
+<h3>What can be owned</h3>
+<table><thead><tr><th>Kind of territory</th><th>Example mandate</th></tr></thead><tbody>
+<tr><td>A module</td><td>You own the payments module; errors seen twice get reproduced and fixed by PR</td></tr>
+<tr><td>A quality bar</td><td>You own test coverage; when a critical path drops below 80%, add tests and open a PR</td></tr>
+<tr><td>A metric</td><td>You own homepage load time; check it daily with the browser and fix or report</td></tr>
+<tr><td>A dependency</td><td>You own the Stripe integration; when the changelog announces a breaking change, update it</td></tr>
+<tr><td>An inbox</td><td>You own bug reports arriving by email; triage each one, reproduce, fix if it is not critical code</td></tr>
+<tr><td>A relationship</td><td>You own trial signups; watch for the ones not reaching the product's first real win</td></tr>
+</tbody></table>
+<div class="win"><strong>Ray's selection rule, worth adopting as written: delegate ownership where the result is easily verifiable.</strong> Code that runs or does not, a browser check that passes or fails, a backlog of past records the agent can grade itself against. Where verification is a matter of taste, keep the boundary tight and make it report rather than act.</div>
+<div class="ray"><strong>The question Ray adds to every ownership prompt:</strong> "what do you need from me so you can appropriately take ownership over this? I will give you the required credentials or MCP servers if need be." Here that question has a different answer shape, because credentials do not get handed over on request — see the next section and <a href="../lesson-21/index.html">lesson 21</a>.</div>
+<div class="callout"><strong>Keep the mandate in a public channel.</strong> Ray's reason is that teammates can see, refine and extend the agent's remit. The version of that here: a mandate in a public channel is a mandate somebody else can read before it surprises them.</div></details>
+<details class="sec" id="joestar-gap" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">Why Joestar cannot hold a standing mandate yet<span class="sec-s">Two missing pieces — a clock, and a place for the mandate to live.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<h3>1 · Nothing wakes the bot but Slack</h3>
+<p>The whole agent is a Vercel function on a Slack event. No event, no run — and a mandate like "check the homepage daily" has no event at all. Something has to produce one: a scheduled GitHub Actions workflow or a Vercel cron posting into a channel, or the alert stream from <a href="../lesson-19/index.html">lesson 19</a>. Ray solves this with scheduled routines in his harness; here it does not exist, and building it is the real work of adopting this lesson.</p>
+<h3>2 · A prompt in a thread is not a mandate</h3>
+<p>The sandbox is destroyed after every run, and the only context a run has is the Slack thread, refetched and replayed as untrusted data. A message saying "from now on you own X" is a message in one thread that stops applying the moment the conversation moves elsewhere. A mandate has to live somewhere durable: the persona file from <a href="../lesson-13/index.html">lesson 13</a>, a skill in the toolkit, or the memory repo from lesson 15 — all of which reach every run by construction.</p>
+<div class="win"><strong>The boundary half, though, is already built.</strong> This bot proposes and a human merges: it has write access to one public sandbox repository and opens pull requests rather than pushing to <code>main</code>. Ray's "propose the change first and wait for my sign-off" is this bot's default for everything, which means the risk of over-delegation here is wasted runs rather than unreviewed changes.</div>
+<div class="callout"><strong>So the honest ordering is: a durable home for the mandate, then a clock, then a mandate.</strong> Delegating ownership to an agent that only wakes when you speak to it is task delegation with more words.</div></details>
+<div class="checkpoint"><b>WHAT PART 1 SETTLED</b>Ownership needs four things in the prompt and two things in the plumbing. Joestar has the boundary by default and neither of the other two.</div>
+<div class="part" id="part2" style="--pc:var(--do)"><span class="pn">PART 2</span><h2>Decide</h2>
+  <p>No code was written for this lesson. These are the four steps for when you have a stream and a clock.</p>
+</div>
+<section class="sec" id="step-own" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Find one repeat, and turn it into a mandate<span class="sec-s">Start from something that has already happened twice.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<ol class="steps">
+<li><p><strong>Scroll your own threads for a problem you have delegated twice.</strong> Ray's example is being rate-limited by Sentry: fixed once, certain to recur, and he only found out by accident. A repeat is the cheapest evidence that a territory exists.</p></li>
+<li><p><strong>Write the four parts out explicitly</strong> — territory, input stream, standing mandate, boundary — and read the mandate back asking "what did I just permit that I did not mean to permit?" If the answer is nothing, the boundary is probably missing rather than unnecessary.</p></li>
+<li><p><strong>Ask the agent what it needs, then treat the answer as a proposal.</strong> "What do you need to take ownership of this?" is a good question with a bad default: here, credentials are not granted on request. Every item comes back as a pull request, reviewed against the <code>CLAUDE.md</code> capability rule, with any secret going to 1Password and Vercel and never to a file.</p>
+<div class="ray"><strong>Where this departs from Ray.</strong> He offers the agent credentials and MCP servers in the prompt itself. This workshop cannot: anything the bot can reach, every workspace member can reach through it. An MCP server that fails that test does not become acceptable because the agent said it would help.</div></li>
+<li><p><strong>Put the mandate where every run reads it, and record it in <code>RESUME.md</code>.</strong> The persona file, a skill, or the memory repo — not a chat message. Then note in <code>RESUME.md</code> what the agent now owns, so the next person to read the repository learns it from the repository.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Either a mandate exists in a file every run loads, with all four parts and a line in <code>RESUME.md</code> — or <code>RESUME.md</code> records that ownership is deferred until the bot has a clock, and names what would provide one.</div></section>
+<div class="part" id="part3" style="--pc:var(--ref)"><span class="pn">PART 3</span><h2>Keep for later</h2>
+  <p>The checklist, the departures, and where a mandate lives.</p>
+</div>
+<details class="sec" id="done" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Done checklist<span class="sec-s">What finishing this lesson means.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<ul class="check">
+<li>You can tell a task prompt from an ownership prompt by whether it has an end state.</li>
+<li>You can write the four parts — territory, input stream, standing mandate, boundary — from memory.</li>
+<li>You can name the two things Joestar lacks: a clock, and a durable home for a mandate.</li>
+<li><code>RESUME.md</code> records what the bot owns, or that ownership is deferred and on what condition.</li>
+</ul></details>
+<details class="sec" id="departures" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where this workshop departs from Ray<span class="sec-s">Three differences, all downstream of how this bot is wired.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Ray</th><th>Here</th><th>Why</th></tr></thead><tbody>
+<tr><td>Gives ownership by sending a Slack message to the agent</td><td>A mandate must live in the persona, a skill, or the memory repo</td><td>The sandbox is destroyed every run; a thread message applies to one thread and nothing else</td></tr>
+<tr><td>Has scheduled routines that re-run a mandate on an interval</td><td>No scheduler exists. Something must be built before ownership means anything</td><td>The agent is a Vercel function on a Slack event. Silence is genuinely nothing happening</td></tr>
+<tr><td>Offers credentials and MCP servers to the agent on request</td><td>Every grant is a reviewed pull request against the capability rule</td><td>Everyone who can message the bot gets every tool it has</td></tr>
+<tr><td>Some mandates let the agent fix without sign-off</td><td>The bot opens a pull request; a human merges</td><td>Already the standing rule since <a href="../lesson-08/index.html">lesson 08</a>, and it makes over-delegation cheap to recover from</td></tr>
+</tbody></table></details>
+<details class="sec" id="where-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where everything lives<span class="sec-s">The four candidate homes for a mandate, and what each costs.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Thing</th><th>Where</th></tr></thead><tbody>
+<tr><td>A mandate every run reads unconditionally</td><td>The agent's persona file — <a href="../lesson-13/index.html">lesson 13</a>. Costs prompt space on every run</td></tr>
+<tr><td>A mandate loaded only when relevant</td><td>A skill in <code>joestar-agent/toolkit/skills/</code> — <a href="../lesson-14/index.html">lesson 14</a>. Needs a trigger line the model recognises</td></tr>
+<tr><td>State that must survive between runs</td><td>The memory repo <code>nojzac/joestar-memory</code>, cloned in and pushed after each run (lesson 15)</td></tr>
+<tr><td>A clock, if one gets built</td><td>A scheduled GitHub Actions workflow or Vercel cron posting into a channel. Does not exist today</td></tr>
+<tr><td>What the bot may write to</td><td><code>nojzac/joestar-sandbox</code> (public) plus the memory repo. Everything else it can read but never write</td></tr>
+<tr><td>Ray's video</td><td>"Task vs Ownership Delegation", 8 min 45 s</td></tr>
+</tbody></table></details>
+<footer>Lesson 20 of Ray Amjad's "Slack agents". Conceptual lesson — nothing was built here. Next: <a href="../lesson-21/index.html">lesson 21, feedback channels</a>.</footer>
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l20-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l20-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l20-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l20-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>
