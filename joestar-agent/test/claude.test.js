@@ -465,6 +465,42 @@ test("claude's timeout is reduced by MEMORY_BUDGET_MS only when memory is on", a
   assert.equal(offClaudeCmd.opts.timeoutMs - onClaudeCmd.opts.timeoutMs, MEMORY_BUDGET_MS);
 });
 
+test('a claude command rejection still pushes memory, and the original rejection propagates', async () => {
+  mockUploadFetch();
+  const commandCalls = [];
+  const sandbox = {
+    files: { makeDir: async () => {}, write: async () => {}, list: async () => [] },
+    commands: {
+      run: async (cmd, opts) => {
+        commandCalls.push({ cmd, opts });
+        if (cmd.includes('git clone --depth 1') && cmd.includes(MEMORY_DIR)) {
+          return { exitCode: 0, stdout: '', stderr: '' };
+        }
+        if (cmd.startsWith('claude -p')) {
+          throw new Error('claude command boom');
+        }
+        return { stdout: '', exitCode: 0 };
+      },
+    },
+    kill: async () => {},
+  };
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  try {
+    await assert.rejects(
+      runClaude({ prompt: 'hi', githubToken: 'gh-token', memoryRepo: 'nojzac/memory', channelId: 'C123' }),
+      /claude command boom/,
+    );
+  } finally {
+    Sandbox.create = origCreate;
+  }
+
+  assert.ok(
+    commandCalls.some((c) => c.cmd.includes('git push -q origin HEAD:main')),
+    'the memory push should still run after the claude command rejects',
+  );
+});
+
 test('a failing memory setup leaves the run alive and memory off', async () => {
   mockUploadFetch();
   const { sandbox, commandCalls } = makeMemorySandbox({ cloneExitCode: 1 });

@@ -161,6 +161,12 @@ export async function runClaude({
     timeoutMs,
   });
 
+  // Declared here, not with `const` inside the try below, so the `finally`
+  // block can still see them: pushMemory needs both to run after a claude
+  // command throw, and `try { const x }` does not leak `x` past the block.
+  let envs = {};
+  let memoryActive = false;
+
   try {
     // The output directory has to exist before the run, or "write your answer
     // to /tmp/outputs/x.md" is a path error the model has to recover from.
@@ -212,7 +218,7 @@ export async function runClaude({
     // this process env only when it actually opens the exa connection.
     // ELEVENLABS_API_KEY rides along the same way: the voice-notes skill's
     // script reads it from the environment.
-    const envs = {
+    envs = {
       ...(githubToken ? { GH_TOKEN: githubToken, HOME: SANDBOX_HOME, HISTFILE: '/dev/null' } : {}),
       ...(hasExaKey ? { EXA_API_KEY: process.env.EXA_API_KEY } : {}),
       ...(process.env.ELEVENLABS_API_KEY ? { ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY } : {}),
@@ -223,7 +229,7 @@ export async function runClaude({
     // call. memoryActive reflects whether setup actually succeeded, not just
     // whether it was requested — a clone failure degrades to "no memory this
     // run", same as every other enabler in this function.
-    const memoryActive = await setUpMemory(sandbox, { memoryRepo, channelId, envs });
+    memoryActive = await setUpMemory(sandbox, { memoryRepo, channelId, envs });
 
     // -p is non-interactive: no TTY, no trust dialog, no onboarding to hang on.
     // --dangerously-skip-permissions is safe only because this machine is empty
