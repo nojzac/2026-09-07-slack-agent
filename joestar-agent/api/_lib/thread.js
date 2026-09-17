@@ -1,3 +1,6 @@
+import { MAX_OUTPUT_BYTES, MAX_OUTPUT_FILES } from './claude.js';
+import { PLAYWRIGHT_VERSION } from './versions.js';
+
 // Transcript replay.
 //
 // The sandbox is destroyed at the end of every run, so there is no session to
@@ -75,6 +78,27 @@ export function renderTranscript({ messages, botUserId, skipTs }) {
 }
 
 /**
+ * What the model is told about the headless browser sitting in its own
+ * sandbox image (see e2b/template.mjs and SANDBOX_RUNTIME_ENVS in
+ * api/_lib/claude.js).
+ *
+ * Unlike GitHub, there is no credential gating this — the browser is baked
+ * into every sandbox, so unlike githubCapabilities this is never conditional.
+ * Without it, discovering Playwright is installed costs minutes out of a
+ * five-minute budget; with it, that time goes to using the thing instead.
+ */
+export function browserCapabilities() {
+  const maxOutputMiB = MAX_OUTPUT_BYTES / (1024 * 1024);
+  return [
+    `You have a headless browser in this sandbox: Playwright, pinned at ${PLAYWRIGHT_VERSION}, Chromium only — no Firefox, no WebKit.`,
+    'Chromium is already installed at /opt/ms-playwright, and PLAYWRIGHT_BROWSERS_PATH and NODE_PATH are already set in the environment — do not hunt for the browser or reinstall it.',
+    'Video is only written once the browser context is closed. Call context.close() explicitly before the run ends, or nothing is saved.',
+    `To send a file to Slack, write it into /tmp/outputs, same as any other output. Cap is ${maxOutputMiB} MiB per file, ${MAX_OUTPUT_FILES} files per run.`,
+    'Playwright dispatches events rather than moving a pointer, so recordings show no cursor. That is expected, not broken.',
+  ].join('\n');
+}
+
+/**
  * The prompt for one turn: the thread so far, then the files, then the question.
  *
  * The transcript and the file list are fenced and labelled as data. Anyone who
@@ -85,6 +109,10 @@ export function renderTranscript({ messages, botUserId, skipTs }) {
  */
 export function buildPrompt({ question, transcript, inputPaths = [], outputDir, github = null }) {
   const parts = [];
+
+  // Unconditional, unlike the github block below: the browser is a fact about
+  // the machine, baked into every sandbox image, not a per-channel credential.
+  parts.push(browserCapabilities(), '');
 
   // Before the thread, because it frames what the model can do with everything
   // that follows — and pointedly NOT inside <thread>, which is untrusted data.
