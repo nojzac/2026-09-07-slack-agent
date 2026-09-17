@@ -16,10 +16,10 @@ This machine: Node 24, git, gh, Playwright with Chromium only.
 
 Postgres 15 and Redis are installed but NOT running; start them only when a task needs them:
 
-pg_ctl -o "-k /tmp -c listen_addresses=127.0.0.1" -w start
+pg_ctl -l /home/user/pgdata/server.log -o "-k /tmp -c listen_addresses=127.0.0.1" -w start
 redis-server --daemonize yes --save "" --appendonly no --bind 127.0.0.1
 
-psql and redis-cli then work with no flags.
+psql and redis-cli then work with no flags. It takes about ten seconds; do not run it in the background.
 
 The machine is destroyed when the run ends: nothing persists except what you push or upload. Your run has about four minutes; push partial work rather than lose it.
 `;
