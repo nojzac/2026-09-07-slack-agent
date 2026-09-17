@@ -1,0 +1,86 @@
+#!/bin/sh
+# Inventory — and, only when you say so, delete — files the bot has uploaded.
+#
+#   bin/with-secrets bin/bot-files                     list everything, newest first
+#   bin/with-secrets bin/bot-files 1048576             list only files over 1 MiB
+#   bin/with-secrets bin/bot-files --delete ID [ID..]  show what those ids are
+#   bin/with-secrets bin/bot-files --delete --yes ID   actually delete them
+#
+# Human in the loop, on purpose. Output files go sandbox -> Slack directly, so
+# Slack is the only copy once the machine dies — and the value of a recording is
+# watching it, so nothing here ever deletes on a schedule, on upload, or by age.
+#
+# Three guardrails, all deliberate:
+#   - ids must be named explicitly. There is no --all, no glob, no --older-than.
+#   - without --yes it only shows you what those ids are. Look, then commit.
+#   - it deletes exactly what you named, in order, and reports each result.
+#
+# Slack's folders cannot do this job: the Web API has no folder method at all,
+# so folders are UI-only and a script cannot read them. Asking Slack for the
+# inventory covers every channel and DM, which a folder never would.
+set -eu
+
+api_list() {
+  curl -sS -G https://slack.com/api/files.list \
+    -H "Authorization: Bearer $SLACK_BOT_TOKEN" --data-urlencode "count=200"
+}
+
+if [ "${1:-}" = "--delete" ]; then
+  shift
+  confirm=no
+  if [ "${1:-}" = "--yes" ]; then confirm=yes; shift; fi
+  [ $# -gt 0 ] || { echo "bot-files: name at least one file id (see the listing)" >&2; exit 2; }
+
+  echo "Files named:"
+  api_list | FILE_IDS="$*" node -e '
+    let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+      const body = JSON.parse(s);
+      if (!body.ok) { console.error("slack said:", body.error); process.exit(1); }
+      const want = new Set(process.env.FILE_IDS.split(/\s+/).filter(Boolean));
+      const by = new Map((body.files || []).map(f => [f.id, f]));
+      for (const id of want) {
+        const f = by.get(id);
+        console.log(f
+          ? `  ${((f.size||0)/1048576).toFixed(2)} MiB  ${id}  ${f.name}`
+          : `  (not found or not ours)  ${id}`);
+      }
+    });'
+
+  if [ "$confirm" != yes ]; then
+    echo
+    echo "Nothing deleted. Re-run with --yes after --delete to go ahead."
+    exit 0
+  fi
+
+  echo
+  for id in "$@"; do
+    printf '%s: ' "$id"
+    curl -sS -X POST https://slack.com/api/files.delete \
+      -H "Authorization: Bearer $SLACK_BOT_TOKEN" -d "file=$id" |
+      node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const b=JSON.parse(s);console.log(b.ok?"deleted":"FAILED ("+b.error+")")})'
+  done
+  exit 0
+fi
+
+min=${1:-0}
+api_list | MIN="$min" node -e '
+let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+  const body = JSON.parse(s);
+  if (!body.ok) { console.error("slack said:", body.error); process.exit(1); }
+  const min = Number(process.env.MIN || 0);
+  const files = (body.files || []).filter(f => (f.size || 0) >= min)
+    .sort((a, b) => b.created - a.created);
+  let total = 0;
+  for (const f of files) {
+    total += f.size || 0;
+    const mib = ((f.size || 0) / 1048576).toFixed(2).padStart(8);
+    const when = new Date(f.created * 1000).toISOString().slice(0, 16).replace("T", " ");
+    console.log(`${mib} MiB  ${when}  ${f.id}  ${f.name}`);
+  }
+  console.log(`\n${files.length} file(s), ${(total / 1048576).toFixed(1)} MiB`);
+  if (files.length) {
+    console.log("\nNothing is ever deleted automatically. To remove specific ones:");
+    console.log("  bin/with-secrets bin/bot-files --delete <ID> [<ID>...]        # shows what they are");
+    console.log("  bin/with-secrets bin/bot-files --delete --yes <ID> [<ID>...]  # then deletes them");
+  }
+});'

@@ -375,6 +375,83 @@ This is the third instance in this project of asserting on the wrong thing,
 after `bin/preflight` passing green while blind to five Slack scopes and
 `git push … | tail -2` reporting `tail`'s exit code instead of git's.
 
+## Build-time environment variables are not run-time ones (lesson 11)
+
+E2B's `Template.setEnvs` looks like a Dockerfile `ENV`. It is not. From the
+SDK's own types (`node_modules/e2b/dist/index.d.ts:11626`):
+
+> Set environment variables. Note: Environment variables defined here are
+> available only during template build.
+
+So `PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright` put the browsers in the right
+place at build time and was **gone by the time a sandbox ran anything**. The
+image looks perfectly built. It fails the moment a browser launches:
+
+```
+browserType.launch: Executable doesn't exist at
+/home/user/.cache/ms-playwright/chromium_headless_shell-1243/...
+║     npx playwright install                                 ║
+```
+
+**The error's own advice is wrong here, and following it hides the cause.** The
+browsers *are* installed — in `/opt`. Running `npx playwright install` "fixes"
+it by downloading another 114 MB into the home cache, on a machine that is
+destroyed every message, so it works once and costs the budget forever after.
+
+`setEnvs` is the only env method on the template builder, so there is no
+build-time repair: the variables have to be set again at run time, in
+`Sandbox.create`'s `envs` (`api/_lib/claude.js`, `SANDBOX_RUNTIME_ENVS`).
+
+Verified both ways on 2026-09-17: with the runtime envs a browser launches as
+`user`, clicks, screenshots and records; the same image with the envs withheld
+reports both variables empty and exits 1 on both `require('playwright')` and
+`chromium.launch()`.
+
+## "All tests pass" measuring the wrong suite (lesson 11)
+
+PR #7 rewrote how every output file leaves the sandbox and reported "57/57
+pass". True, and worthless: **the PR touched no test file.** Those were the same
+57 tests that passed before the change, none of which executed the new path.
+
+This is the lesson-10 trap one level up. There, a test's *name* promised more
+than it checked. Here the number was simply measuring something else — and it is
+harder to catch, because a green count next to a diff reads as evidence about
+the diff.
+
+**Ask what would have gone red.** A test that passes against unchanged code is
+not testing the change. The fix on #7 was six tests, then breaking each one to
+confirm it failed; leaking the Slack token into the sandbox command turned 63/63
+into 62/1.
+
+## Moving work inside the sandbox puts it on the sandbox's clock (lesson 11)
+
+Uploading output files from inside the sandbox (rather than reading them into
+the function and uploading from there) is strictly better for memory and
+strictly worse for time. The first version created the sandbox with
+`timeoutMs: 285_000` and gave the `claude` command the same 285 s — so on a long
+run the sandbox was at its deadline exactly when the uploads started, and every
+output file would have been dropped.
+
+The old path did not have this problem: it uploaded from the function, outside
+the sandbox's life. **A long run is precisely the run worth recording**, so the
+regression hid where it hurt most.
+
+The fix is to make the split explicit — `UPLOAD_BUDGET_MS` carved out of the
+sandbox's lifetime, the run getting the remainder, each upload getting a share —
+rather than letting two things share one number.
+
+## The bot edits its placeholder, so counting messages never sees it finish (lesson 11)
+
+`bin/wait-for-reply` exists because an agent session gets no push from Slack;
+without it the only way to notice the bot answered is to sleep a guess.
+
+The first version polled until the thread's message count grew — and returned
+instantly, every time, holding a `_thinking…_` placeholder. The bot posts that
+placeholder the moment it starts and **edits it in place** when it finishes, so
+the count rises at the start of the run and never rises again. The completion
+signal is not a new message; it is the newest message no longer being a
+placeholder.
+
 ## Where the time actually went
 
 | Cause | Roughly |

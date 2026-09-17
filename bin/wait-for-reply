@@ -1,0 +1,51 @@
+#!/bin/sh
+# Block until a Slack thread gains a new reply, then print the new ones.
+#
+#   bin/with-secrets bin/wait-for-reply <channel> <thread_ts> [known_count] [max_seconds]
+#
+# Why this exists: an agent session has no push from Slack. Without it the only
+# way to notice the bot answered is to sleep a guess and poll, which is either
+# late or wasteful. This polls cheaply and returns the moment the count changes.
+#
+# Reads SLACK_BOT_TOKEN from the environment (supply it via bin/with-secrets)
+# and never prints it.
+set -eu
+
+channel=$1; ts=$2; known=${3:-0}; budget=${4:-600}
+waited=0
+
+while [ "$waited" -lt "$budget" ]; do
+  body=$(curl -sS -G https://slack.com/api/conversations.replies \
+    -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+    --data-urlencode "channel=$channel" \
+    --data-urlencode "ts=$ts" \
+    --data-urlencode "limit=100")
+
+  ok=$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const b=JSON.parse(s);console.log(b.ok?"1":"0:"+b.error)})')
+  case "$ok" in 1) ;; *) echo "wait-for-reply: slack said ${ok#0:}" >&2; exit 1 ;; esac
+
+  count=$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log((JSON.parse(s).messages||[]).length))')
+
+  # The bot posts a "_thinking…_" placeholder immediately and EDITS IT IN PLACE
+  # when the run finishes — so the message count rises the instant it starts, and
+  # never rises again. Counting alone would return a placeholder every time.
+  # The real signal is the newest message no longer being one.
+  pending=$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const m=(JSON.parse(s).messages||[]);const t=m.length?String(m[m.length-1].text||""):"";console.log(/^_thinking/.test(t)?"1":"0")})')
+
+  if [ "$count" -gt "$known" ] && [ "$pending" = "0" ]; then
+    printf '%s' "$body" | node -e '
+      let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+        const known = Number(process.argv[1]);
+        const msgs = (JSON.parse(s).messages||[]).slice(known);
+        for (const m of msgs) console.log(`--- ${m.user||m.bot_id} @ ${m.ts} ---\n${m.text}\n`);
+      });' "$known"
+    echo "wait-for-reply: $count messages (was $known) after ${waited}s"
+    exit 0
+  fi
+
+  sleep 15
+  waited=$((waited + 15))
+done
+
+echo "wait-for-reply: no new reply after ${budget}s (still $known)" >&2
+exit 2
