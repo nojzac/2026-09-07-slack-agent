@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
+import path from 'node:path';
 
 process.env.SLACK_SIGNING_SECRET = 'test-secret';
 process.env.SLACK_BOT_TOKEN = 'xoxb-test';
@@ -10,6 +12,23 @@ process.env.CLAUDE_CODE_OAUTH_TOKEN = 'oauth-test';
 
 const CLAUDE_JS_PATH = fileURLToPath(new URL('../api/_lib/claude.js', import.meta.url));
 const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex } = await import('../api/_lib/claude.js');
+const { sandboxFiles } = await import('../api/_lib/sandbox-files.js');
+
+/** A fresh toolkit dir with one skill (SKILL.md + a nested file) and one skill missing SKILL.md. */
+function makeToolkitDir() {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'toolkit-'));
+  const goodSkill = path.join(dir, 'skills', 'good-skill');
+  mkdirSync(path.join(goodSkill, 'scripts'), { recursive: true });
+  writeFileSync(path.join(goodSkill, 'SKILL.md'), '# good skill\n');
+  writeFileSync(path.join(goodSkill, 'scripts', 'run.sh'), '#!/bin/sh\necho hi\n');
+  writeFileSync(path.join(goodSkill, '.hidden'), 'should be skipped');
+
+  const badSkill = path.join(dir, 'skills', 'no-skill-md');
+  mkdirSync(badSkill, { recursive: true });
+  writeFileSync(path.join(badSkill, 'notes.txt'), 'no SKILL.md here');
+
+  return dir;
+}
 
 /** Stub Slack's files.getUploadURLExternal, the only network call collectOutputs makes directly. */
 function mockUploadFetch() {
@@ -212,4 +231,68 @@ test('SANDBOX_RUNTIME_ENVS is actually spread into Sandbox.create, not just defi
   const source = readFileSync(CLAUDE_JS_PATH, 'utf8');
   const createCall = source.slice(source.indexOf('Sandbox.create('), source.indexOf('timeoutMs,\n  });'));
   assert.match(createCall, /\.\.\.SANDBOX_RUNTIME_ENVS/);
+});
+
+// ---------------------------------------------------------------------------
+// sandboxFiles — the persona + skills payload written fresh into every sandbox
+// ---------------------------------------------------------------------------
+
+test('sandboxFiles always includes CLAUDE.md at the right path', () => {
+  const files = sandboxFiles({});
+  const claudeMd = files.find((f) => f.path === '/home/user/.claude/CLAUDE.md');
+  assert.ok(claudeMd, 'CLAUDE.md entry should be present');
+  assert.match(claudeMd.data, /^You are Joestar/);
+});
+
+test('missing toolkitDir returns only CLAUDE.md', () => {
+  const files = sandboxFiles({ toolkitDir: '/does/not/exist' });
+  assert.deepEqual(files.map((f) => f.path), ['/home/user/.claude/CLAUDE.md']);
+});
+
+test('a skill\'s files map to /home/user/.claude/skills/<name>/<relative path>, dotfiles skipped', () => {
+  const dir = makeToolkitDir();
+  try {
+    const files = sandboxFiles({ toolkitDir: dir });
+    const paths = files.map((f) => f.path);
+    assert.ok(paths.includes('/home/user/.claude/skills/good-skill/SKILL.md'));
+    assert.ok(paths.includes('/home/user/.claude/skills/good-skill/scripts/run.sh'));
+    assert.ok(!paths.some((p) => p.includes('.hidden')), 'dotfiles must be skipped');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a skill directory without SKILL.md is skipped', () => {
+  const dir = makeToolkitDir();
+  try {
+    const files = sandboxFiles({ toolkitDir: dir });
+    const paths = files.map((f) => f.path);
+    assert.ok(!paths.some((p) => p.includes('no-skill-md')), 'skill without SKILL.md must be skipped');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('over-cap payload returns CLAUDE.md only', () => {
+  const dir = makeToolkitDir();
+  try {
+    const bigSkill = path.join(dir, 'skills', 'big-skill');
+    mkdirSync(bigSkill, { recursive: true });
+    writeFileSync(path.join(bigSkill, 'SKILL.md'), '# big\n');
+    writeFileSync(path.join(bigSkill, 'blob.bin'), Buffer.alloc(3 * 1024 * 1024, 1));
+
+    const files = sandboxFiles({ toolkitDir: dir });
+    assert.deepEqual(files.map((f) => f.path), ['/home/user/.claude/CLAUDE.md']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the sandboxFiles write happens before the claude command runs', () => {
+  const source = readFileSync(CLAUDE_JS_PATH, 'utf8');
+  const writeIdx = source.indexOf('sandbox.files.write(sandboxFiles(');
+  const claudeCmdIdx = source.indexOf('sandbox.commands.run(\n      `claude -p');
+  assert.ok(writeIdx > -1, 'sandboxFiles write call should exist');
+  assert.ok(claudeCmdIdx > -1, 'claude command should exist');
+  assert.ok(writeIdx < claudeCmdIdx, 'sandboxFiles write must precede the claude command');
 });
