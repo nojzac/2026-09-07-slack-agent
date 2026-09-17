@@ -34,20 +34,15 @@ test('a present EXA_API_KEY adds exa as a remote http server', () => {
 
 // --- the value itself never lands in the config -------------------------------
 
-test('the config carries the literal placeholder, never a real key', () => {
-  const config = buildMcpConfig({ hasExaKey: true });
-  const serialized = JSON.stringify(config);
-  // Claude Code expands this from its own process env at connect time; the
-  // config file on disk must only ever hold the unexpanded string.
-  assert.match(serialized, /\$\{EXA_API_KEY\}/);
-});
-
-test('buildMcpConfig never reads process.env itself', () => {
+test('the config carries the literal placeholder, never a real key, even with a real key in env', () => {
   const saved = process.env.EXA_API_KEY;
   process.env.EXA_API_KEY = 'sk-do-not-leak-this-into-the-config';
   try {
-    const config = buildMcpConfig({ hasExaKey: false });
+    const config = buildMcpConfig({ hasExaKey: true });
     const serialized = JSON.stringify(config);
+    // Claude Code expands this from its own process env at connect time; the
+    // config file on disk must only ever hold the unexpanded string.
+    assert.match(serialized, /\$\{EXA_API_KEY\}/);
     assert.ok(
       !serialized.includes('sk-do-not-leak-this-into-the-config'),
       'the caller decides hasExaKey; the function must not go looking for the real value',
