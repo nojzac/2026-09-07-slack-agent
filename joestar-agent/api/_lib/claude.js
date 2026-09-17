@@ -238,8 +238,11 @@ export async function setUpCodex(sandbox) {
 
   try {
     JSON.parse(authJson);
-  } catch (err) {
-    console.warn('[codex] CODEX_AUTH_JSON is not valid JSON:', err.message);
+  } catch {
+    // Never log err.message here: V8's SyntaxError message embeds a slice of
+    // the input it failed to parse, so a malformed credential would put its
+    // own first characters into Vercel logs. Log a fixed string instead.
+    console.warn('[codex] CODEX_AUTH_JSON is not valid JSON');
     return;
   }
 

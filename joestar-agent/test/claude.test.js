@@ -133,6 +133,11 @@ test('CODEX_AUTH_JSON never enters the sandbox as an env var or command-string s
         'auth JSON must not appear in the envs object',
       );
     }
+    assert.doesNotMatch(
+      JSON.stringify(SANDBOX_RUNTIME_ENVS),
+      /sk-codex-super-secret-value/,
+      'auth JSON must not leak into SANDBOX_RUNTIME_ENVS, which is spread into every Sandbox.create env',
+    );
   } finally {
     if (prevEnv === undefined) delete process.env.CODEX_AUTH_JSON;
     else process.env.CODEX_AUTH_JSON = prevEnv;
@@ -157,6 +162,10 @@ test('setUpCodex writes auth.json and config.toml when set, and writes nothing w
       ['/home/user/.codex/auth.json', '/home/user/.codex/config.toml'].sort(),
     );
     assert.equal(writes.find(w => w.path === '/home/user/.codex/auth.json').data, secret);
+    assert.equal(
+      writes.find(w => w.path === '/home/user/.codex/config.toml').data,
+      'model_reasoning_effort = "high"\napproval_policy = "never"\nsandbox_mode = "danger-full-access"\n',
+    );
 
     delete process.env.CODEX_AUTH_JSON;
     const writesUnset = [];
@@ -168,6 +177,22 @@ test('setUpCodex writes auth.json and config.toml when set, and writes nothing w
     await setUpCodex(sandboxUnset);
 
     assert.equal(writesUnset.length, 0, 'nothing should be written when CODEX_AUTH_JSON is unset');
+  } finally {
+    if (prevEnv === undefined) delete process.env.CODEX_AUTH_JSON;
+    else process.env.CODEX_AUTH_JSON = prevEnv;
+  }
+});
+
+test('setUpCodex never throws, even on bad JSON with a failing sandbox', async () => {
+  const prevEnv = process.env.CODEX_AUTH_JSON;
+  process.env.CODEX_AUTH_JSON = 'not json';
+  try {
+    const sandbox = {
+      files: { write: async () => { throw new Error('sandbox is unreachable'); } },
+      commands: { run: async () => { throw new Error('sandbox is unreachable'); } },
+    };
+
+    await assert.doesNotReject(setUpCodex(sandbox));
   } finally {
     if (prevEnv === undefined) delete process.env.CODEX_AUTH_JSON;
     else process.env.CODEX_AUTH_JSON = prevEnv;

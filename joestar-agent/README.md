@@ -36,6 +36,7 @@ Files here:
 | `GITHUB_INSTALLATION_ID` | the number ending `github.com/settings/installations/…` — **not** the App ID |
 | `GITHUB_APP_PRIVATE_KEY` | the App's `.pem`, **base64-encoded, single line** — see below |
 | `EXA_API_KEY` | exa.ai dashboard → API keys. Optional — see below |
+| `CODEX_AUTH_JSON` | whole contents of a local `~/.codex/auth.json` from `codex login`. Optional — powers the Codex CLI second-opinion reviewer |
 
 ## The browser, and how files get out
 
