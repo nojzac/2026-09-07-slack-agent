@@ -115,6 +115,24 @@ export async function getThreadReplies({ token, channel, ts, limit = 20 }) {
 }
 
 // ---------------------------------------------------------------------------
+// Channel metadata
+// ---------------------------------------------------------------------------
+
+/**
+ * The channel's topic, or '' if it has none.
+ *
+ * Requires the `channels:read` scope for public channels and `groups:read` for
+ * private ones — neither is in the manifest as of this writing. Without them
+ * conversations.info answers `missing_scope` and this throws; callers should
+ * treat that as "no repo configured for this channel" rather than a hard
+ * failure, the same way a missing GitHub App is treated.
+ */
+export async function getChannelTopic({ token, channel }) {
+  const body = await callForm('conversations.info', token, { channel });
+  return body.channel?.topic?.value ?? '';
+}
+
+// ---------------------------------------------------------------------------
 // Reactions
 // ---------------------------------------------------------------------------
 

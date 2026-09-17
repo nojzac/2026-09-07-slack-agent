@@ -5,12 +5,13 @@ import {
   updateMessage,
   getBotUserId,
   getThreadReplies,
+  getChannelTopic,
   addReaction,
   downloadFile,
   uploadFile,
 } from '../_lib/slack.js';
 import { runClaude, sandboxInputPath, OUTPUT_DIR } from '../_lib/claude.js';
-import { tryMintInstallationToken } from '../_lib/github.js';
+import { tryMintInstallationToken, repoFromTopic } from '../_lib/github.js';
 import { isFromBot, renderTranscript, buildPrompt, THINKING } from '../_lib/thread.js';
 import { toMrkdwn } from '../_lib/mrkdwn.js';
 
@@ -36,9 +37,12 @@ const MAX_INPUT_BYTES = 8 * 1024 * 1024;
  * and limits, not as a plea: these are enforced by GitHub, not by good
  * behaviour.
  */
-const GITHUB_CAPABILITIES = [
+function githubCapabilities(repo) {
+  return [
   'You have GitHub access via the `gh` CLI and `git`, already authenticated.',
-  'It is scoped to the repositories the App was installed on. Other repositories are not reachable for writing.',
+  repo
+    ? `It is scoped to a single repository for this channel: ${repo}. Other repositories are not reachable, even other ones the App is installed on.`
+    : 'It is scoped to the repositories the App was installed on. Other repositories are not reachable for writing.',
   'Work by branching and opening a pull request. The default branch refuses direct pushes.',
   'Force-push and branch deletion are disabled. Do not attempt them.',
   'You cannot modify .github/workflows/ — that permission was deliberately withheld.',
@@ -54,7 +58,8 @@ const GITHUB_CAPABILITIES = [
   '- Read `README.md`, `RESUME.md` and `TRAPS.md` first if you need orientation. They are short and they are current.',
   '- Go straight to the files you need. Do not survey the repository.',
   '- If you will not finish in time, push what you have to a branch and say what is left, rather than running out mid-edit and losing everything.',
-].join('\n');
+  ].join('\n');
+}
 
 /** Strip the leading <@U123> mention so Claude gets the question, not the ping. */
 export function promptFrom(text) {
@@ -263,6 +268,23 @@ export async function POST(request) {
     try {
       const inputs = await collectInputs({ token, files: event.files });
 
+      // Every channel's topic names its repo. Read fresh each run, same as the
+      // token below — a channel's topic can change between messages, and this
+      // one HTTP call is not worth caching against a stale mapping.
+      let repo = null;
+      try {
+        const topic = await getChannelTopic({ token, channel });
+        repo = repoFromTopic(topic);
+        if (topic && !repo) {
+          console.warn('[github] channel topic set but no owner/repo found in it:', topic);
+        }
+      } catch (err) {
+        // missing_scope means channels:read/groups:read were never granted —
+        // see slack-app-manifest.yml. Treat it like "no repo configured" rather
+        // than failing the whole run.
+        console.warn('[github] could not read channel topic:', err.message);
+      }
+
       // Minted here, on every request, rather than lazily when the question
       // looks GitHub-shaped. Lazy minting means keyword-sniffing the prompt, and
       // the obvious counter-example is a thread reply reading "now open a PR for
@@ -274,7 +296,12 @@ export async function POST(request) {
       // Nothing is cached across warm invocations: "fresh per request" stays
       // literally true, and an hour-long credential is not worth reusing to save
       // 200ms.
-      const github = await tryMintInstallationToken();
+      //
+      // No repo from the topic means no GitHub access at all, even though the
+      // App may be installed on several repos — the topic is the boundary, not
+      // just a hint, so a channel with no repo in its topic gets no write access
+      // to anything.
+      const github = repo ? await tryMintInstallationToken({ repo }) : { token: null, reason: null };
 
       const prompt = buildPrompt({
         question: promptFrom(event.text) || 'The user sent this with no text. Respond to the attached file.',
@@ -284,7 +311,7 @@ export async function POST(request) {
         // Tell the model where the walls are. Without this it spends minutes
         // rediscovering them by hitting them — trying to push to main, trying to
         // force-push — and reports the refusals as failures.
-        github: github.token ? GITHUB_CAPABILITIES : null,
+        github: github.token ? githubCapabilities(repo) : null,
       });
 
       // Swappable so the tests can run the whole path without booting a real

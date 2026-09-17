@@ -10,6 +10,7 @@ import {
   signAppJwt,
   isGitHubConfigured,
   mintInstallationToken,
+  repoFromTopic,
 } from '../api/_lib/github.js';
 import { HOOK_SOURCE, HOOK_SETTINGS, gitSetupScript } from '../api/_lib/git-guard.js';
 
@@ -47,6 +48,32 @@ test('iat is backdated and exp stays inside the ten-minute ceiling', () => {
 });
 
 // --- configuration and failure -----------------------------------------------
+
+// --- channel topic -> repo ----------------------------------------------------
+
+test('repoFromTopic reads a bare owner/repo', () => {
+  assert.equal(repoFromTopic('nojzac/2026-09-07-slack-agent'), 'nojzac/2026-09-07-slack-agent');
+});
+
+test('repoFromTopic reads owner/repo inside a longer topic', () => {
+  assert.equal(repoFromTopic('🤖 bot playground — nojzac/joestar-sandbox — ask away'), 'nojzac/joestar-sandbox');
+});
+
+test('repoFromTopic reads a github.com URL', () => {
+  assert.equal(repoFromTopic('https://github.com/nojzac/joestar-sandbox'), 'nojzac/joestar-sandbox');
+  assert.equal(repoFromTopic('repo: github.com/nojzac/joestar-sandbox.git'), 'nojzac/joestar-sandbox');
+});
+
+test('repoFromTopic returns null for a topic with no repo in it', () => {
+  assert.equal(repoFromTopic('just a normal channel topic'), null);
+  assert.equal(repoFromTopic(''), null);
+  assert.equal(repoFromTopic(undefined), null);
+});
+
+test('repoFromTopic ignores ordinary prose that happens to look like owner/repo', () => {
+  assert.equal(repoFromTopic('bug fixes and/or improvements welcome here'), null);
+  assert.equal(repoFromTopic('support runs 24/7, ping oncall'), null);
+});
 
 test('a GitHub App that is not configured is off, not broken', () => {
   const saved = { ...process.env };
@@ -106,6 +133,47 @@ test('a minted token is returned but never logged', async () => {
   });
   assert.equal(token, 'ghs_x');
   assert.equal(expiresAt, 'soon');
+});
+
+test('a repo whose owner does not match the installation is refused, not silently rescoped', async () => {
+  process.env.GITHUB_APP_ID = '1';
+  process.env.GITHUB_INSTALLATION_ID = '2';
+  process.env.GITHUB_APP_PRIVATE_KEY = Buffer.from(privateKey).toString('base64');
+
+  let tokenCallMade = false;
+  await assert.rejects(
+    () =>
+      mintInstallationToken({
+        repo: 'someone-else/joestar-sandbox',
+        fetchImpl: async url => {
+          if (url.endsWith('/app/installations/2')) {
+            return { ok: true, json: async () => ({ account: { login: 'nojzac' } }) };
+          }
+          tokenCallMade = true;
+          return { ok: true, status: 201, json: async () => ({ token: 'ghs_x', expires_at: 'soon' }) };
+        },
+      }),
+    /nojzac/,
+  );
+  assert.equal(tokenCallMade, false, 'must not mint a token once the owner check fails');
+});
+
+test('a repo whose owner matches the installation mints scoped to just the repo name', async () => {
+  process.env.GITHUB_APP_ID = '1';
+  process.env.GITHUB_INSTALLATION_ID = '2';
+  process.env.GITHUB_APP_PRIVATE_KEY = Buffer.from(privateKey).toString('base64');
+
+  const { token } = await mintInstallationToken({
+    repo: 'nojzac/joestar-sandbox',
+    fetchImpl: async (url, opts) => {
+      if (url.endsWith('/app/installations/2')) {
+        return { ok: true, json: async () => ({ account: { login: 'nojzac' } }) };
+      }
+      assert.deepEqual(JSON.parse(opts.body), { repositories: ['joestar-sandbox'] });
+      return { ok: true, status: 201, json: async () => ({ token: 'ghs_x', expires_at: 'soon' }) };
+    },
+  });
+  assert.equal(token, 'ghs_x');
 });
 
 // --- the push guard ----------------------------------------------------------

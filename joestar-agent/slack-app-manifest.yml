@@ -26,6 +26,14 @@ oauth_config:
       # Public and private channels need separate scopes.
       - channels:history
       - groups:history
+      # Read the channel topic, to learn which GitHub repo a channel maps to.
+      # Public and private channels need separate scopes here too. NOT YET
+      # GRANTED as of this change — adding these lines to the manifest does
+      # nothing on their own; the app has to be reinstalled to the workspace
+      # for them to take effect, which mints a new bot token (see the warning
+      # at the top of this file and sops/lesson-07/index.html, steps 3-4).
+      - channels:read
+      - groups:read
       # Download attachments via url_private, and upload files back.
       - files:read
       - files:write
