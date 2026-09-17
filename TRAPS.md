@@ -323,6 +323,58 @@ credential for the same store is also reachable. Check what the shell can
 actually see, rather than what it was configured to see — and have the agent
 run that check from *its own* shell, since that is the one in question.
 
+## "Invalid API key" names three different faults (lesson 10)
+
+Exa returns HTTP 401 `{"error":"Invalid API key","tag":"INVALID_API_KEY"}` for
+**no key, a wrong key, and an account over its monthly quota** — byte-identical
+in all three cases, on the REST API and through every MCP auth form tested
+(`x-api-key` header, `Authorization: Bearer`, `?exaApiKey=` query parameter).
+
+Confirmed the hard way on 2026-09-17: this workshop hit Exa's monthly limit
+mid-lesson. A key that was minutes old and correctly stored produced exactly the
+error text a mis-paste produces.
+
+**So when a search fails, do not start by re-copying the key.** Check in this
+order: did anything deploy after the variable was set; does the dashboard show
+quota remaining; only then the value. Ray re-copies the key at this point in his
+video and it starts working — equally consistent with a redeploy having landed in
+between.
+
+## A connected MCP server proves nothing about its credential (lesson 10)
+
+Exa's MCP server does not authenticate until `tools/call`. Verified live: a
+deliberately bogus key **and the literal unexpanded string `${EXA_API_KEY}`**
+both completed `initialize` and `tools/list` with HTTP 200 and the full tool
+list. A green connection status is compatible with having no key at all.
+
+This matters because Claude Code, by design, loads an MCP config whose
+environment variable is unset — it warns and passes the literal `${VAR}` text
+through as the header value. Missing therefore looks exactly like connected.
+
+**The fix is structural, not vigilance: keep one keyless server configured.**
+`deepwiki` needs no credential, so if it works the config file, the
+`--mcp-config` path, the strict flag and the tool-calling loop are all proven,
+and any remaining fault is the credential. One server gives four suspects; two
+give one. It is a debugging instrument, not padding — do not remove it once Exa
+works.
+
+## A test named as a guard that is not guarding (lesson 10)
+
+The bot's first `test/mcp.test.js` contained `buildMcpConfig never reads
+process.env itself`, which called the builder with `hasExaKey: false` — so the
+branch that could leak never executed. With a real key leaking into the config
+it still passed. A sibling test did catch the leak, so it was decorative rather
+than a hole, but the name promised a guarantee it did not provide.
+
+**Check a security test by breaking the thing it guards.** Mutate the source,
+run the test, require it to fail. And watch the mutation land: the first attempt
+here silently failed to match, so the source was never changed and the suite
+"passed" — indistinguishable from a working guard.
+
+This is the third instance in this project of asserting on the wrong thing,
+after `bin/preflight` passing green while blind to five Slack scopes and
+`git push … | tail -2` reporting `tail`'s exit code instead of git's.
+
 ## Where the time actually went
 
 | Cause | Roughly |

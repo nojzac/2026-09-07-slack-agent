@@ -13,6 +13,12 @@ The code for Noj's own Claude-in-Slack agent, built by following Ray Amjad's
 - **No push to any remote without Noj's explicit go.**
 - Lesson pages are made here, in `sops/lesson-NN/`; course inputs stay in
   `course/`.
+- **MCP servers are added only if handing their full capability to any workspace
+  member would be acceptable.** Read-only public data qualifies. Production
+  databases, payment dashboards and anything with customer data do not, and do
+  not become acceptable by being read-only — until per-user or per-channel
+  scoping exists, there is no such thing as "the bot can see it but people
+  cannot". Everyone who can message the bot gets every tool it has.
 
 ## Read first, then act
 - BEFORE running any `op` command, handling a credential, or wondering where a

@@ -237,6 +237,40 @@ function. This was the lesson-05 "known unknown"; it does not truncate, it fails
 outright. Moving the work out is a deliberate architectural decision, not
 another constant to bump.
 
+## Lesson 10, as built
+
+Joestar has tools. Two MCP servers are written into every sandbox at run time and
+passed with `--mcp-config --strict-mcp-config`. Verified live in `#joestar-dev`
+on 2026-09-17: it called DeepWiki and quoted back real documentation.
+
+- **Shipped by the bot itself** as PR #4, reviewed in-thread, one fix taken.
+  `api/_lib/mcp.js` builds the config; `deepwiki` always, `exa` only when
+  `EXA_API_KEY` is set. 55 tests pass.
+- **The key never touches a file or a command line.** The config holds the
+  literal `${EXA_API_KEY}`; Claude Code expands it from the process environment
+  at connect time. The value rides in the per-command `envs` beside `GH_TOKEN` —
+  never at `Sandbox.create`, never in the E2B template.
+- **`--strict-mcp-config` is not optional here.** Without it, a repository the
+  bot clones can add tools via its own `.mcp.json` — the checkout would be
+  choosing the agent's capabilities.
+- **Remote HTTP, not `npx` stdio.** Most vendor docs show stdio first. A fresh
+  sandbox every message means stdio pays an npm install every run, out of the
+  five-minute budget.
+- **DeepWiki is a debugging instrument, not padding.** Keyless, so its success
+  rules out every config-side fault at once. Keep it.
+- **The rule, now in `CLAUDE.md`:** a server is addable only if handing its full
+  capability to any workspace member would be acceptable. Ray connects his
+  production application databases at this point in the video; this workshop
+  deliberately does not.
+
+Three findings in TRAPS.md, all from testing rather than the video: "invalid API
+key" names three different faults; a connected MCP server proves nothing about
+its credential; and a test named as a guard that was not guarding.
+
+**Exa is configured and currently out of quota.** The account hit its monthly
+limit mid-lesson, so `web_search_exa` returns 401. Nothing to fix — the code path
+is identical and it starts working when the limit resets.
+
 ## Known and unfixed
 
 - **Bolded URLs come out broken.** `toMrkdwn` turns `**https://…**` into
@@ -277,9 +311,11 @@ another constant to bump.
   key that lives in both places too, so the cost grows.
 ## Next step
 
-Lesson 09, "Dogfooding" — transcript at
-`course/transcripts/09-0-to-1--dogfooding.md`. Build `sops/lesson-09/index.html`
+Lesson 11, "Playwright" — transcript at
+`course/transcripts/11-0-to-1--playwright.md`. Build `sops/lesson-11/index.html`
 from it following `docs/lessons.md`, show it, get a yes, then do the lesson.
+Ray's framing: once the bot makes a change in the cloud it records the change and
+sends the recording back through Slack.
 
 **Settled 2026-09-16: stay on the GitHub free plan until the end of the course.**
 Not an open question — don't re-raise it each lesson. What follows from it, and
@@ -291,12 +327,13 @@ must be respected for the rest of the course:
 - **No private repo gets `contents: write`.** On the free plan a private repo's
   branch protection does not enforce, and does not say so — so "private" here
   means "unprotected", which is the opposite of how it reads.
-- If a lesson wants the bot writing to a real private repo (lesson 09,
-  dogfooding, is the likely one), the choice at that point is: use the public
-  sandbox instead, do the work by hand, or revisit the plan. Do not quietly
-  install the App on a private repo.
+- If a lesson wants the bot writing to a real private repo, the choice at that
+  point is: use the public sandbox instead, do the work by hand, or revisit the
+  plan. Do not quietly install the App on a private repo. (Lesson 09 was the
+  likely one and did not need it — it wrote to this repo, which is public for
+  the duration of the course.)
 
-Thirteen lessons remain: 09–17 finish the "0 to 1" chapter, and 18–21 are the
+Eleven lessons remain: 11–17 finish the "0 to 1" chapter, and 18–21 are the
 "Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
 page rather than the full treatment.
 
