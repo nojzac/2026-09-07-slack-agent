@@ -67,6 +67,12 @@ export const template = Template()
   .runCmd('chmod -R a+rX /opt/ms-playwright', { user: 'root' })
   // Lesson 12: a throwaway local Postgres and Redis, installed but NOT started.
   .aptInstall([`postgresql-${POSTGRES_MAJOR}`, 'redis-server'])
+  // The postgresql-<v> postinst runs pg_createcluster and leaves cluster
+  // <v>/main running on port 5432 under /var/lib/postgresql. If it's still up
+  // when the build reaches the initdb/pg_ctl step below, that step can't bind
+  // 5432 and the build fails. Drop it now — also removes a second, unused data
+  // directory from the image.
+  .runCmd(`pg_dropcluster --stop ${POSTGRES_MAJOR} main || true`, { user: 'root' })
   // Debian hides the server binaries in /usr/lib/postgresql/<v>/bin and wraps only
   // the client tools. Symlink the three the run needs so `pg_ctl` works as `user`.
   .runCmd(
