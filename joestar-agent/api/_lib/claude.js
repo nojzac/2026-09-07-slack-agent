@@ -184,9 +184,12 @@ export async function runClaude({
     // command, never to Sandbox.create and never baked into the template.
     // Claude Code expands the "${EXA_API_KEY}" placeholder in mcp.json from
     // this process env only when it actually opens the exa connection.
+    // ELEVENLABS_API_KEY rides along the same way: the voice-notes skill's
+    // script reads it from the environment.
     const envs = {
       ...(githubToken ? { GH_TOKEN: githubToken, HOME: SANDBOX_HOME, HISTFILE: '/dev/null' } : {}),
       ...(hasExaKey ? { EXA_API_KEY: process.env.EXA_API_KEY } : {}),
+      ...(process.env.ELEVENLABS_API_KEY ? { ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY } : {}),
     };
 
     // -p is non-interactive: no TTY, no trust dialog, no onboarding to hang on.

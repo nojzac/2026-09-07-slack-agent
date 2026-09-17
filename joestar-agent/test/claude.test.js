@@ -235,6 +235,93 @@ test('SANDBOX_RUNTIME_ENVS is actually spread into Sandbox.create, not just defi
 });
 
 // ---------------------------------------------------------------------------
+// ELEVENLABS_API_KEY — per-command envs on the claude command only, same as
+// EXA_API_KEY: never at Sandbox.create, never in SANDBOX_RUNTIME_ENVS.
+// ---------------------------------------------------------------------------
+
+function makeRunClaudeSandbox(commandCalls) {
+  return {
+    files: { makeDir: async () => {}, write: async () => {}, list: async () => [] },
+    commands: {
+      run: async (cmd, opts) => {
+        commandCalls.push({ cmd, opts });
+        return { stdout: JSON.stringify({ result: 'ok' }), exitCode: 0 };
+      },
+    },
+    kill: async () => {},
+  };
+}
+
+test('ELEVENLABS_API_KEY set: present in the claude command envs and nowhere else', async () => {
+  const prevEnv = process.env.ELEVENLABS_API_KEY;
+  process.env.ELEVENLABS_API_KEY = 'el-secret-key';
+  try {
+    const commandCalls = [];
+    const sandbox = makeRunClaudeSandbox(commandCalls);
+    let createEnvs;
+    const origCreate = Sandbox.create;
+    Sandbox.create = async (_template, opts) => { createEnvs = opts?.envs; return sandbox; };
+    try {
+      await runClaude({ prompt: 'hi' });
+    } finally {
+      Sandbox.create = origCreate;
+    }
+
+    assert.ok(
+      !('ELEVENLABS_API_KEY' in (createEnvs ?? {})),
+      'must not be passed to Sandbox.create',
+    );
+    assert.ok(
+      !('ELEVENLABS_API_KEY' in SANDBOX_RUNTIME_ENVS),
+      'must not be baked into SANDBOX_RUNTIME_ENVS',
+    );
+
+    const claudeCmd = commandCalls.find((c) => c.cmd.startsWith('claude -p'));
+    assert.ok(claudeCmd, 'the claude command should have run');
+    assert.equal(claudeCmd.opts?.envs?.ELEVENLABS_API_KEY, 'el-secret-key');
+    assert.doesNotMatch(
+      claudeCmd.cmd,
+      /el-secret-key/,
+      'must not be interpolated into the command string',
+    );
+
+    for (const { opts } of commandCalls) {
+      if (opts === claudeCmd.opts) continue;
+      assert.ok(
+        !('ELEVENLABS_API_KEY' in (opts?.envs ?? {})),
+        'must not appear in any other command\'s envs',
+      );
+    }
+  } finally {
+    if (prevEnv === undefined) delete process.env.ELEVENLABS_API_KEY;
+    else process.env.ELEVENLABS_API_KEY = prevEnv;
+  }
+});
+
+test('ELEVENLABS_API_KEY unset: absent from the claude command envs', async () => {
+  const prevEnv = process.env.ELEVENLABS_API_KEY;
+  delete process.env.ELEVENLABS_API_KEY;
+  try {
+    const commandCalls = [];
+    const sandbox = makeRunClaudeSandbox(commandCalls);
+    const origCreate = Sandbox.create;
+    Sandbox.create = async () => sandbox;
+    try {
+      await runClaude({ prompt: 'hi' });
+    } finally {
+      Sandbox.create = origCreate;
+    }
+
+    const claudeCmd = commandCalls.find((c) => c.cmd.startsWith('claude -p'));
+    assert.ok(claudeCmd, 'the claude command should have run');
+    assert.ok(!('ELEVENLABS_API_KEY' in (claudeCmd.opts?.envs ?? {})));
+  } finally {
+    if (prevEnv === undefined) delete process.env.ELEVENLABS_API_KEY;
+    else process.env.ELEVENLABS_API_KEY = prevEnv;
+  }
+});
+
+// ---------------------------------------------------------------------------
 // sandboxFiles — the persona + skills payload written fresh into every sandbox
 // ---------------------------------------------------------------------------
 
