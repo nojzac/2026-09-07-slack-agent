@@ -53,6 +53,9 @@ did you put in backticks earlier?" — not a question the model could bluff.
   which is a Slack-side problem — bot not in the channel, message not actually
   tagging it, event subscription off, or the saved URL pointing at an old
   deployment. Report which link broke; fix, redeploy, re-test.
+- **Where the logs are:** the Vercel dashboard, Project → Logs. There is no
+  `vercel` CLI on this machine and no Vercel token in `.env.op`, so the function
+  logs — `[claude]`, `[memory]` and the rest — are read in the browser, by hand.
 
 ## Two things to know
 It posts **as Noj**, not as the bot — the connector acts with his Slack account,

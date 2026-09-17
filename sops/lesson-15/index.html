@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-15/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 15</p>
+<h1>Give the bot a memory that outlives its sandbox</h1>
+<p class="standfirst">Claude Code already has a memory feature. It writes notes, keeps an index, and curates the pile when it grows — and all of it lands on the machine the session ran on. That is fine for Ray, whose sandbox pauses and resumes. Here the machine is destroyed the moment the answer is posted, so the whole lesson is one question: where do the notes live between messages? The answer is a private git repository, cloned before <code>claude</code> starts and pushed after it finishes, whether or not the run worked.</p>
+<div class="facts">
+  <span><b>Ray's video:</b> 3 min 55 s</span>
+  <span><b>This page:</b> 60–90 min</span>
+  <span><b>At the end:</b> a bot that remembers, per channel, across sandboxes</span>
+</div>
+<div class="fm" style="--fc:#0b6b3a"><h2>What you'll have at the end</h2>
+<div class="fig"><svg viewBox="0 0 700 300" width="100%" height="auto" role="img"><title>Each message clones the private memory repository into the sandbox, points Claude Code auto-memory at this channel's directory, runs claude, then commits and pushes before the sandbox is destroyed</title><defs><marker id="arrow15a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="14" width="150" height="70" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/><text x="24" y="36" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#4a154b">SLACK</text><text x="24" y="57" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">"remember that we</text><text x="24" y="74" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">deploy on Fridays"</text><path d="M164,49 L206,49" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow15a)"/><rect x="212" y="8" width="330" height="214" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/><text x="228" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX (per message, then destroyed)</text><rect x="228" y="40" width="298" height="42" rx="7" fill="#eef4fb" stroke="#1a6ce7" stroke-width="1.5"/><text x="242" y="59" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#1a6ce7">1 · setUpMemory — shallow clone, 8 s cap</text><text x="242" y="75" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">/home/user/memory + settings.json</text><rect x="228" y="90" width="298" height="56" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/><text x="242" y="109" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">2 · claude -p — auto-memory reads and writes</text><text x="242" y="126" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">channels/C0C2FES3UGJ/MEMORY.md + topic files</text><text x="242" y="141" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">the harness decides what is worth keeping</text><rect x="228" y="154" width="298" height="56" rx="7" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/><text x="242" y="173" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">3 · pushMemory — in finally, 12 s cap</text><text x="242" y="190" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">git add -A · commit · push</text><text x="242" y="205" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">runs even when the claude command threw</text><path d="M548,120 L590,120" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow15a)"/><rect x="548" y="82" width="144" height="76" rx="9" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/><text x="564" y="104" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#24292f">GITHUB · PRIVATE</text><text x="564" y="125" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">nojzac/</text><text x="564" y="142" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">joestar-memory</text><rect x="8" y="238" width="684" height="54" rx="9" fill="#f4f6f8" stroke="#8f98a3" stroke-width="1.5"/><text x="26" y="257" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">The repository is the durable half. The sandbox is not.</text><text x="26" y="273" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Nothing written inside the box survives the reply — so a turn that does not push has forgotten everything it learned.</text><text x="26" y="288" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">That is why the push sits in a finally block, not after a successful answer.</text></svg><p class="cap">Three sandbox commands per message, two of them new in this lesson, and one private repository holding everything the bot has been told to keep.</p>
+</div>
+<ul>  <li><strong>A private repository</strong>, <code>nojzac/joestar-memory</code>, with one directory per Slack channel and a <code>shared/</code> beside them.</li>
+  <li><strong>Claude Code's own auto-memory</strong> pointed at that directory through <code>~/.claude/settings.json</code> — no recall endpoint, no embeddings, no database.</li>
+  <li><strong>A 25-second budget</strong> carved out of the <code>claude</code> command's time, only on runs that actually use memory.</li>
+  <li><strong>Token minting that takes a list</strong> — topic repo plus memory repo — with every entry owner-checked before any network call.</li>
+  <li><strong>One recorded exception</strong> to "no private repository gets App write access", taken deliberately on 2026-09-17.</li>
+  <li><strong><code>AGENT_MEMORY_REPO</code> in Vercel</strong> as the kill switch: unset it, redeploy, memory is off.</li></ul>
+</div>
+<div class="fm" style="--fc:#4a5766"><h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 14, so the bot has a persona and a toolkit of skills that ship into every sandbox. You have a GitHub App from lesson 08 that mints an hour-long installation token per run, and you know from lesson 09 that <code>main</code> is protected and the bot opens pull requests rather than pushing. You can set a Vercel production environment variable and trigger a deploy. Nothing new is installed: this lesson adds no binary to the E2B image, so there is no template rebuild in it.</p>
+</div>
+<div class="fm" style="--fc:#7a3d9c"><h2>Why this lesson exists</h2>
+<div class="fig"><svg viewBox="0 0 700 148" width="100%" height="auto" role="img"><title>Where lesson 15 sits: lessons 13 and 14 gave the bot standing instructions, lesson 15 lets it write its own, and lessons 16 and 17 add new capabilities</title><defs><marker id="arrowArc15" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 13–14</text><text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">You wrote its habits</text><text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">CLAUDE.md, skills</text><path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc15)"/><rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/><text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 15 — YOU ARE HERE</text><text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">It writes its own</text><text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">per channel, into a private</text><text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">git repository you can read</text><path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc15)"/><rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 16–17</text><text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">New capabilities</text><text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Codex, voice notes</text></svg><p class="cap">A persona is what you told it once. Memory is what it worked out since — which is why memory, not the persona file, is the thing you have to be able to audit and revert.</p>
+</div>
+<p><strong>The gap this closes.</strong> Up to here the bot starts every message with total amnesia. Correct it and the correction lasts until the reply is posted. A channel that has explained its deploy process forty times has been explaining it to forty different machines. This lesson is the first one where something the bot learns on Tuesday is still true on Wednesday.</p>
+</div>
+<div class="fm" style="--fc:#1f4fd8"><h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span> <span class="what">Why the sandbox cannot hold memory here even though it can for Ray; what auto-memory already does for you; where the 25 seconds come from; why the push is in a <code>finally</code>; and the access decision a private memory repository forces. ~25 min.</span></li>
+<li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span> <span class="what">Six steps, three of them done by hand in a browser: create the repository, install the App on it, ask for the runtime, widen token minting, set the environment variable, then test it live. 60–90 min.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span> <span class="what">The code walk, every log line and what it means, the one gap left open, what is verified and what is not, the traps this lesson produced, and where everything lives.</span></li>
+</ol>
+</div>
+<div class="fm" style="--fc:#a32020"><h2>Before you begin</h2>
+<div class="danger"><strong>This lesson breaks a rule you wrote in lesson 09, on purpose, and you need to agree to it first.</strong> The standing rule is <em>no private repository gets <code>contents: write</code> from the App</em>, because on GitHub's free plan a private repository's branch protection does not enforce and does not say so. The memory store has to be private and the bot has to write to it, so the rule cannot hold. It was taken as a <strong>recorded exception on 2026-09-17</strong>, not a revision: this one repository holds only the bot's own notes, and the bot writing its <code>main</code> is the design rather than a risk. Everything else still obeys the rule. If you are not willing to record that exception, stop here — there is no version of this feature without it.</div>
+<ul>  <li><strong>A GitHub account that can create a private repository</strong> and change which repositories your App is installed on.</li>
+  <li><strong>The Vercel project</strong>, so you can add a production environment variable and redeploy.</li>
+  <li><strong>A test channel</strong> whose channel ID you can copy — right-click the channel, Copy link, and the ID is in the URL.</li>
+  <li><strong>The knowledge that the premise is unverified.</strong> That Claude Code honours auto-memory at all in <code>-p</code> (headless) mode is the assumption this whole feature rests on, and step 6 is where you find out.</li></ul>
+</div>
+<div class="part" id="part1" style="--pc:var(--understand)"><span class="pn">PART 1</span><h2>Understand what you're building</h2>
+  <p>Five things: why Ray's answer does not transfer, what the harness already does so you don't build it, where the time comes from, why the push sits where it does, and the access question a private store forces you to settle.</p>
+</div>
+<details class="sec" id="durable" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">Why memory cannot live on the sandbox here<span class="sec-s">Ray's sandbox pauses and wakes up again. Ours is destroyed after every single message.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Ray's design and this one start from the same place — Claude Code's auto-memory writes markdown files to a directory — and diverge on one fact about the machine underneath.</p>
+<table><thead><tr><th>Ray's runtime</th><th>This runtime</th></tr></thead><tbody>
+<tr><td>The sandbox pauses between turns and resumes with its disk intact</td><td><code>runClaude</code> calls <code>sandbox.kill()</code> in a <code>finally</code> block on every path. There is no next turn on this machine</td></tr>
+<tr><td>So he writes memory under <code>$HOME</code> — <em>not</em> <code>/tmp</code> — and it is still there next time</td><td>Under <code>$HOME</code> or <code>/tmp</code> makes no difference; both are gone</td></tr>
+<tr><td>Git is a backup: the durable copy for when a box is finally recycled</td><td>Git is the storage. The clone is a working copy that exists for about two minutes</td></tr>
+<tr><td>A pull before the process starts, a push after it ends, bounded at about 40 s</td><td>The same two operations, bounded at 25 s — because they are not a background sync, they are on the critical path of a reply somebody is watching</td></tr>
+</tbody></table>
+<div class="metaphor"><strong>A hotel room versus a locker.</strong> Ray checks into a room and leaves his things there overnight. This bot is issued a fresh room every time it walks in, so anything it wants tomorrow has to go back into the locker on the way out — and the walk to the locker has to fit inside the visit.</div>
+<div class="win"><strong>The upside of being forced into git.</strong> Because the store is a repository rather than a disk, every memory the bot writes is a commit: diffable, attributable, revertable. A memory that turns out to be wrong — or planted — is <code>git revert</code>, not an archaeology exercise. Ray makes the same point about his backup; here it is the only mode.</div></details>
+<details class="sec" id="auto-memory" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">Auto-memory is a feature you configure, not one you build<span class="sec-s">Two settings keys, one directory, and a deliberate refusal to write a recall step.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Claude Code already loads a <code>MEMORY.md</code> index at session start, decides during the session what is worth keeping, writes topic files beside the index, and curates them when they grow. Ray's prompt is emphatic that this is the whole point: <em>"Our job is only the git plumbing and one settings file."</em></p>
+<pre><code>{
+  "hooks": { <span class="c">/* … whatever configureGitHub already wrote … */</span> },
+  "autoMemoryEnabled": true,
+  "autoMemoryDirectory": "/home/user/memory/channels/C0C2FES3UGJ"
+}</code></pre>
+<p>That file is written at <strong>user scope</strong> — <code>/home/user/.claude/settings.json</code> — and it is merged, never replaced. <code>mergeSettings</code> exists as its own exported function for exactly that reason: the hooks block from lesson 08's push guard has to survive, and a shallow spread that can be unit-tested without booting a sandbox is cheaper than discovering in production that memory silently disabled the guard.</p>
+<h3>The directory is keyed by channel ID, never channel name</h3>
+<p>The path is <code>channels/&lt;channel id&gt;/</code>, using Slack's internal ID — <code>C0C2FES3UGJ</code>, not <code>#joestar-dev</code>. Names get renamed; IDs do not. <code>events.js</code> refuses anything that is not <code>^[A-Z0-9]+$</code> rather than sanitising it, so a strange channel value turns memory off for that run instead of writing into a path nobody intended.</p>
+<div class="danger"><strong>Why "do not build a recall step" is the strongest instruction in Ray's prompt.</strong> Every obvious alternative — a memory skill, an embedding store, a database, "load the memories into the prompt" — is more code producing a worse copy of something the harness does for free, and each one has to be maintained against a harness that keeps improving underneath it. The temptation is real because the git plumbing feels too small to be the answer. It is the answer.</div>
+<h3>What the model is told, and only when memory actually came up</h3>
+<p><code>memoryBriefing</code> appends four lines to the prompt — where memory lives, which directory is this channel's, that <code>shared/</code> applies everywhere, and that anything it is asked to remember gets written as a markdown note that is pushed after the run. It is appended by <code>runClaude</code> rather than folded into <code>buildPrompt</code>, because <code>runClaude</code> is the only thing that knows whether the clone succeeded this time.</p>
+<div class="ray"><strong>Where this departs from Ray.</strong> His prompt asks for a fuller disposition in <code>--append-system-prompt</code> — what is durable versus transient, the idioms <em>"remember for this channel: …"</em> and <em>"what do you remember about this channel?"</em>, and recording corrections after being corrected. Ours is four plain lines in the prompt. His two-tier read/write rules for public versus private channels are also not built: <code>shared/</code> exists as a directory and is mentioned in the briefing, but nothing enforces who may write to it.</div></details>
+<details class="sec" id="budget" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">Where the 25 seconds come from<span class="sec-s">Memory runs inside the same 285-second sandbox as everything else, so its time is taken from the model's.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>The sandbox gets the full <code>timeoutMs</code>. The <code>claude</code> command deliberately gets less, so it cannot run the machine out of clock before the work that has to happen after it:</p>
+<pre><code>const runTimeoutMs = Math.max(
+  timeoutMs - UPLOAD_BUDGET_MS - (memoryRequested ? MEMORY_BUDGET_MS : 0),
+  0,
+);</code></pre>
+<table><thead><tr><th>Constant</th><th>Value</th><th>What it pays for</th></tr></thead><tbody>
+<tr><td><code>timeoutMs</code></td><td>285 000 ms</td><td>The sandbox's whole life, near the 300 s function ceiling</td></tr>
+<tr><td><code>UPLOAD_BUDGET_MS</code></td><td>30 000 ms</td><td>Streaming output files to Slack — from lesson 11</td></tr>
+<tr><td><code>MEMORY_BUDGET_MS</code></td><td>25 000 ms</td><td>Both memory commands, and only when memory is requested</td></tr>
+<tr><td><code>MEMORY_SETUP_TIMEOUT_MS</code></td><td>8 000 ms</td><td>Shallow clone, branch check, <code>mkdir -p</code></td></tr>
+<tr><td><code>MEMORY_PUSH_TIMEOUT_MS</code></td><td>12 000 ms</td><td><code>add</code>, <code>commit</code>, <code>push</code></td></tr>
+</tbody></table>
+<div class="win"><strong>The arithmetic is checked at module load, not in a comment.</strong> <code>claude.js</code> throws at import time if <code>8 000 + 12 000 + 5 000</code> margin ever exceeds <code>MEMORY_BUDGET_MS</code>. Someone trimming the budget to buy the model five more seconds gets a loud failure on deploy instead of a memory push that starts and is cut off halfway — which is the failure that looks like everything working.</div>
+<div class="callout"><strong>A run with no memory pays nothing.</strong> <code>memoryRequested</code> is <code>Boolean(memoryRepo &amp;&amp; githubToken)</code>, decided before the sandbox boots, and the subtraction is conditional on it. Turning memory off does not leave 25 seconds sitting unused.</div>
+<div class="ray"><strong>Where this departs from Ray.</strong> His prompt bounds the whole sync at about 40 s and, when out of budget, returns a synthetic failure so callers take their ordinary "that step didn't work" branch. Here the two commands carry their own timeouts and the budget is 25 s, because it is subtracted from a model that already needed every second it had.</div></details>
+<details class="sec" id="finally" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">The push runs even when the run fails<span class="sec-s">One <code>finally</code> block, two variables hoisted out of the <code>try</code>, and a swallowed error.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>A crash mid-run is exactly the case where memory is most valuable and most easily lost: the model may have written its note before whatever went wrong. So the push sits in the same <code>finally</code> that kills the sandbox, ahead of the kill.</p>
+<pre><code>} finally {
+  if (memoryActive) {
+    try {
+      await pushMemory(sandbox, { envs, channelId });
+    } catch {
+      console.warn('[memory] push failed');
+    }
+  }
+  await sandbox.kill().catch(() =&gt; {});
+}</code></pre>
+<div class="win"><strong>Two small things in that block are load-bearing.</strong> <code>envs</code> and <code>memoryActive</code> are declared with <code>let</code> above the <code>try</code>, not inside it, because <code>try { const x }</code> does not leak <code>x</code> into <code>finally</code> — without the hoist the push has no credentials to push with. And the <code>catch</code> is bare: a memory failure must never replace the error the caller was about to see.</div>
+<div class="callout"><strong>The ordering with uploads is deliberate.</strong> Output files are collected and streamed to Slack <em>inside</em> the <code>try</code>, while the sandbox is certainly alive. Memory is pushed in the <code>finally</code>, after them. Both happen before <code>sandbox.kill()</code>, which is the only hard deadline either of them has.</div>
+<h3>Best-effort, everywhere, on purpose</h3>
+<p><code>setUpMemory</code> returns a boolean and never throws; <code>pushMemory</code> logs and returns and never throws. A missing repository, a missing token, a clone that times out, a push GitHub rejects — every one of those degrades to "no memory this run", the same way the GitHub setup and the Codex credential already did. A turn must never be lost to the feature that was supposed to make turns better.</p></details>
+<details class="sec" id="access" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">The access decision: one private repository, and a token scoped to a list<span class="sec-s">The App now mints for two repositories at most, and a review caught the version that failed open.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Before this lesson, each run minted an installation token scoped to one repository: the one named in the channel topic. Memory adds a second, so <code>mintInstallationToken</code> now takes a list:</p>
+<pre><code>const repos = [repo, memoryRepo].filter(Boolean);
+const github = repos.length
+  ? await tryMintInstallationToken({ repos })
+  : { token: null, reason: null };</code></pre>
+<p>Every entry is checked against <code>^[\w.-]+\/[\w.-]+$</code> before any network call, and the owner half of every entry is checked against the installation's own account, looked up once from the API.</p>
+<div class="danger"><strong>The first version failed open, and the failure was invisible.</strong> A malformed entry — a memory repository typed without an owner, say — was filtered out rather than refused. The caller's non-empty list looked honoured, but the function then minted for <em>zero</em> repositories, and GitHub reads zero repositories as <em>every repository the App is installed on</em>. A typo in an environment variable would have quietly widened the token instead of narrowing it. The fix is to throw: <code>refusing to mint: invalid repo name "…"</code>, before the request. This is the same bug class as lesson 09's, caught earlier only because someone reviewed the diff.</div>
+<div class="metaphor"><strong>A filter that lets everything through when it breaks.</strong> A door that opens when its lock jams is worse than a door with no lock, because you stop checking it. Any code that narrows access must fail closed — and "fail closed" here means refusing to mint at all rather than minting something broader.</div>
+<h3>Why a private repository gets App write access, this once</h3>
+<p>The standing rule from lesson 09: no private repository gets <code>contents: write</code>, because on the free plan a private repository's branch protection does not enforce and does not tell you so, which makes "private" mean "unprotected". The memory store cannot satisfy that rule — it must be private, because it holds whatever the workspace told the bot, and the bot must be able to write it, because that is the entire feature.</p>
+<div class="callout"><strong>Recorded as an exception, dated, not as a revision.</strong> On 2026-09-17 this one repository was granted App write access, on the grounds that it holds only the bot's own notes and the bot writing its <code>main</code> is the design rather than a risk to be protected against. The rule still stands for everything else. The distinction matters: an exception you wrote down is something a later reader can weigh, while a rule quietly rewritten is a rule nobody will ever question again.</div>
+<div class="win"><strong>What keeps the blast radius small.</strong> The token expires in an hour, it is minted fresh per request with no caching, and it now reaches at most two repositories: the channel's topic repository and the memory store. A channel with neither gets no GitHub access at all — the list is the boundary, not a hint.</div></details>
+<div class="checkpoint"><b>THE DECISION THIS PAGE MAKES</b>Use Claude Code's own auto-memory, store it in one private git repository keyed by channel ID, pay 25 seconds of the model's time for it, push in a <code>finally</code> so a failed run still remembers, and record the private-repository write access as a dated exception rather than changing the rule.</div>
+<div class="part" id="part2" style="--pc:var(--do)"><span class="pn">PART 2</span><h2>Build it</h2>
+  <p>Six steps. Three are done by hand in a browser and cannot be delegated — creating the repository, installing the App on it, and setting the environment variable. Two are pull requests the bot writes. The last one is the test that decides whether any of it worked.</p>
+</div>
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 1 of 6 — Create the private memory repository<span class="sec-s">By hand, in the browser. It is the durable half of the feature and nothing else creates it.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 1 of 6</title><rect x="8" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · Repo</text><rect x="124" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="178" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Install</text><rect x="240" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="294" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Runtime</text><rect x="356" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="410" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Token</text><rect x="472" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="526" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Env var</text><rect x="588" y="10" width="104" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="640" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text></svg></div>
+<ol class="steps">
+<li><p><strong>Create a new repository</strong> named <code>joestar-memory</code> under your own account, and set it to <strong>Private</strong>. Here that is <code>nojzac/joestar-memory</code>.</p></li>
+<li><p><strong>Leave it empty.</strong> No README, no <code>.gitignore</code>, no licence. An empty remote clones fine and leaves <code>HEAD</code> unborn; <code>setUpMemory</code> handles that by checking out <code>main</code> before the first commit, so initialising it yourself buys nothing.</p> <div class="ray"><strong>Where this departs from Ray.</strong> His prompt asks for a <code>README.md</code> explaining the layout and a <code>.gitattributes</code> with <code>*.md merge=union</code>, so two threads writing at once merge instead of conflicting. Neither is here. With a destroyed-per-run sandbox and a push every turn the window for a conflict is small, but it is not zero — adding the <code>.gitattributes</code> is a one-line improvement worth making.</div></li>
+<li><p><strong>Write down the <code>owner/repo</code> slug.</strong> You will need it twice: once for the App installation, once for the Vercel variable, and they must match exactly.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>An empty private repository exists and you have its <code>owner/repo</code> slug. Nothing can push to it yet.</div></section>
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 2 of 6 — Install the GitHub App on that repository<span class="sec-s">Skip this and memory commits locally, pushes nothing, and reports no error anyone notices.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 2 of 6</title><rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Repo</text><rect x="124" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="178" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Install</text><rect x="240" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="294" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Runtime</text><rect x="356" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="410" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Token</text><rect x="472" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="526" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Env var</text><rect x="588" y="10" width="104" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="640" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text></svg></div>
+<ol class="steps">
+<li><p><strong>Record the exception before you click.</strong> This is the step that breaks lesson 09's rule. Write the decision down where a future reader will find it — here it went into <code>RESUME.md</code>, dated 2026-09-17, as an exception rather than a change to the rule.</p></li>
+<li><p><strong>Add the repository to the installation.</strong> GitHub → Settings → Applications → your App → Configure → Repository access, and add <code>joestar-memory</code> to the selected list. The installation ID does not change.</p></li>
+<li><p><strong>Check the App's permissions include <code>contents: write</code>.</strong> It already does if the bot has been committing since lesson 08. Read access alone produces a clone that works and a push that fails.</p></li>
+</ol>
+<div class="danger"><strong>This is the silent failure of the whole lesson.</strong> Ray flags it explicitly: if the App is not installed on the store repository, memory commits locally and never pushes, and nobody notices. Here the sandbox is destroyed afterwards, so the commit does not even survive to be found later — the only trace is one <code>[memory] push failed</code> line in the Vercel log, and everything in Slack looks perfect.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>The App's repository list contains both your sandbox/topic repository and the memory repository.</div></section>
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 3 of 6 — Ask for the runtime: clone before <code>claude</code>, push after it<span class="sec-s">The first pull request. Paste Ray's prompt, then hold the result against the constraints that differ here.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 3 of 6</title><rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Repo</text><rect x="124" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="178" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Install</text><rect x="240" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="294" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · Runtime</text><rect x="356" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="410" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Token</text><rect x="472" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="526" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Env var</text><rect x="588" y="10" width="104" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="640" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text></svg></div>
+<ol class="steps">
+<li><p><strong>Paste Ray's prompt as written</strong>, from the video's page. It is long and every paragraph earns its place — the failure modes it lists are the ones that were real bugs for him.</p></li>
+<li><p><strong>Add the two facts that differ here,</strong> in your own words: the sandbox is destroyed after every message rather than paused, so the clone is a working copy and not a cache; and the memory commands run inside the same 285-second budget as the model, so the time has to be carved out explicitly and checked.</p></li>
+<li><p><strong>Ask for the plan before the code.</strong> Ray's prompt says so and it is worth keeping — a plan that is wrong about the sandbox lifetime is cheap to correct and a merged implementation is not.</p></li>
+<li><p><strong>Read the diff for the five things that matter:</strong> <code>setUpMemory</code> returning a boolean rather than throwing; <code>mergeSettings</code> preserving the hooks block; the briefing appended only when setup succeeded; <code>pushMemory</code> in the <code>finally</code>; and the budget constants with the module-load assertion.</p> <div class="ray"><strong>Where this departs from Ray.</strong> He asks Claude to implement, deploy, and end-to-end test in one instruction, and accepts the result. Here it was a pull request, reviewed, with tests — including one asserting the ordering of the <code>finally</code> push relative to <code>sandbox.kill()</code>.</div></li>
+</ol>
+<div class="callout"><strong>Expect this one to take more than one round.</strong> Ours did: the runtime landed in PR #18, and a second pull request followed with fixes — the hoist of <code>memoryActive</code> out of the <code>try</code>, the unborn-<code>HEAD</code> case, pushing to the cloned branch rather than an assumed <code>main</code>, and the budget raised to 25 s with the margin guard.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>A merged pull request in which <code>claude.js</code> clones before the model runs, writes the two settings keys, and pushes in a <code>finally</code> — with tests that fail if the push is moved out of it.</div></section>
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 4 of 6 — Widen token minting to a list, and make it fail closed<span class="sec-s">The second pull request. This is the one to review hardest; the first version failed open.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 4 of 6</title><rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Repo</text><rect x="124" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="178" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Install</text><rect x="240" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="294" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Runtime</text><rect x="356" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="410" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Token</text><rect x="472" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="526" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Env var</text><rect x="588" y="10" width="104" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="640" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text></svg></div>
+<ol class="steps">
+<li><p><strong>Ask for <code>repos</code> alongside the existing <code>repo</code>,</strong> collapsing to a list internally, de-duplicated so a memory repository that happens to equal the topic repository is not sent twice.</p></li>
+<li><p><strong>Insist on refusal, not filtering.</strong> A malformed entry must throw before the network call. State why in the request: GitHub treats an empty repository list as "every repository this App is installed on", so silently dropping a bad entry widens the token instead of narrowing it.</p></li>
+<li><p><strong>Keep the owner check.</strong> Look up the installation's account once and compare it, case-insensitively, against the owner half of every entry. Without it, <code>someone-else/joestar-memory</code> would still mint a token for <em>your</em> repository of that name.</p></li>
+<li><p><strong>Update <code>events.js</code> to validate both inputs</strong> and to log shape rather than value: <code>[memory] off (invalid repo)</code>, <code>[memory] off (invalid channel)</code>. An unset <code>AGENT_MEMORY_REPO</code> is not an error and logs nothing at that point.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>mintInstallationToken</code> throws on a malformed or foreign-owner entry, with a test proving it, and the logs never print the repository value on a rejection.</div></section>
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 5 of 6 — Set <code>AGENT_MEMORY_REPO</code> in Vercel and redeploy<span class="sec-s">One environment variable, by hand, which is also the off switch.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 5 of 6</title><rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Repo</text><rect x="124" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="178" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Install</text><rect x="240" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="294" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Runtime</text><rect x="356" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="410" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Token</text><rect x="472" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="526" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Env var</text><rect x="588" y="10" width="104" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="640" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text></svg></div>
+<ol class="steps">
+<li><p><strong>Vercel → the project → Settings → Environment Variables.</strong> Add <code>AGENT_MEMORY_REPO</code> with the value <code>owner/repo</code> — for example <code>nojzac/joestar-memory</code> — scoped to <strong>Production</strong>.</p></li>
+<li><p><strong>Redeploy.</strong> Environment variables are read at run time, but the running deployment does not pick up a new one until it is replaced. Here a push to <code>main</code> runs the tests and deploys.</p></li>
+<li><p><strong>Note that this is the kill switch.</strong> Unset the variable and redeploy, and every run takes the <code>[memory] off</code> branch: no clone, no settings keys, no push, and no time subtracted from the model.</p></li>
+</ol>
+<div class="callout"><strong>The value is never in a file in this repository.</strong> It is not a secret — it is a repository name — but it lives with the secrets by the same route: 1Password and Vercel, set by hand, documented in <code>joestar-agent/README.md</code> as "Optional, Vercel only — unset = memory off".</div>
+<div class="checkpoint"><b>CHECKPOINT</b>A deployment is live with the variable set, and the logs for the next mention show a minted token scoped to two repositories rather than one.</div></section>
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 6 of 6 — Verify it live<span class="sec-s">Five checks, in this order. Until they pass, the feature is code that runs rather than a bot that remembers.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 6 of 6</title><rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Repo</text><rect x="124" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="178" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Install</text><rect x="240" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="294" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Runtime</text><rect x="356" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="410" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Token</text><rect x="472" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="526" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Env var</text><rect x="588" y="10" width="104" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="640" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Verify</text></svg></div>
+<p>The premise under test is not the git plumbing — that is ordinary code with ordinary tests. It is whether Claude Code honours auto-memory at all when it is invoked headless with <code>-p</code>. Nothing above this line proves that.</p>
+<ol class="steps">
+<li><p><strong>Tell it a distinctive fact.</strong> In <code>#joestar-test</code>, mention the bot and ask it to remember something no model would guess — a made-up phrase, a fake port number, a nonsense codename. Distinctive matters: a plausible fact can be produced by a model that remembers nothing at all.</p></li>
+<li><p><strong>Check the log for <code>[memory] push ok</code>.</strong> In the Vercel function logs for that invocation. The three outcomes point at completely different problems, which is why they are three different lines — see the log table in Part 3.</p></li>
+<li><p><strong>Check the commit landed</strong> in <code>nojzac/joestar-memory</code>: a commit named <code>memory: &lt;channel id&gt; &lt;timestamp&gt;</code>, authored by <code>joestar</code>, touching a file under <code>channels/&lt;channel id&gt;/</code>.</p></li>
+<li><p><strong>Ask in a new thread in the same channel.</strong> A brand-new sandbox, a brand-new clone. If it answers with the fact, memory works end to end.</p></li>
+<li><p><strong>Ask from a different channel.</strong> It should not know — memory is siloed per channel, and anything else means the directory is not keyed the way you think it is.</p></li>
+</ol>
+<h3>Results</h3>
+<p>Run on <strong>2026-09-17</strong>, against the deployment from CI run <code>35226817557</code> ("test and deploy", success, 58 s, 13:23:57Z). Two messages in <code>#joestar-test</code> and one in <code>#joestar-dev</code>. Check 2 could not be run — see the row.</p>
+<table><thead><tr><th>Check</th><th>What passing looks like</th><th>Outcome</th></tr></thead><tbody>
+<tr><td>1 · Told a distinctive fact in <code>#joestar-test</code></td><td>The bot acknowledges it in the reply</td><td><strong>PASS.</strong> Message <code>1789651533.178589</code>, asking it to remember "the release codename for this channel is PELICAN-47". Reply: "Saved: the release codename for this channel is PELICAN-47. It'll be committed and pushed to memory after this run."</td></tr>
+<tr><td>2 · <code>[memory] push ok</code> in the Vercel log</td><td>Exactly that line, not <code>push skip</code> and not <code>push failed</code></td><td><strong>Not read.</strong> <code>docs/verifying.md</code> names no log command, there is no <code>vercel</code> CLI on this machine and no Vercel token in <code>.env.op</code>. The <code>[memory]</code> lines are readable in the Vercel dashboard; doing so is an open item. Check 3 is the independent evidence that the push succeeded.</td></tr>
+<tr><td>3 · Commit in <code>nojzac/joestar-memory</code></td><td>A commit under <code>channels/&lt;channel id&gt;/</code> from <code>joestar</code></td><td><strong>PASS.</strong> One commit, <code>0526c84</code> at 13:25:49Z, message <code>memory: C0C1QB5PCNB 2026-09-17T13:25:49.089Z</code> — created by check 1. Files: <code>channels/C0C1QB5PCNB/MEMORY.md</code> (one index line) and <code>release_codename.md</code> (front matter, then the fact and a <em>Why / How to apply</em> block) — Claude Code's own auto-memory format, unedited. No commit after checks 4 or 5: nothing changed, so nothing was pushed.</td></tr>
+<tr><td>4 · New thread, same channel</td><td>It recalls the fact with no prompting</td><td><strong>PASS — recall across runs.</strong> A new top-level message in <code>#joestar-test</code>, <code>1789651585.967809</code>, asked from memory only. Reply: "The release codename for this channel is PELICAN-47." A different sandbox, a fresh clone, no conversation history.</td></tr>
+<tr><td>5 · A different channel</td><td>It does not know the fact</td><td><strong>Did not behave as described — read the detail.</strong> In <code>#joestar-dev</code>, <code>1789651590.094729</code>: "No release codename saved in this channel's memory. There's one on record in a different channel (PELICAN-47), but it was noted there specifically as scoped to that channel, so I wouldn't apply it here." So <em>writes</em> are siloed per channel — only <code>channels/C0C1QB5PCNB/</code> exists — but <em>reads</em> are repo-wide by design: the whole clone is on disk. The refusal to apply the fact was the model's judgement, not isolation.</td></tr>
+</tbody></table>
+<div class="callout"><strong>The premise holds.</strong> Checks 1 and 4 together verify the claim this whole feature rests on: Claude Code honours auto-memory in <code>-p</code> mode, writing files the next run reads. Check 5 corrects a sentence written above it — per-channel memory means per-channel <em>writing</em>, and any channel can read any other channel's notes.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>All five rows filled in with what actually happened, and the claim "Claude Code honours auto-memory in <code>-p</code> mode" moved out of the unverified table in Part 3 — here, verified. Check 5 moved the other way, and corrected a sentence written above it.</div></section>
+<div class="part" id="part3" style="--pc:var(--ref)"><span class="pn">PART 3</span><h2>Keep for later</h2>
+  <p>What Claude wrote, what each log line means, the gap this implementation still has, an honest account of what is verified, the traps this lesson produced, and where everything lives.</p>
+</div>
+<details class="sec" id="code-walk" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">What Claude wrote for you<span class="sec-s">Five functions, one environment variable, and about a hundred lines.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Piece</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>setUpMemory(sandbox, {memoryRepo, channelId, envs})</code></td><td>One shell command: shallow clone to <code>/home/user/memory</code>, create <code>main</code> if <code>HEAD</code> is unborn, <code>mkdir -p</code> the channel directory and <code>shared/</code>. Then writes the merged settings file. Returns <code>true</code> only if all of that worked</td></tr>
+<tr><td><code>mergeSettings(existing, patch)</code></td><td>A shallow spread, exported on its own so the promise that memory never clobbers the push-guard hooks is unit-testable without a sandbox</td></tr>
+<tr><td><code>memoryBriefing(channelId)</code></td><td>Four lines appended to the prompt, only on a run where setup succeeded</td></tr>
+<tr><td><code>pushMemory(sandbox, {envs, channelId})</code></td><td><code>git add -A</code>, commit with <code>-c user.name</code>/<code>-c user.email</code> rather than repo config, then push to the branch that was cloned — <code>HEAD:$b</code>, not a hard-coded <code>main</code></td></tr>
+<tr><td><code>mintInstallationToken({repos})</code></td><td>Validates the shape of every entry, checks every owner against the installation account, de-duplicates, and mints scoped to exactly that list</td></tr>
+<tr><td><code>events.js</code> validation</td><td>Turns <code>AGENT_MEMORY_REPO</code> and the Slack channel into either a usable pair or <code>undefined</code>, logging the reason without the value</td></tr>
+</tbody></table>
+<h3>The clone command, in full</h3>
+<pre><code>git clone --depth 1 'https://github.com/owner/repo' /home/user/memory &amp;&amp;
+cd /home/user/memory &amp;&amp;
+git rev-parse -q --verify HEAD &gt;/dev/null || git checkout -b main &amp;&amp;
+mkdir -p '/home/user/memory/channels/&lt;channel id&gt;' '/home/user/memory/shared'</code></pre>
+<div class="win"><strong>The token is not in that string.</strong> The clone URL carries no credential. <code>GH_TOKEN</code> travels in the per-command <code>envs</code>, and the credential helper that lesson 08's <code>configureGitHub</code> already installed reads it from there when git actually needs it. A token in the URL would land in <code>.git/config</code> and in process listings.</div>
+<h3>The commit and push, in full</h3>
+<pre><code>cd /home/user/memory &amp;&amp; git add -A &amp;&amp;
+git -c user.name=joestar -c user.email=joestar@users.noreply.github.com \
+    commit -qm 'memory: &lt;channel id&gt; &lt;ISO timestamp&gt;' &amp;&amp;
+b=$(git rev-parse --abbrev-ref HEAD) &amp;&amp; git push -q origin "HEAD:$b"</code></pre>
+<p><code>add -A</code> rather than <code>commit -a</code>, because a brand-new memory file is untracked and untracked is the common case here. The identity is passed at commit time rather than relying on repository configuration a differently-provisioned box may not have.</p></details>
+<details class="sec" id="logs" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Every log line memory can produce<span class="sec-s">Read these before reading the code — each one points somewhere different.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Line</th><th>What it means</th><th>Where to look</th></tr></thead><tbody>
+<tr><td><code>[memory] off</code></td><td>No repository or no GitHub token for this run</td><td><code>AGENT_MEMORY_REPO</code> unset, or the App is not configured at all</td></tr>
+<tr><td><code>[memory] off (invalid repo)</code></td><td>The variable is set but is not <code>owner/repo</code></td><td>A typo or a full URL pasted into the variable</td></tr>
+<tr><td><code>[memory] off (invalid channel)</code></td><td>The Slack channel value is not <code>^[A-Z0-9]+$</code></td><td>An unusual event shape — memory is off rather than guessing a path</td></tr>
+<tr><td><code>[memory] setup failed: …</code></td><td>The clone command exited non-zero or timed out</td><td>App not installed on the repository, or an 8-second clone that did not finish</td></tr>
+<tr><td><code>[memory] push ok</code></td><td>Something was written, committed and pushed</td><td>Nothing — this is the line step 6 is looking for</td></tr>
+<tr><td><code>[memory] push skip (nothing changed)</code></td><td>The clone succeeded and the model wrote nothing</td><td>Either nothing was worth remembering, or auto-memory is not running. After an explicit "remember this", suspect the second</td></tr>
+<tr><td><code>[memory] push failed: …</code></td><td>Committed locally, push rejected or timed out</td><td>Write access on the repository first, then the 12-second budget</td></tr>
+<tr><td><code>refusing to mint: invalid repo name "…"</code></td><td>Token minting refused before any network call</td><td>The variable's value — and it is deliberately loud, because the alternative was an unscoped token</td></tr>
+</tbody></table>
+<div class="win"><strong>Three push outcomes, three lines, no shared wording.</strong> Ray's prompt insists on this and it is worth the extra branch: <code>push ok</code>, <code>push skip</code> and <code>push failed</code> have nothing in common as problems, and collapsing them into one "memory sync finished" line would make the most interesting failure — the model wrote nothing — indistinguishable from the ordinary quiet turn.</div></details>
+<details class="sec" id="gap" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">The gap this implementation still has<span class="sec-s">Ray calls it "the single most important line in the whole feature", and it is not here.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<p>Ray's prompt is emphatic: <em>on every failure path, write <code>autoMemoryEnabled: false</code> explicitly and delete <code>autoMemoryDirectory</code></em>, because the CLI default is <strong>on</strong>. A clone that fails and simply returns leaves the model happily writing memories into a local, per-sandbox directory that nothing ever syncs.</p>
+<p>In this implementation <code>setUpMemory</code> writes <code>settings.json</code> only on the success path. On the <code>off</code> and <code>setup failed</code> paths the file keeps whatever <code>configureGitHub</code> wrote, which contains the hooks block and no <code>autoMemoryEnabled</code> key at all.</p>
+<div class="callout"><strong>What that means here, stated carefully.</strong> The consequence Ray describes is a persistent sandbox filling up with unsynced notes. This sandbox is destroyed minutes later, so nothing accumulates and nothing is silently lost that would otherwise have been kept. What is lost is the <em>signal</em>: a failed run looks to the model exactly like a working one, so it may tell somebody it has remembered a thing it has not. <strong>Whether the default is on and what it does with no directory set is untested here.</strong> Writing the key explicitly on both failure paths is two lines and removes the question — it is the first change to make to this feature.</div>
+<h3>Other things Ray's prompt asks for that are not built</h3>
+<ul>
+<li><strong>Two tiers.</strong> A shared directory readable by every channel and writable only from public ones. <code>shared/</code> is created and mentioned in the briefing; nothing enforces it.</li>
+<li><strong>Conflict refusal.</strong> No check for <code>.git/rebase-merge</code> or unmerged <code>XY</code> codes before <code>add -A</code>. With a per-run clone and a push every turn this is unlikely rather than impossible.</li>
+<li><strong>Push-rejected retry.</strong> No <code>pull --rebase --autostash</code> and second attempt; a rejected push is logged and the commit dies with the sandbox.</li>
+<li><strong>A pull before the model starts.</strong> Not needed — a fresh <code>--depth 1</code> clone per run is already the newest state.</li>
+<li><strong>A curation skill.</strong> A user-invoked "prune and reorganise this channel's memory" task. Ray suggests building it separately, after writing works. It has not been built.</li>
+</ul></details>
+<details class="sec" id="verified" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">The central premise is now verified live. One claim below was corrected by the run; read this before trusting any sentence above.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Claim</th><th>Status</th></tr></thead><tbody>
+<tr><td>The clone, settings merge, briefing and push happen in that order, with the push in a <code>finally</code></td><td><strong>Verified</strong> 2026-09-17 by reading the merged source at commit <code>9e09ae6</code>, and by tests asserting the ordering</td></tr>
+<tr><td><code>MEMORY_BUDGET_MS</code> is 25 s, split 8 s setup and 12 s push, asserted at module load</td><td><strong>Verified</strong> in the same source, including the throw when the arithmetic stops working</td></tr>
+<tr><td>Token minting refuses a malformed or foreign-owner entry before any network call</td><td><strong>Verified</strong> by reading <code>github.js</code> and its tests. The earlier fail-open version is <strong>verified</strong> from the review that found it</td></tr>
+<tr><td>Memory is off when <code>AGENT_MEMORY_REPO</code> is unset, with no time subtracted</td><td><strong>Verified</strong> by reading <code>events.js</code> and the <code>memoryRequested</code> arithmetic</td></tr>
+<tr><td>The App is installed on the private memory repository and the variable is set in Vercel</td><td><strong>Verified</strong> as done by hand on 2026-09-17, and recorded as a dated exception</td></tr>
+<tr><td><strong>Claude Code honours auto-memory in <code>-p</code> mode</strong></td><td><strong>Verified</strong> live on 2026-09-17 by step 6 checks 1 and 4: the run wrote <code>channels/C0C1QB5PCNB/release_codename.md</code> in the harness's own format and pushed it as commit <code>0526c84</code>, and a later run in a fresh sandbox read it back</td></tr>
+<tr><td>A new thread in the same channel recalls a fact from an earlier one</td><td><strong>Verified</strong> 2026-09-17, step 6 check 4 — message <code>1789651585.967809</code> answered "PELICAN-47" from memory alone</td></tr>
+<tr><td>A different channel does not recall it</td><td><strong>False as stated.</strong> Step 6 check 5: writes are per channel, reads are repo-wide by design — the other channel could see the fact and declined to apply it on its own judgement</td></tr>
+<tr><td>What happens to auto-memory on a failed setup, given the CLI default is on</td><td><strong>Untested</strong>, and see the gap section above. Ray states the default; it has not been confirmed here</td></tr>
+</tbody></table>
+<div class="callout"><strong>This page was written before the feature was finished, then completed from the live run.</strong> The step 6 table now holds what actually happened on 2026-09-17. Two things stay open: the <code>[memory]</code> log lines have not been read (no Vercel CLI or token locally — read them in the Vercel dashboard), and <code>settings.json</code> is still written only on the success path, the gap described above.</div></details>
+<details class="sec" id="traps" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Two traps this lesson produced<span class="sec-s">Both are about git rather than memory, and both cost a rebuild of work that already existed.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<h3>Squash-merging a pull request that a later one was stacked on</h3>
+<p>Branch B was built on branch A. A was squash-merged into <code>main</code>, which rewrote its commits into one new commit with a different hash, and B immediately went <strong>CONFLICTING</strong> — every commit it inherited from A now looks like an unrelated change.</p>
+<div class="win"><strong>The fix is to merge <code>main</code> in — never rebase.</strong> A rebase rewrites the branch's history and needs a force-push, and the push guard from lesson 08 blocks force-pushes. After this, later requests were based on <code>main</code> rather than stacked on each other.</div>
+<h3>A merge performed by the bot dropped one side of the change</h3>
+<p>The memory runtime was written, then <code>origin/main</code> was merged into the branch by the bot. The merge commit resolved that conflict by taking the incoming side, and about 150 lines of memory runtime disappeared from <code>claude.js</code> — while the tests for it, in a file with no conflict, stayed. The repair was a commit whose message says exactly what happened: <em>memory runtime restored from 81ffa73</em>.</p>
+<div class="danger"><strong>What makes this one dangerous.</strong> The merge succeeded, the branch was green on everything that still compiled, and the diff against <code>main</code> looked smaller rather than wrong. After any conflicted merge an agent performs, diff the merge result against <strong>both</strong> parents and check the file the branch exists to change is still changed. "It merged cleanly" is not a statement about whether your work survived.</div></details>
+<details class="sec" id="troubleshooting" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">When something doesn't work<span class="sec-s">Symptom first, in the order these are likely to bite.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>What you see</th><th>What it usually is</th></tr></thead><tbody>
+<tr><td>The bot says it will remember, and the repository stays empty</td><td>Look for <code>push skip (nothing changed)</code>: the clone worked and the harness wrote nothing. That is the premise failing, not the plumbing</td></tr>
+<tr><td><code>[memory] push failed</code> on every run</td><td>The App is not installed on the memory repository, or has read access without write</td></tr>
+<tr><td><code>[memory] setup failed</code> intermittently</td><td>The clone did not finish inside 8 seconds. A shallow clone of a notes repository should be far inside that — a repository growing this large wants the curation skill</td></tr>
+<tr><td>No memory lines in the log at all</td><td>The deployment predates the variable. Redeploy after setting it</td></tr>
+<tr><td>Answers got noticeably slower</td><td>Expected: 25 seconds of the model's budget now belong to memory on every run that uses it</td></tr>
+<tr><td>A fact from one channel surfaces in another</td><td>Check <code>autoMemoryDirectory</code> in the written settings actually ends in the channel ID, and that the directory was created before <code>claude</code> started</td></tr>
+<tr><td>The bot recalls something wrong or unwanted</td><td>It is a commit. <code>git revert</code> it, or delete the file and push — the store is a repository you can edit by hand</td></tr>
+<tr><td>Token minting fails with <code>refusing to mint</code></td><td>The variable's value is not <code>owner/repo</code>, or names an owner that is not your installation's account</td></tr>
+</tbody></table></details>
+<details class="sec" id="done" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Done checklist<span class="sec-s">The lesson is finished when every line here is true.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<ul class="check">
+<li>A private repository exists for memory, and its slug is written down.</li>
+<li>The GitHub App is installed on it with <code>contents: write</code>.</li>
+<li>The exception to "no private repository gets App write access" is recorded, with a date and a reason.</li>
+<li>The runtime is merged: clone before <code>claude</code>, merged settings, briefing, push in a <code>finally</code>.</li>
+<li>Token minting takes a list, refuses malformed entries, and checks every owner.</li>
+<li><code>AGENT_MEMORY_REPO</code> is set in Vercel Production and a deployment has picked it up.</li>
+<li>All five checks in step 6 have been run and the results table is filled in.</li>
+<li>The verification table in this part has been updated in whichever direction the live test pointed.</li>
+<li><code>RESUME.md</code> records the lesson as done, and <code>TRAPS.md</code> carries the two git traps.</li>
+</ul></details>
+<details class="sec" id="where-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where everything lives<span class="sec-s">What this lesson adds to the map.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Thing</th><th>Where</th></tr></thead><tbody>
+<tr><td>The memory runtime</td><td><code>joestar-agent/api/_lib/claude.js</code> — <code>setUpMemory</code>, <code>mergeSettings</code>, <code>memoryBriefing</code>, <code>pushMemory</code>, and the budget constants</td></tr>
+<tr><td>Token minting for a list of repositories</td><td><code>joestar-agent/api/_lib/github.js</code> — <code>mintInstallationToken</code>, <code>REPO_NAME_PATTERN</code>, the installation-owner check</td></tr>
+<tr><td>Validation and the kill switch</td><td><code>joestar-agent/api/slack/events.js</code> — the <code>memoryRepo</code>/<code>channelId</code> block and the <code>repos</code> array</td></tr>
+<tr><td>The environment variable, documented</td><td><code>joestar-agent/README.md</code>, in the environment table</td></tr>
+<tr><td>The store itself</td><td><code>nojzac/joestar-memory</code> on GitHub — private, <code>channels/&lt;id&gt;/</code> and <code>shared/</code></td></tr>
+<tr><td>Where memory lands in the sandbox</td><td><code>/home/user/memory</code>, with <code>/home/user/.claude/settings.json</code> pointing auto-memory at the channel directory</td></tr>
+<tr><td>The access exception</td><td><code>RESUME.md</code>, dated 2026-09-17, under the lesson 09 access rule it excepts</td></tr>
+<tr><td>The two git traps</td><td><code>TRAPS.md</code>, and the section above</td></tr>
+<tr><td>Ray's code for this lesson</td><td>The <code>lesson-13-end</code> tag at <code>github.com/ray-amjad/slack-agent-course</code> — the tag numbering does not match the video numbering</td></tr>
+<tr><td>Ray's prompt and transcript</td><td><code>course/transcripts/15-0-to-1--adding-memory.md</code></td></tr>
+</tbody></table></details>
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l17-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l17-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l17-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l17-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>
