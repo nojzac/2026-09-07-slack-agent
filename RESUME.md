@@ -324,12 +324,6 @@ session stops sleeping guesses and polling. Run it through `bin/with-secrets`.
 grow** — the bot posts `_thinking…_` immediately and edits it in place, so the
 count rises when a run starts and never again.
 
-## Known and unfixed
-
-- **Bolded URLs come out broken.** `toMrkdwn` turns `**https://…**` into
-  `*https://…*` and Slack swallows the asterisk into the link, so PR links the
-  bot posts do not open. Ray hits the same bug in his video. It is our
-  `api/_lib/mrkdwn.js`, and a good dogfooding request.
 ## How lessons 12–17 were built (2026-09-17)
 
 Noj asked for the remaining "0 to 1" lessons with minimal interaction, and the
@@ -533,18 +527,6 @@ has been since lesson 10.
   key that lives in both places too, so the cost grows.
 ## Next step
 
-Lesson 12, "Adding Database" — transcript at
-`course/transcripts/12-0-to-1--adding-database.md`. Build `sops/lesson-12/index.html`
-from it following `docs/lessons.md`, show it, get a yes, then do the lesson.
-Ray's framing follows directly from lesson 11: the bot can now drive your app and
-record it, but it cannot verify a change that touches the database, because there
-is no Postgres on the container. Same shape as lesson 11 — a template change, so
-expect the same build-deploys-immediately asymmetry.
-
-**Ray dogfoods 12, 16 and 17, and does 13, 14 and 15 by hand.** The split is
-deliberate: he delegates anything that changes the *machine* (template, tooling,
-integrations) and hand-writes anything that is the agent's own *instructions*
-(CLAUDE.md, skills, memory).
 **Lessons 18–21, the "Using your agent" chapter.** The "0 to 1" chapter is
 finished as of 2026-09-17 — lessons 04–17 are built, and every page but 15’s is
 written. What remains is a different kind of work: `course/LESSON-PAGE-RULES.md`
@@ -589,9 +571,6 @@ must be respected for the rest of the course:
   likely one and did not need it — it wrote to this repo, which is public for
   the duration of the course.)
 
-Ten lessons remain: 12–17 finish the "0 to 1" chapter, and 18–21 are the
-"Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
-page rather than the full treatment.
 **One exception exists, added 2026-09-17:** the private memory repo
 `nojzac/joestar-memory` (lesson 15). It was taken deliberately and recorded as an
 exception rather than a revision — it holds only the bot's own notes, and the bot
