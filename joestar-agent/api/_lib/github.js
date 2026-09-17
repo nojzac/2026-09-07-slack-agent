@@ -137,7 +137,25 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null, re
 
   // `repo` is the old single-name shape, kept for existing callers; `repos`
   // is the list. Either way it collapses to a list below.
-  const repoList = (repos ?? (repo ? [repo] : [])).filter(r => r && r.includes('/'));
+  //
+  // Every entry must be exactly "owner/name" — one slash, both halves
+  // non-empty. Anything else throws here, before any network call. Silently
+  // filtering out a malformed entry (a memory repo typed without an owner,
+  // say) would leave the caller's non-empty list looking honoured while this
+  // function actually mints for zero repos, and zero repos means GitHub
+  // hands back a token for *every* repo the App is installed on — a filter
+  // that fails open. A "owner/repo/extra" entry is refused the same way: it
+  // does not match the pattern, so it can't silently truncate to "repo".
+  const rawList = repos ?? (repo ? [repo] : []);
+  const REPO_NAME_PATTERN = /^[\w.-]+\/[\w.-]+$/;
+  for (const entry of rawList) {
+    if (!entry || !REPO_NAME_PATTERN.test(entry)) {
+      throw new Error(`refusing to mint: invalid repo name "${entry}"`);
+    }
+  }
+  // Dedupe so a memory repo that happens to equal the topic repo doesn't get
+  // sent twice.
+  const repoList = [...new Set(rawList)];
 
   // With no repos, the token reaches every repository the App is installed on
   // (today's behaviour). With any, GitHub scopes the token down to just them —
@@ -166,7 +184,7 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null, re
       const [owner, name] = entry.split('/');
       if (!installOwner || installOwner.toLowerCase() !== owner.toLowerCase()) {
         throw new Error(
-          `refusing to mint: topic names owner "${owner}", installation belongs to "${installOwner ?? 'unknown'}"`,
+          `refusing to mint: "${entry}" names owner "${owner}", installation belongs to "${installOwner ?? 'unknown'}"`,
         );
       }
       repoNames.push(name);

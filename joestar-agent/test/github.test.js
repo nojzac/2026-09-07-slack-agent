@@ -176,6 +176,46 @@ test('a repo whose owner matches the installation mints scoped to just the repo 
   assert.equal(token, 'ghs_x');
 });
 
+test('a repo without an owner refuses to mint and no token request is made', async () => {
+  process.env.GITHUB_APP_ID = '1';
+  process.env.GITHUB_INSTALLATION_ID = '2';
+  process.env.GITHUB_APP_PRIVATE_KEY = Buffer.from(privateKey).toString('base64');
+
+  let anyRequestMade = false;
+  await assert.rejects(
+    () =>
+      mintInstallationToken({
+        repos: ['joestar-memory'],
+        fetchImpl: async () => {
+          anyRequestMade = true;
+          return { ok: true, status: 201, json: async () => ({ token: 'ghs_x', expires_at: 'soon' }) };
+        },
+      }),
+    /invalid repo name/,
+  );
+  assert.equal(anyRequestMade, false, 'must not make any network call once an entry is malformed');
+});
+
+test('a repo with extra path segments refuses to mint rather than truncating', async () => {
+  process.env.GITHUB_APP_ID = '1';
+  process.env.GITHUB_INSTALLATION_ID = '2';
+  process.env.GITHUB_APP_PRIVATE_KEY = Buffer.from(privateKey).toString('base64');
+
+  let anyRequestMade = false;
+  await assert.rejects(
+    () =>
+      mintInstallationToken({
+        repos: ['nojzac/joestar-sandbox/extra'],
+        fetchImpl: async () => {
+          anyRequestMade = true;
+          return { ok: true, status: 201, json: async () => ({ token: 'ghs_x', expires_at: 'soon' }) };
+        },
+      }),
+    /invalid repo name/,
+  );
+  assert.equal(anyRequestMade, false, 'must not make any network call once an entry is malformed');
+});
+
 // --- the push guard ----------------------------------------------------------
 
 const runHook = command => {

@@ -38,12 +38,12 @@ const MAX_INPUT_BYTES = 8 * 1024 * 1024;
  * and limits, not as a plea: these are enforced by GitHub, not by good
  * behaviour.
  */
-function githubCapabilities(repo) {
+function githubCapabilities(repos) {
   return [
   'You have GitHub access via the `gh` CLI and `git`, already authenticated.',
-  repo
-    ? `It is scoped to a single repository for this channel: ${repo}. Other repositories are not reachable, even other ones the App is installed on.`
-    : 'It is scoped to the repositories the App was installed on. Other repositories are not reachable for writing.',
+  repos.length === 1
+    ? `It is scoped to a single repository for this channel: ${repos[0]}. Other repositories are not reachable, even other ones the App is installed on.`
+    : `It is scoped to exactly these repositories: ${repos.join(', ')}. Other repositories are not reachable, even other ones the App is installed on.`,
   'Work by branching and opening a pull request. The default branch refuses direct pushes.',
   'Force-push and branch deletion are disabled. Do not attempt them.',
   'You cannot modify .github/workflows/ — that permission was deliberately withheld.',
@@ -319,7 +319,7 @@ export async function POST(request) {
         // Tell the model where the walls are. Without this it spends minutes
         // rediscovering them by hitting them — trying to push to main, trying to
         // force-push — and reports the refusals as failures.
-        github: github.token ? githubCapabilities(repo) : null,
+        github: github.token ? githubCapabilities(repos) : null,
       });
 
       // Swappable so the tests can run the whole path without booting a real
