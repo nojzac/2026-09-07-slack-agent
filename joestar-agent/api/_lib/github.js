@@ -39,7 +39,17 @@ export function repoFromTopic(topic) {
   if (urlMatch) return `${urlMatch[1]}/${urlMatch[2]}`;
 
   const bareMatch = text.match(/(?:^|\s)([\w.-]+)\/([\w.-]+)(?=\s|$)/);
-  if (bareMatch) return `${bareMatch[1]}/${bareMatch[2]}`;
+  if (bareMatch) {
+    const [, owner, name] = bareMatch;
+    // Ordinary prose slips through the shape check too: "and/or", "24/7",
+    // "his/her" all look like owner/repo. Both-numeric and a short list of
+    // common connector phrases catch the frequent offenders without touching
+    // real slugs, which almost always carry a hyphen, dot, or a longer word.
+    const bothNumeric = /^\d+$/.test(owner) && /^\d+$/.test(name);
+    const commonPhrase = /^(?:and|or|either|neither|him|her|his|yes|no|true|false|on|off|up|down|in|out|win|lose|pass|fail|black|white)\/(?:and|or|either|neither|him|her|his|yes|no|true|false|on|off|up|down|in|out|win|lose|pass|fail|black|white)$/i;
+    if (bothNumeric || commonPhrase.test(`${owner}/${name}`)) return null;
+    return `${owner}/${name}`;
+  }
 
   return null;
 }
@@ -119,22 +129,48 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null } =
   const installationId = process.env.GITHUB_INSTALLATION_ID;
 
   const jwt = signAppJwt({ appId, privateKey: readPrivateKey() });
+  const authHeaders = {
+    authorization: `Bearer ${jwt}`,
+    accept: 'application/vnd.github+json',
+    'x-github-api-version': API_VERSION,
+  };
 
   // With no repo, the token reaches every repository the App is installed on
   // (today's behaviour). With one, GitHub scopes the token down to just it —
   // the channel's topic becomes an access boundary, not just a label.
-  const repoName = repo && repo.includes('/') ? repo.split('/')[1] : null;
+  let repoName = null;
+  if (repo && repo.includes('/')) {
+    const [owner, name] = repo.split('/');
+
+    // The owner half of the topic is part of that boundary too. Without this
+    // check, a topic naming "someone-else/joestar-sandbox" would still mint a
+    // token for *our* installation's joestar-sandbox — the repo name matches,
+    // but nobody asked us to reach into someone else's account. Confirm the
+    // installation's own account before trusting the repo name at all.
+    const installRes = await fetchImpl(
+      `https://api.github.com/app/installations/${installationId}`,
+      { method: 'GET', headers: authHeaders },
+    );
+    const installBody = await installRes.json().catch(() => ({}));
+    if (!installRes.ok) {
+      throw new Error(
+        `github installation lookup failed: ${installRes.status} ${installBody.message ?? ''}`,
+      );
+    }
+    const installOwner = installBody.account?.login;
+    if (!installOwner || installOwner.toLowerCase() !== owner.toLowerCase()) {
+      throw new Error(
+        `refusing to mint: topic names owner "${owner}", installation belongs to "${installOwner ?? 'unknown'}"`,
+      );
+    }
+    repoName = name;
+  }
 
   const res = await fetchImpl(
     `https://api.github.com/app/installations/${installationId}/access_tokens`,
     {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${jwt}`,
-        accept: 'application/vnd.github+json',
-        'x-github-api-version': API_VERSION,
-        'content-type': 'application/json',
-      },
+      headers: { ...authHeaders, 'content-type': 'application/json' },
       body: repoName ? JSON.stringify({ repositories: [repoName] }) : undefined,
     },
   );
