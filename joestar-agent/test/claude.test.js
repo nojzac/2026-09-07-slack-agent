@@ -398,7 +398,7 @@ test('memory on: the clone command precedes claude, and the push follows the fir
 
   const cloneIdx = commandCalls.findIndex((c) => c.cmd.includes('git clone') && c.cmd.includes(MEMORY_DIR));
   const claudeIdx = commandCalls.findIndex((c) => c.cmd.startsWith('claude -p'));
-  const pushIdx = commandCalls.findIndex((c) => c.cmd.includes('git push -q origin HEAD:main'));
+  const pushIdx = commandCalls.findIndex((c) => c.cmd.includes('git push -q origin "HEAD:$b"'));
   const uploadIdx = commandCalls.findIndex((c) => c.cmd.startsWith('curl '));
 
   assert.ok(cloneIdx > -1 && claudeIdx > -1 && pushIdx > -1 && uploadIdx > -1, 'all four commands should have run');
@@ -496,7 +496,7 @@ test('a claude command rejection still pushes memory, and the original rejection
   }
 
   assert.ok(
-    commandCalls.some((c) => c.cmd.includes('git push -q origin HEAD:main')),
+    commandCalls.some((c) => c.cmd.includes('git push -q origin "HEAD:$b"')),
     'the memory push should still run after the claude command rejects',
   );
 });
@@ -516,7 +516,7 @@ test('a failing memory setup leaves the run alive and memory off', async () => {
   const claudeCmd = commandCalls.find((c) => c.cmd.startsWith('claude -p'));
   assert.doesNotMatch(claudeCmd.cmd, /long-term memory/, 'no briefing should be appended when setup failed');
   assert.ok(
-    !commandCalls.some((c) => c.cmd.includes('git push -q origin HEAD:main')),
+    !commandCalls.some((c) => c.cmd.includes('git push -q origin "HEAD:$b"')),
     'no memory push should run when setup failed',
   );
 });

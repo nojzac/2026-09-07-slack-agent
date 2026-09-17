@@ -391,7 +391,7 @@ export async function pushMemory(sandbox, { envs, channelId }) {
   const cmd =
     `cd ${MEMORY_DIR} && git add -A && ` +
     `git -c user.name=joestar -c user.email=joestar@users.noreply.github.com commit -qm ${shellQuote(message)} && ` +
-    `git push -q origin HEAD:main`;
+    `b=$(git rev-parse --abbrev-ref HEAD) && git push -q origin "HEAD:$b"`;
 
   try {
     const res = await sandbox.commands.run(cmd, { timeoutMs: MEMORY_PUSH_TIMEOUT_MS, envs });
