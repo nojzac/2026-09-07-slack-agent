@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-12/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 12</p>
+<h1>Give the bot a database it can ruin</h1>
+<p class="standfirst">Lesson 11 let the bot film what it built. But a recording of a broken flow is
+still a recording — and most flows worth filming touch a database the sandbox does not have. This
+lesson puts Postgres and Redis on the machine so it can seed data, run the flow, and check the rows
+afterwards. The interesting question is not how to install them. It is what "a database" should mean
+for a bot anyone in the workspace can talk to.</p>
+
+<div class="facts">
+  <span><b>Ray's video:</b> 6 min 47 s</span>
+  <span><b>This page:</b> 60–100 min</span>
+  <span><b>At the end:</b> a sandbox that can seed, query and film its own work</span>
+</div>
+
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 300" width="100%" height="auto" role="img">
+  <title>The sandbox gains a throwaway Postgres and Redis alongside Chromium, so the bot can seed data, drive the app and check the rows, then film the result</title>
+  <defs>
+    <marker id="arrow12a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="8" width="446" height="196" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX (per message, then destroyed)</text>
+
+  <rect x="24" y="44" width="122" height="64" rx="7" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/>
+  <text x="38" y="66" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">Chromium</text>
+  <text x="38" y="84" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">lesson 11</text>
+  <text x="38" y="100" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">drives the app</text>
+
+  <rect x="162" y="44" width="122" height="64" rx="7" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="176" y="66" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">Postgres</text>
+  <text x="176" y="84" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">new here</text>
+  <text x="176" y="100" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">seed and check</text>
+
+  <rect x="300" y="44" width="138" height="64" rx="7" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="314" y="66" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">Redis</text>
+  <text x="314" y="84" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">new here</text>
+  <text x="314" y="100" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">queues, sessions</text>
+
+  <rect x="24" y="124" width="414" height="64" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/>
+  <text x="38" y="146" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">seed four accounts → run the flow in the browser → read the rows back</text>
+  <text x="38" y="166" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">The whole point: a recording that proves the change worked, not one that shows a</text>
+  <text x="38" y="182" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">page loading with no data behind it.</text>
+
+  <path d="M460,106 L510,106" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow12a)"/>
+
+  <rect x="516" y="66" width="176" height="80" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <text x="532" y="90" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#4a154b">SLACK</text>
+  <text x="532" y="112" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">the recording, and</text>
+  <text x="532" y="130" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">what the rows said</text>
+
+  <rect x="8" y="222" width="684" height="70" rx="9" fill="#fdf6f6" stroke="#a32020" stroke-width="1.5"/>
+  <text x="26" y="244" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">This database is empty, local, and destroyed with the machine. That is the feature.</text>
+  <text x="26" y="264" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Ray's application uses a hosted Postgres, and the obvious next thought is to point the bot at it. Don't. The rule</text>
+  <text x="26" y="282" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">from lesson 10 decides this: everyone who can message the bot gets every capability it has. Part 1 works through why.</text>
+</svg>
+<p class="cap">Two more services on a machine that already had a browser — and one decision, made
+once, about which database the bot is allowed to know exists.</p>
+</div>
+<ul>
+  <li><strong>Postgres and Redis in the sandbox image</strong>, available to every run with nothing to install.</li>
+  <li><strong>A measured answer</strong> to what they cost per message, which is not the answer you would guess.</li>
+  <li><strong>The bot told it has them</strong>, the same way lesson 11 told it about the browser.</li>
+  <li><strong>A written line</strong> between a throwaway database and a real one.</li>
+</ul>
+</div>
+
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 11, so the sandbox has Chromium, files come back through a single-use upload
+URL, and you have rebuilt the E2B template at least once — that command is needed again here.</p>
+<p>No new credential. No new account. This lesson is two lines of template and one decision, and the
+decision is the part worth your time.</p>
+</div>
+
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
+  <title>Where lesson 12 sits: lesson 11 let the bot show you, lesson 12 lets it prove the thing it shows, and lessons 13 onward shape how it behaves</title>
+  <defs>
+    <marker id="arrowArc12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+  <rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSON 11</text>
+  <text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">It can show you</text>
+  <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a browser, recordings</text>
+
+  <path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc12)"/>
+
+  <rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/>
+  <text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 12 — YOU ARE HERE</text>
+  <text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">It can prove it</text>
+  <text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">state to set up, and</text>
+  <text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">to read back afterwards</text>
+
+  <path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc12)"/>
+
+  <rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 13–17</text>
+  <text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">It gets habits</text>
+  <text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">CLAUDE.md, skills, memory</text>
+</svg>
+<p class="cap">This is the last lesson that adds to the machine. From 13 onward the course stops
+giving the bot new powers and starts shaping how it uses the ones it has.</p>
+</div>
+<p><strong>The gap this closes.</strong> A browser can click through a signup form. It cannot tell you
+whether the row landed, whether the second account collided with the first, or whether the queue
+drained. Without state, "verified" means "the page rendered" — which is exactly the class of bug that
+survives a demo and dies in production.</p>
+</div>
+
+<div class="fm" style="--fc:#1f4fd8">
+<h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span>
+  <span class="what">Why a browser alone proves little, what these services actually cost per message
+  (measured, and surprising), who is allowed to build a template and why it is not the bot, and the
+  line between a throwaway database and a real one. ~25 min.</span></li>
+<li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span>
+  <span class="what">Seven steps: one decision, a request, a review, a build you run yourself, a
+  merge, a three-way live test, and the briefing. 60–100 min.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span>
+  <span class="what">The template written out, the failure table, what this page verified, and where
+  everything lives.</span></li>
+</ol>
+</div>
+
+<div class="fm" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<div class="danger"><strong>Do not give the bot your real database.</strong> Ray mentions that his own
+application runs on a hosted Postgres, and the natural next thought — the one that makes this feature
+feel properly useful — is to hand the bot that connection string so it can verify against real data.
+<br><br>The rule you wrote in lesson 10 already decides this: <em>a capability is addable only if
+handing it to any workspace member would be acceptable</em>. A production database fails that test,
+and does not pass it by being read-only. What this lesson installs is an <strong>empty local
+Postgres that dies with the machine</strong> — and that is not a limitation to work around, it is the
+thing that makes the feature safe to have at all.</div>
+<ul>
+  <li><strong>Lesson 11 finished</strong>, and you have run <code>bin/with-secrets node e2b/build.mjs</code> once.</li>
+  <li><strong>Twenty minutes where a production deploy is fine</strong> — the template build ships the moment it completes, as it did last lesson.</li>
+  <li><strong>No new accounts or keys.</strong> If a step asks you for one, something has gone wrong.</li>
+</ul>
+</div>
+
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what you're building</h2>
+  <p>Four things: why lesson 11's browser proves less than it looks like it proves, what a service in
+  the image actually costs per message, why the bot cannot do this job itself, and where the line sits
+  between a database it may ruin and one it must never see.</p>
+</div>
+
+<details class="sec" id="verification-gap" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What a browser alone can and cannot prove<span class="sec-s">A recording of a broken flow is still a recording. The camera does not know.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Lesson 11 ended with a video of a counter going up, and that felt like proof. It was proof of
+something narrow: the page rendered and responded to clicks. Most changes worth reviewing are not
+like that.</p>
+
+<table>
+<thead><tr><th>The change</th><th>What a browser sees</th><th>What is actually in question</th></tr></thead>
+<tbody>
+<tr><td>"Signup now rejects duplicate emails"</td><td>A form, an error message</td><td>Whether a second row was written anyway</td></tr>
+<tr><td>"Invites expire after 7 days"</td><td>A page saying expired</td><td>Whether the old rows were ever aged, or just hidden</td></tr>
+<tr><td>"Orders move to the fulfilment queue"</td><td>A success toast</td><td>Whether anything reached the queue</td></tr>
+<tr><td>"Admins can see other users' drafts"</td><td>A list with items in it</td><td>Whether it is <em>their</em> items — which needs four accounts to exist first</td></tr>
+</tbody>
+</table>
+
+<div class="metaphor"><strong>A film of a rehearsal.</strong> The browser records the performance
+faithfully and has no opinion about whether the stage was set. Seeding the database is setting the
+stage; reading the rows back afterwards is checking that anything actually moved.</div>
+
+<div class="win"><strong>The last row is the one that changes what is possible.</strong> "Four
+accounts exist, in this configuration" is not something a browser can arrange by clicking — it is
+minutes of signup flow, or one SQL statement. Ray makes exactly this point: with a database on the
+machine, Claude can seed the state a test needs and then verify against it.</div>
+
+<h3>And why Redis comes along</h3>
+<p>Ray adds Redis in the same breath, without saying why, and it is worth a sentence: the things
+applications put in Redis — sessions, queues, rate limits, caches — are precisely the things that
+behave correctly on a first click and wrongly on the second. They are invisible to a browser and
+awkward to assert on without the server in front of you.</p>
+<div class="callout"><strong>You may not need it.</strong> Nothing in this repository uses Redis
+today. Adding it is a bet that your applications do, which for Ray is true. Step 1 asks you to make
+that call deliberately rather than by copying.</div>
+</details>
+
+<details class="sec" id="what-it-costs" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What a service in the image costs per message<span class="sec-s">Measured before the change. The answer is not the one lesson 11's reasoning suggests.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Lesson 11 established a rule that sounded general: <em>a fresh sandbox per message turns every
+install into a per-message cost, so put it in the image.</em> Applied here that suggests Postgres and
+Redis in the image will make every message slower, and that the cost is the price of the feature.</p>
+
+<p>That reasoning is half right, and the half that is wrong matters. Measured on this project's image
+immediately before this lesson:</p>
+
+<table>
+<thead><tr><th>Measurement</th><th>Median of 3</th></tr></thead>
+<tbody>
+<tr><td><code>Sandbox.create()</code> returns</td><td><strong>519 ms</strong></td></tr>
+<tr><td>First command actually runs</td><td><strong>696 ms</strong> total</td></tr>
+</tbody>
+</table>
+
+<div class="win"><strong>E2B boots from a snapshot, not from a container pull.</strong> That is why a
+sandbox carrying Node, git, the GitHub CLI, Claude Code, Playwright and a 114 MB Chromium starts in
+about half a second. <em>Adding files to the image is close to free at boot.</em> The lesson-11 rule
+was about avoiding a download per run, and it still holds — but it never implied that a bigger image
+boots more slowly, and here it plainly does not.</div>
+
+<p>So the cost is not the installing. It is the <strong>running</strong>:</p>
+
+<table>
+<thead><tr><th>Question</th><th>Where the cost lands</th></tr></thead>
+<tbody>
+<tr><td>Are the binaries on disk?</td><td>Image size. Nearly free, per the numbers above</td></tr>
+<tr><td>Is a server <em>process</em> up and accepting connections?</td><td><strong>Per message, every message</strong> — a database has to initialise a data directory and reach a ready state before anything can connect</td></tr>
+<tr><td>Does every run need it?</td><td>Most do not. "What is 2 + 2?" pays the same startup as a four-account seeding test</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Which makes "always on or on demand" the real design question</strong>,
+and it is one the video does not raise. Ray has the services running in the sandbox. The alternative
+is that they are installed but idle, started by the model in the runs that need them — a second or
+two on those runs, nothing on the rest. Step 1 asks you to choose, and step 4 measures the result so
+the choice is not a guess.</div>
+
+<div class="win"><strong>Measure before, not after.</strong> The numbers above exist because they were
+taken while the old image was still the live one. After the change there is nothing to compare
+against, and "it feels about the same" is not a finding.</div>
+</details>
+
+<details class="sec" id="who-builds" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Why the bot cannot do this one itself<span class="sec-s">Ray gives a reason, corrects it mid-video, and the real answer is better than either.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>This is the first lesson since 09 where the work does not go to the bot in Slack. Ray switches to
+his local Claude Code and explains why:</p>
+
+<div class="ray"><strong>Ray:</strong> "it's much better to do this locally because we're going to be
+building the image as well, and our actual sandbox doesn't have enough memory and capacity to build a
+sandbox image."
+<br><br>Then, later in the same video: "I was actually a little bit wrong earlier because I said the
+build happens locally for the template image, but it actually happens on e2b.dev's own cloud system."
+<br><br>The second statement voids the first. The build runs on E2B's builders wherever you type the
+command — which is visible in the build log, where every step is executed remotely. Memory is not the
+constraint.</div>
+
+<p><strong>The real reason is a credential, and it is one this project created on purpose.</strong>
+<code>E2B_API_KEY</code> reaches two places: the Vercel function, which uses it to create sandboxes,
+and <code>e2b/build.mjs</code>, which uses it to build images. It is never passed <em>into</em> a
+sandbox. So the bot cannot build a template however much memory it has — it has no way to
+authenticate to E2B.</p>
+
+<div class="win"><strong>That boundary is the same shape as two you already have.</strong> The GitHub
+App's private key stays in the function and only a one-hour installation token crosses. The Slack
+token stays in the function and only a single-use upload URL crosses. Here, nothing crosses at all:
+the ability to <em>create</em> sandboxes is deliberately not a thing that sandboxes have. An agent
+that could mint its own machines would be an agent whose spending has no ceiling.</div>
+
+<p>Which leaves a split you have already used once. Lesson 11 ran exactly this way without anyone
+naming it as a pattern:</p>
+
+<table>
+<thead><tr><th>Job</th><th>Who</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Edit <code>e2b/template.mjs</code>, open a pull request</td><td><strong>The bot</strong></td><td>It is code in a repository it can reach</td></tr>
+<tr><td>Review the diff</td><td><strong>You</strong></td><td>Lesson 11 found two bugs here that the author could not see</td></tr>
+<tr><td>Run the build</td><td><strong>You</strong></td><td>The credential is yours, and the build is a production deploy</td></tr>
+<tr><td>Test the result end to end</td><td><strong>The bot</strong></td><td>It is the only party that can run inside the new image</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>So "does Ray dogfood this lesson" has two answers.</strong> The template
+change: no, he does it locally. The verification: yes, through Slack — and that half is the half that
+can only be done from inside.</div>
+</details>
+
+<details class="sec" id="which-database" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Which database, and the one you must not connect<span class="sec-s">The feature is only safe because the data is worthless. Keep it that way.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Everything above describes a Postgres that starts empty, holds only what a test puts in it, and is
+destroyed minutes later along with the machine. Every useful property of this lesson depends on that.</p>
+
+<table>
+<thead><tr><th></th><th>Sandbox Postgres (this lesson)</th><th>Your real database</th></tr></thead>
+<tbody>
+<tr><td>Contents at start</td><td>Nothing</td><td>Everything</td></tr>
+<tr><td>Worst case if the model runs <code>DROP TABLE</code></td><td>The test fails. Try again</td><td>The obvious</td></tr>
+<tr><td>Worst case if a web page the browser loaded tells it to exfiltrate rows</td><td>It exfiltrates rows it wrote itself, thirty seconds ago</td><td>The obvious</td></tr>
+<tr><td>Who effectively has access</td><td>Anyone who can message the bot — which is fine</td><td>Anyone who can message the bot — which is not</td></tr>
+</tbody>
+</table>
+
+<div class="danger"><strong>The last row is the whole argument.</strong> There is no per-user or
+per-channel scoping in this design. A <code>DATABASE_URL</code> pointing at production is not a
+capability the bot has; it is a capability <em>every member of the workspace</em> has, mediated by a
+model that reads web pages for a living. Read-only does not fix it: "the bot can read customer data"
+and "anyone in the workspace can read customer data, by asking nicely" are the same sentence.</div>
+
+<div class="win"><strong>And you already wrote the rule.</strong> Lesson 10 put it in
+<code>CLAUDE.md</code>: a capability is addable only if handing its full power to any workspace member
+would be acceptable. This lesson is its first real test, because unlike a search engine, a production
+database is genuinely tempting — it is the difference between verifying against fixtures and
+verifying against reality.</div>
+
+<div class="callout"><strong>If you need real data, the answer is a copy, not a connection.</strong>
+A restored snapshot with the sensitive columns scrubbed gives you realistic shapes and volumes, in a
+database that is still worthless. That is more work than pasting a connection string, which is
+precisely why the decision should be made now, calmly, and not at the moment a test is failing.</div>
+</details>
+
+<div class="checkpoint"><b>THE DECISION THIS PAGE MAKES</b>Postgres and Redis go in the image, empty
+and local, and nothing in this project ever holds a connection string to a database that matters.</div>
+
+
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Seven steps. The same shape as lesson 11 — decide, ask, review, build, merge, verify, brief —
+  because that shape was found the hard way and it worked.</p>
+</div>
+
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 1 of 7 — Decide what goes in, and whether it runs<span class="sec-s">Two questions Ray answers by default. Both are cheap now and awkward later.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Brief</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Postgres, Redis, or both?</strong> Ray adds both. This page follows him, on the grounds
+  that the lesson is about the pattern and the second service costs almost nothing once the first is
+  there — but say why out loud, because "nothing here uses Redis today" is also a defensible answer.</p>
+</li>
+<li>
+  <p><strong>Running always, or started on demand?</strong> This is the one the video does not ask.</p>
+  <table>
+  <thead><tr><th></th><th>Always running</th><th>Started on demand</th></tr></thead>
+  <tbody>
+  <tr><td>Cost on a run that needs a database</td><td>Nothing extra</td><td>A second or two to start</td></tr>
+  <tr><td>Cost on a run that does not</td><td>The same startup, every message, forever</td><td>Nothing</td></tr>
+  <tr><td>What the model has to know</td><td>Nothing — it is just there</td><td>One line: "start it if you need it"</td></tr>
+  <tr><td>Failure mode</td><td>A slow boot nobody attributes to this lesson</td><td>The model forgets, and reports "no database" when there is one</td></tr>
+  </tbody>
+  </table>
+  <div class="win"><strong>Recommendation: install always, start on demand</strong>, and make step 7's
+  briefing carry the one line that prevents the failure mode. Most messages to this bot are questions,
+  not database tests, and a cost paid on every message for the benefit of a few is the kind of thing
+  that never gets revisited because nobody can see it.</div>
+</li>
+<li>
+  <p><strong>Write down the boot numbers you are about to change.</strong> On this project,
+  immediately before the change: <strong>519 ms</strong> median to create a sandbox, <strong>696
+  ms</strong> to the first command running. Take your own if you have not.</p>
+  <div class="callout">There is no way to take a "before" measurement after the build. The template
+  name is the only handle, and the new image replaces the old one under it.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You can say which services go in, whether they run by default,
+and what the machine's boot time was beforehand.</div>
+</section>
+
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 2 of 7 — Ask the bot to change the template<span class="sec-s">It can write the change. It cannot build it — and telling it that up front saves a wasted run.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Brief</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Post this in <code>#joestar-dev</code>.</strong></p>
+  <p class="where">Where: Slack → <code>#joestar-dev</code> → mention <code>@joestar</code></p>
+<pre><code>Add PostgreSQL and Redis to the E2B sandbox template in e2b/template.mjs, so
+every future sandbox has them without installing anything at run time.
+
+Install them, but do NOT start them on boot. Most messages are questions, not
+database tests, and a startup cost paid on every message for the benefit of a
+few is invisible and never gets revisited. The model starts them in the runs
+that need them.
+
+Do not build the image. You cannot — E2B_API_KEY is deliberately never passed
+into a sandbox, so you have no way to authenticate to E2B. I run the build.
+
+What I want:
+- postgres and redis installed, with a data directory initialised at BUILD time
+  so that starting the server at run time is fast and needs no setup
+- whatever is needed so a plain `psql` and `redis-cli` work as the `user`
+  account without sudo, against a local server on the default ports
+- a database that exists and is owned by `user`, so nothing has to CREATE
+  DATABASE before it can do anything
+- no passwords, no exposed ports, nothing reachable from outside the sandbox
+
+Do not add DATABASE_URL or REDIS_URL as Vercel environment variables and do not
+put a connection string anywhere outside the sandbox. This database is local,
+empty and thrown away with the machine, and that is the entire reason it is safe
+to have.
+
+Open a PR with just the template change. Tell me exactly what commands start
+each service and how long each takes to become ready — I am going to measure it.</code></pre>
+  <div class="ray"><strong>Two departures from Ray, both deliberate.</strong> He has the services
+  running in the sandbox; this installs them idle, for the reason in step 1. And he asks his agent to
+  build and deploy the image, which ours structurally cannot do — saying so in the prompt costs one
+  sentence and saves a run that ends in a permissions error.</div>
+</li>
+<li>
+  <p><strong>Expect it to need more than one attempt at the build later, not now.</strong> Ray's went
+  "back and forth a few times with e2b.dev because it kept failing… and then it basically realized it
+  made a wrong assumption". Ours cannot iterate against the builder at all, so any wrong assumption
+  surfaces in <em>your</em> build in step 4 and comes back here as a second request.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A pull request touching <code>e2b/template.mjs</code> and
+nothing else, plus a message naming the start commands.</div>
+</section>
+
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 3 of 7 — Review the diff<span class="sec-s">Five checks. The first two are where a database in a container usually goes wrong.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Brief</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Read it against this list.</strong></p>
+<table>
+<thead><tr><th>Check</th><th>What wrong looks like</th></tr></thead>
+<tbody>
+<tr><td><strong>The data directory is initialised at build time, as the right user</strong></td><td>Initialised at run time, so every message pays for it; or initialised as root, so <code>user</code> cannot write to it and the server fails to start with a permissions error that names a path, not a cause</td></tr>
+<tr><td><strong>No service is started on boot</strong></td><td>A start command in the template, which is the thing step 1 decided against — and which will not show up as a regression anywhere except a boot number nobody is watching</td></tr>
+<tr><td><strong>No password, no listening on a public interface</strong></td><td>A password in the template (a secret in an image, which lesson 10 ruled out), or a config binding to <code>0.0.0.0</code> when nothing outside the machine should reach it</td></tr>
+<tr><td><strong>No connection string escapes the sandbox</strong></td><td><code>DATABASE_URL</code> added to Vercel, to <code>.env.op</code>, or to the function. The function has no business talking to this database</td></tr>
+<tr><td><strong>Versions pinned, like everything else in the image</strong></td><td>Whatever the distribution's default happens to be on the day of the next rebuild. <code>versions.js</code> exists now; use it</td></tr>
+</tbody>
+</table>
+</li>
+<li>
+  <p><strong>Ask what would have gone red.</strong> A template change is hard to unit-test, so expect
+  few or no new tests here — but say that explicitly rather than letting a passing suite imply
+  coverage it does not have. Lesson 11 shipped "57/57 pass" on a change no test touched.</p>
+  <div class="win"><strong>The real test for this one is step 4.</strong> Which is a reason to do step
+  4 attentively, not a reason to skip the question.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The diff touches the template only, starts nothing, holds no
+secret, and leaks no connection string.</div>
+</section>
+
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 4 of 7 — Build the image, and measure what it cost<span class="sec-s">Your credential, your production deploy. Then the numbers that tell you whether step 1 was right.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Brief</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Check out the branch and build.</strong></p>
+<pre><code>gh pr checkout N
+bin/with-secrets node e2b/build.mjs</code></pre>
+  <div class="danger"><strong>Still a production deploy dressed as a local command.</strong> The image
+  registers under <code>joestar-claude</code>, which every <code>Sandbox.create()</code> asks for, so
+  the next message anyone sends the bot boots it. No review, no CI, no rollback — and this time the
+  change is two server packages rather than a browser, so a template that fails to build leaves
+  production on the old image while your branch says otherwise.</div>
+  <p>Confirm a <strong>new build id</strong>, not merely an absence of errors.</p>
+</li>
+<li>
+  <p><strong>Expect this to fail at least once.</strong> Ray's did — repeatedly — and his agent could
+  iterate against the builder directly. Yours cannot, so read the failing step, and take the error
+  back to the thread in step 2 rather than patching <code>template.mjs</code> yourself.</p>
+  <div class="callout"><strong>Database packages are the classic case.</strong> Installing a database
+  in a container image usually tries to start a service during installation, in an environment with no
+  init system, and fails in a way that names neither. If the build dies inside the install step, that
+  is the first thing to suspect.</div>
+</li>
+<li>
+  <p><strong>Measure the new image against the numbers from step 1.</strong> Boot a sandbox, time
+  <code>Sandbox.create()</code> and the first command, then time starting each service to a ready
+  state. Three questions:</p>
+  <table>
+  <thead><tr><th>Question</th><th>What the answer tells you</th></tr></thead>
+  <tbody>
+  <tr><td>Did boot time change?</td><td>Whether "adding to the image is nearly free" survived contact with two servers</td></tr>
+  <tr><td>How long to a usable database?</td><td>What a test that needs one actually pays</td></tr>
+  <tr><td>Does it work as <code>user</code>, with no sudo?</td><td>The permissions trap from step 3, caught here rather than from a Slack thread</td></tr>
+  </tbody>
+  </table>
+  <div class="win"><strong>Do this before Slack, as in lesson 11.</strong> Driving it by hand
+  separates "the image is wrong" from "the model wrote a bad script" — two failures that look
+  identical from a thread, and last lesson that separation is what found the real bug.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A new build id, both services reaching ready as
+<code>user</code> by hand, and a before-and-after boot number.</div>
+</section>
+
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 5 of 7 — Merge, and let CI deploy<span class="sec-s">The code half. The image half shipped in step 4, which is the asymmetry to keep in mind.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Brief</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Merge, then watch the deploy.</strong></p>
+<pre><code>gh pr merge N --squash --admin
+gh run watch</code></pre>
+  <p>If this pull request touches only <code>e2b/template.mjs</code>, the deploy changes nothing the
+  function does — the image was already live from step 4. Merging is about the repository telling the
+  truth, not about shipping.</p>
+  <div class="callout">Which is worth noticing: for a template-only change, <strong>the code and the
+  image are live at different times, in that order</strong>, and reverting the commit does not revert
+  the image.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>main</code> matches the image that is already running.</div>
+</section>
+
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 6 of 7 — Verify all three together, in one run<span class="sec-s">Ray's test, and the right one: the point was never Postgres alone.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 6 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Brief</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask for the combined test.</strong></p>
+  <p class="where">Where: Slack → <code>#joestar-dev</code></p>
+<pre><code>New image is live. Prove all three work in one run, and tell me the timings.
+
+1. Start Postgres. Create a table, insert a row, select it back, show me what
+   came back.
+2. Start Redis. Set a key, read it back.
+3. Serve a tiny page that reads that row out of Postgres and displays it, drive
+   it in Playwright, and record the video.
+
+Send me the recording. Report how long each service took to become ready.</code></pre>
+  <div class="win"><strong>Step 3 is the one that matters, and Ray's test does not have it.</strong>
+  His checks Postgres, then Redis, then Playwright — three separate things on one machine. Making the
+  page <em>read the row it seeded</em> is what proves they compose, which is the entire point of
+  having them together. Three passing checks in one sandbox is a weaker claim than it appears.</div>
+</li>
+<li>
+  <p><strong>Read the answer for what it did not do.</strong> A model that cannot start Postgres has
+  an obvious way out: describe what the test would show. Look for the actual row values coming back,
+  and for a recording of a page with data in it rather than a placeholder.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A recording showing a page rendering a row that was seeded in
+the same run, plus real timings for each service.</div>
+</section>
+
+<section class="sec" id="step7" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 7 of 7 — Tell the model it has them<span class="sec-s">The lesson-11 step, repeated — and now load-bearing, because on-demand services have to be started by someone who knows they exist.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 7 of 7</title>
+  <rect x="8" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="54" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="107" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="153" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="206" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="252" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text>
+  <rect x="305" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="351" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Build</text>
+  <rect x="404" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="450" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text>
+  <rect x="503" y="10" width="92" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="549" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text>
+  <rect x="602" y="10" width="92" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="648" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">7 · Brief</text>
+</svg></div>
+
+<p>Lesson 11 added <code>browserCapabilities()</code> to the prompt the function builds, so the model
+is told about its browser on every run rather than discovering it. The same argument applies here, and
+one thing makes it stronger: if the services are installed but idle, a model that does not know they
+exist will report that it has no database — and be wrong, on a machine that has one.</p>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask for a capabilities block, in the same place and shape.</strong> It should carry the
+  exact start commands, that the database is empty and local and dies with the machine, and that
+  nothing in it should ever be treated as real data.</p>
+  <div class="win"><strong>Derive the facts, do not restate them.</strong> Lesson 11's review found
+  the briefing hard-coding a cap that lived elsewhere, three hours after that cap changed. Anything
+  with a version or a port in it belongs in <code>versions.js</code> and gets interpolated.</div>
+</li>
+<li>
+  <p><strong>Verify it the same way: in a channel whose topic names no repository.</strong> Nothing is
+  cloned, so a correct answer can only have come through the prompt. Ask what database it has and how
+  it would start it, and require it to answer without running anything.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>In a channel with no repo in its topic, the bot describes its
+database, names the start command, and says the data is throwaway.</div>
+</section>
+
+
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>The shape the template change takes, the failure table, an honest account of what this page
+  checked, and where the new things live.</p>
+</div>
+
+<details class="sec" id="template-shape" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">The template change, and the parts that are not obvious<span class="sec-s">Installing a database in an image is not the same as installing a tool.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<p>A CLI is a binary on a path. A database is a binary, a data directory, a user who owns it, and a
+process that has to be running. Four things instead of one, and three of them are where it goes
+wrong.</p>
+
+<table>
+<thead><tr><th>Idea</th><th>Why it is not just "install postgres"</th></tr></thead>
+<tbody>
+<tr><td><strong>Initialise the data directory at build time</strong></td><td>A fresh cluster has to be created before a server can start. Do it in the image and starting is fast; do it at run time and every run that wants a database pays for it</td></tr>
+<tr><td><strong>Own it as the account that will use it</strong></td><td>The build runs as root, the sandbox runs as <code>user</code>. This is the same trap Playwright set in lesson 11, in different clothes: the files exist and the wrong account owns them</td></tr>
+<tr><td><strong>Installing may try to start a service</strong></td><td>Database packages commonly start a server as part of installation, in an image build with no init system. That fails, and the error names neither the cause nor the fix</td></tr>
+<tr><td><strong>Nothing listens to the outside</strong></td><td>There is no outside. Local sockets or loopback only, no password, no exposed port — the machine has one occupant and lives five minutes</td></tr>
+</tbody>
+</table>
+
+<div class="win"><strong>The build-time / run-time split is the through-line of these two lessons.</strong>
+Lesson 11 hit it with <code>setEnvs</code>, where a variable set at build time was gone at run time.
+Here it is data directories and processes. Same question each time: <em>does this survive the
+snapshot, or does it have to happen again on every boot?</em> Files do. Environment and processes do
+not.</div>
+</details>
+
+<details class="sec" id="failure-table" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When something doesn't work<span class="sec-s">Anticipated from the shape of the problem — updated once this lesson has actually been run.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>What you see</th><th>What it usually is</th></tr></thead>
+<tbody>
+<tr><td>The image build fails inside the install step</td><td>The package tried to start a service during installation. Installing without triggering that, or accepting the failure and initialising by hand, is the usual fix</td></tr>
+<tr><td>The server will not start, complaining about a directory</td><td>The data directory is owned by root and the sandbox runs as <code>user</code>. Lesson 11's trap again</td></tr>
+<tr><td>"database does not exist" on the first connection</td><td>A cluster was created but no database inside it, or not one named after the connecting user</td></tr>
+<tr><td>Connection refused, immediately after starting the server</td><td>Starting is asynchronous. The command returns before the server accepts connections — wait for ready rather than sleeping a guess</td></tr>
+<tr><td>Works by hand, fails from Slack</td><td>The model does not know the service needs starting. That is step 7, and it is why step 7 exists</td></tr>
+<tr><td>Every message got slower and nobody noticed for a week</td><td>Something starts on boot. Compare against the step 1 numbers</td></tr>
+<tr><td>The bot says it has no database</td><td>Either the briefing did not ship, or it shipped and the model is right and the image did not. Check by hand before believing either</td></tr>
+</tbody>
+</table>
+</details>
+
+<details class="sec" id="verified-vs-untested" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Written before the lesson was run. Read this before trusting any sentence above.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Claim</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>The sandbox boots in about half a second on the pre-lesson image</td><td><strong>Verified</strong> 2026-09-17: 519 ms median to create, 696 ms to first command, three runs</td></tr>
+<tr><td><code>E2B_API_KEY</code> never reaches a sandbox, so the bot cannot build a template</td><td><strong>Verified</strong> by reading <code>api/_lib/claude.js</code> and <code>api/slack/events.js</code> — it appears only in the function's startup check and in <code>e2b/build.mjs</code></td></tr>
+<tr><td>Ray's stated reason for building locally is memory, and he corrects it later in the same video</td><td><strong>Verified</strong> against the transcript</td></tr>
+<tr><td>Ray does the template change in local Claude Code, not through Slack</td><td><strong>Verified</strong> against the transcript. An earlier note in this repository said he dogfooded lesson 12; that was wrong and is corrected</td></tr>
+<tr><td>Adding these services leaves boot time roughly unchanged</td><td><strong>Untested.</strong> It follows from E2B booting a snapshot, and the before numbers exist to check it — but it is a prediction until step 4</td></tr>
+<tr><td>How long a database takes to become usable from a cold sandbox</td><td><strong>Unknown.</strong> This is the number that decides whether "start on demand" was the right call</td></tr>
+<tr><td>Whether the image build succeeds first time</td><td><strong>Untested</strong>, and unlikely — Ray's needed several attempts, and ours cannot iterate against the builder</td></tr>
+<tr><td>Whether Redis earns its place here</td><td><strong>Unknown and worth revisiting.</strong> Nothing in this repository uses it. It is in because Ray's applications use it, which is a reason to learn the pattern, not evidence that you need the service</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Why this table exists.</strong> A cold reader cannot tell a checked claim
+from a repeated one. Lesson 07 asserted that reinstalling a Slack app mints a new bot token because
+the video said so; it does not. Lesson 11 found a bug in a fix whose own comment claimed it prevented
+that exact failure. The habit is cheap and it has paid twice.</div>
+</details>
+
+<details class="sec" id="where-everything-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where everything lives<span class="sec-s">What this lesson adds to the map.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+<thead><tr><th>Thing</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>The sandbox image definition</td><td><code>joestar-agent/e2b/template.mjs</code> — Postgres and Redis join Chromium here</td></tr>
+<tr><td>Building and registering it</td><td><code>bin/with-secrets node e2b/build.mjs</code>, registered as <code>joestar-claude</code></td></tr>
+<tr><td>Pinned versions shared by image and briefing</td><td><code>joestar-agent/api/_lib/versions.js</code></td></tr>
+<tr><td>What the model is told about its machine</td><td><code>browserCapabilities()</code> in <code>api/_lib/thread.js</code>, and its new neighbour</td></tr>
+<tr><td>The E2B key</td><td>1Password, Vercel, and <code>e2b/build.mjs</code> — never a sandbox</td></tr>
+<tr><td>The rule about what may be connected</td><td><code>CLAUDE.md</code>, written in lesson 10 and first tested here</td></tr>
+<tr><td>E2B's template list and build logs</td><td><code>e2b.dev</code> → Templates</td></tr>
+<tr><td>Traps already paid for</td><td><code>TRAPS.md</code></td></tr>
+</tbody>
+</table>
+</details>
+
+
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l12-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l12-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l12-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l12-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>

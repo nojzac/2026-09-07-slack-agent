@@ -399,10 +399,17 @@ record it, but it cannot verify a change that touches the database, because ther
 is no Postgres on the container. Same shape as lesson 11 — a template change, so
 expect the same build-deploys-immediately asymmetry.
 
-**Ray dogfoods 12, 16 and 17, and does 13, 14 and 15 by hand.** The split is
-deliberate: he delegates anything that changes the *machine* (template, tooling,
-integrations) and hand-writes anything that is the agent's own *instructions*
-(CLAUDE.md, skills, memory).
+**Ray dogfoods 16 and 17 through Slack; 12, 13, 14 and 15 he does himself.**
+For 12 he uses his *local* Claude Code for the template change and only the
+verification through Slack. His stated reason is that the sandbox lacks memory
+to build an image — and he corrects himself later in the same video: the build
+runs on E2B's own cloud either way.
+
+**The real blocker is a credential, and it is one we built.** `E2B_API_KEY`
+reaches the Vercel function and `e2b/build.mjs`, and is never passed into a
+sandbox, so the bot cannot build a template no matter how much memory it has.
+Lesson 11 already found the right shape for this: the bot writes the template
+change and opens a PR, and a human runs the build. Do that again for 12.
 
 **Settled 2026-09-16: stay on the GitHub free plan until the end of the course.**
 Not an open question — don't re-raise it each lesson. What follows from it, and
