@@ -593,7 +593,8 @@ survives a demo and dies in production.</p>
   line between a throwaway database and a real one. ~25 min.</span></li>
 <li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span>
   <span class="what">Seven steps: one decision, a request, a review, a build you run yourself, a
-  merge, a three-way live test, and the briefing. 60–100 min.</span></li>
+  merge, a three-way live test, and the briefing — then a record of what happened when they were
+  run. 60–100 min.</span></li>
 <li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span>
   <span class="what">The template written out, the failure table, what this page verified, and where
   everything lives.</span></li>
@@ -807,7 +808,8 @@ and local, and nothing in this project ever holds a connection string to a datab
   <span class="pn">PART 2</span>
   <h2>Build it</h2>
   <p>Seven steps. The same shape as lesson 11 — decide, ask, review, build, merge, verify, brief —
-  because that shape was found the hard way and it worked.</p>
+  because that shape was found the hard way and it worked. A final section records what happened when
+  these steps were actually run, on 2026-09-17.</p>
 </div>
 
 <section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
@@ -927,10 +929,21 @@ each service and how long each takes to become ready — I am going to measure i
   sentence and saves a run that ends in a permissions error.</div>
 </li>
 <li>
-  <p><strong>Expect it to need more than one attempt at the build later, not now.</strong> Ray's went
-  "back and forth a few times with e2b.dev because it kept failing… and then it basically realized it
-  made a wrong assumption". Ours cannot iterate against the builder at all, so any wrong assumption
-  surfaces in <em>your</em> build in step 4 and comes back here as a second request.</p>
+  <p><strong>Spell out the design, or the request times out.</strong> The prompt above, sent as
+  written, left the bot to research how Debian packages Postgres: it spent the whole 255-second budget
+  reading and pushed nothing. The retry named the design instead — <code>POSTGRES_MAJOR = '15'</code>
+  in <code>versions.js</code>, an <code>apt</code> install of <code>postgresql-15</code> and
+  <code>redis-server</code>, symlinks for <code>pg_ctl</code>, <code>initdb</code> and
+  <code>postgres</code> into <code>/usr/local/bin</code>, a build-time
+  <code>initdb -D /home/user/pgdata -U user --auth=trust</code> then start, <code>createdb</code> and
+  stop as <code>user</code>, and the run-time environment <code>PGDATA</code>,
+  <code>PGHOST=/tmp</code>, <code>PGUSER</code>, <code>PGDATABASE</code> — and it opened
+  <strong>PR #11</strong> in 75 seconds.</p>
+  <div class="callout"><strong>Why a template change needs this and lesson 11's did not.</strong>
+  Ray's agent went "back and forth a few times with e2b.dev because it kept failing… and then it
+  basically realized it made a wrong assumption". Ours cannot iterate against the builder at all, so
+  research it has no way to test is research it cannot finish. Hand it the decisions and it writes
+  them correctly in a minute.</div>
 </li>
 </ol>
 <div class="checkpoint"><b>CHECKPOINT</b>A pull request touching <code>e2b/template.mjs</code> and
@@ -981,6 +994,21 @@ nothing else, plus a message naming the start commands.</div>
   <div class="win"><strong>The real test for this one is step 4.</strong> Which is a reason to do step
   4 attentively, not a reason to skip the question.</div>
 </li>
+<li>
+  <p><strong>What the review found here.</strong> A subagent read PR #11 against that list; with no
+  container runtime on the Mac there was no dry run, so this was reading only. Two findings, both
+  fixed in one round:</p>
+  <table>
+  <thead><tr><th>Finding</th><th>Fix</th></tr></thead>
+  <tbody>
+  <tr><td>Debian's <code>postgresql-15</code> postinst creates a cluster <code>15/main</code> listening on port 5432 — a second cluster nobody asked for, beside the one <code>initdb</code> makes</td><td><code>pg_dropcluster --stop 15 main || true</code> added after the install, as insurance</td></tr>
+  <tr><td><code>redis-server</code> started with no config file binds every interface, which is the check three rows above failing quietly</td><td>The start command gained <code>--bind 127.0.0.1</code></td></tr>
+  </tbody>
+  </table>
+  <p>Two things that looked like findings and were not: <code>{ user: 'user' }</code> on
+  <code>runCmd</code> is valid and merely restates the SDK default, and <code>aptInstall</code>
+  hard-codes root already, so neither needed changing.</p>
+</li>
 </ol>
 <div class="checkpoint"><b>CHECKPOINT</b>The diff touches the template only, starts nothing, holds no
 secret, and leaks no connection string.</div>
@@ -1020,11 +1048,19 @@ bin/with-secrets node e2b/build.mjs</code></pre>
   change is two server packages rather than a browser, so a template that fails to build leaves
   production on the old image while your branch says otherwise.</div>
   <p>Confirm a <strong>new build id</strong>, not merely an absence of errors.</p>
+  <div class="danger"><strong>The template is whatever branch is checked out.</strong> The first
+  attempt here finished in 14 seconds and looked like a triumphant cache hit. It had rebuilt the
+  <em>old</em> image: the checkout was still on a docs branch, so <code>e2b/build.mjs</code> read a
+  <code>template.mjs</code> with no database in it and registered that under
+  <code>joestar-claude</code>. A fast build after a real change is the symptom.</div>
 </li>
 <li>
   <p><strong>Expect this to fail at least once.</strong> Ray's did — repeatedly — and his agent could
   iterate against the builder directly. Yours cannot, so read the failing step, and take the error
-  back to the thread in step 2 rather than patching <code>template.mjs</code> yourself.</p>
+  back to the thread in step 2 rather than patching <code>template.mjs</code> yourself. Here the
+  second attempt, from <code>main</code>, took <strong>1 min 11 s</strong> over 12 steps, initialised
+  the cluster and stopped it cleanly, and needed no third — the install-time start problem the
+  callout below predicts never appeared, because PR #11 dropped the cluster the package makes.</p>
   <div class="callout"><strong>Database packages are the classic case.</strong> Installing a database
   in a container image usually tries to start a service during installation, in an environment with no
   init system, and fails in a way that names neither. If the build dies inside the install step, that
@@ -1044,11 +1080,35 @@ bin/with-secrets node e2b/build.mjs</code></pre>
   </table>
   <div class="win"><strong>Do this before Slack, as in lesson 11.</strong> Driving it by hand
   separates "the image is wrong" from "the model wrote a bad script" — two failures that look
-  identical from a thread, and last lesson that separation is what found the real bug.</div>
+  identical from a thread, and last lesson that separation is what found the real bug. It earned its
+  keep again: both of this lesson's real defects were things only a boot could show, and neither was
+  visible in the diff.</div>
+</li>
+<li>
+  <p><strong>What three boots said.</strong> Boot time held — <strong>654 ms</strong> median to
+  create against a 519 ms baseline, and <strong>154 ms</strong> to the first command against 696 ms —
+  on an image that had also gained Codex 0.154.0 (339 MB) from PR #12 in the same build. Postgres
+  15.19 was present and so was Codex. Then the two problems:</p>
+  <table>
+  <thead><tr><th>What the boot showed</th><th>Root cause</th></tr></thead>
+  <tbody>
+  <tr><td><strong>Redis was already running</strong> — pid 331, listening on 127.0.0.1:6379, on a machine that was supposed to start nothing</td><td>The sandbox boots <code>/sbin/init</code>, which honours the <code>/etc/rc2.d/S01redis-server</code> link and the systemd wants-link the package installs. Postgres only looked obedient because its cluster had been dropped</td></tr>
+  <tr><td><strong><code>pg_ctl -w start</code> hung the SDK call</strong> for the full 60-second timeout, although the server came up and worked</td><td><code>pg_ctl</code> without <code>-l</code> hands the server the command's stdout and the server keeps it open, so the SDK never sees EOF and waits for a command that has already finished</td></tr>
+  </tbody>
+  </table>
+  <div class="win"><strong>Both fixed in PR #19, and both cheap.</strong> The template now removes the
+  rc links and the wants-links for both services, and the start command carries
+  <code>-l /home/user/pgdata/server.log</code>. The rebuild took <strong>21 s</strong>. Re-measured:
+  nothing running on boot, Postgres ready in <strong>1.3 s</strong>, Redis in <strong>0.5 s</strong>,
+  create 543 ms median, first command 150 ms.</div>
+  <div class="callout"><strong>One thing seen and not explained.</strong> <code>ss</code> reports
+  listeners on the sandbox's own <code>169.254.0.21</code> address for 5432 and 6379 with no owning
+  process. That is consistent with E2B's port forwarding sitting outside the namespace, but it was
+  not verified — treat it as an observation, not a fact.</div>
 </li>
 </ol>
 <div class="checkpoint"><b>CHECKPOINT</b>A new build id, both services reaching ready as
-<code>user</code> by hand, and a before-and-after boot number.</div>
+<code>user</code> by hand, nothing running before you start it, and a before-and-after boot number.</div>
 </section>
 
 <section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
@@ -1135,6 +1195,12 @@ Send me the recording. Report how long each service took to become ready.</code>
   <p><strong>Read the answer for what it did not do.</strong> A model that cannot start Postgres has
   an obvious way out: describe what the test would show. Look for the actual row values coming back,
   and for a recording of a page with data in it rather than a placeholder.</p>
+  <div class="win"><strong>It passed on the first run, in <code>#joestar-test</code>.</strong> The bot
+  started Postgres, created a <code>visits</code> table, wrote a Node server on port 3000 that inserts
+  a row and <code>INCR</code>s a Redis key on every GET, loaded the page three times under Playwright
+  and sent the video. It reported four rows and a hit count of four — <em>the fourth being the
+  browser's request for the favicon</em>, which is the kind of detail a described test never
+  produces. Postgres reached ready in 0.72 s. Nothing failed.</div>
 </li>
 </ol>
 <div class="checkpoint"><b>CHECKPOINT</b>A recording showing a page rendering a row that was seeded in
@@ -1169,6 +1235,12 @@ is told about its browser on every run rather than discovering it. The same argu
 one thing makes it stronger: if the services are installed but idle, a model that does not know they
 exist will report that it has no database — and be wrong, on a machine that has one.</p>
 
+<div class="ray"><strong>Where this briefing ended up.</strong> By the time it was written, lesson 13
+had replaced the prompt block with a <strong>persona file written into every sandbox</strong>, so the
+database briefing lives there rather than in a string the function assembles. It carries both start
+commands, and — after step 4 — the sentence "It takes about ten seconds; do not run it in the
+background." Same argument, better home.</div>
+
 <ol class="steps">
 <li>
   <p><strong>Ask for a capabilities block, in the same place and shape.</strong> It should carry the
@@ -1189,11 +1261,83 @@ database, names the start command, and says the data is throwaway.</div>
 </section>
 
 
+<details class="sec" id="what-happened" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What actually happened, 2026-09-17<span class="sec-s">Written after the run. Where this differs from the steps above, this is what is true.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<p>The lesson shipped in <strong>two</strong> pull requests: the template change, and a second one
+fixing what the first could not have known. Both defects were invisible in the diff and obvious on the
+first boot, which is the shape this lesson has to teach.</p>
+
+<table>
+<thead><tr><th>PR</th><th>What it did</th><th>What it cost</th></tr></thead>
+<tbody>
+<tr><td><strong>#11</strong></td><td>Postgres 15 and Redis into the template, cluster initialised at build time, nothing started</td><td>One timed-out request first, then 75 s</td></tr>
+<tr><td><strong>#19</strong></td><td>Removed the boot links for both services; added <code>-l</code> to the Postgres start command and a line to the persona file</td><td>A 21 s rebuild</td></tr>
+</tbody>
+</table>
+
+<h3>The request that researched instead of writing</h3>
+<p>The first attempt at step 2 left the bot to work out how Debian packages Postgres. It read for the
+full <strong>255-second</strong> budget and pushed nothing. The retry handed it the design — major
+version, package names, symlink targets, the exact <code>initdb</code> line, the run-time environment
+— and it opened PR #11 in 75 seconds. <strong>For a template change, spell out the design.</strong>
+The bot cannot build the image, so it cannot test an assumption, so research is the one thing it
+should not be asked to do here.</p>
+
+<h3>The two bugs only a boot could show</h3>
+<p>Review read the diff carefully and found two real things (a duplicate cluster on port 5432, and
+Redis binding every interface) without ever running the image — there is no container runtime on the
+Mac, so there was no dry run. Neither of the defects that actually mattered was among them.</p>
+<table>
+<thead><tr><th>Symptom on the first boot</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Redis already running — pid 331, 127.0.0.1:6379 — on an image whose whole point was that nothing runs</td><td>The sandbox boots <code>/sbin/init</code>, which honours <code>/etc/rc2.d/S01redis-server</code> and the systemd wants-link the package installs. Postgres only appeared to obey because its cluster had been dropped</td><td>The template deletes the rc links and wants-links for both services</td></tr>
+<tr><td><code>pg_ctl -w start</code> hung the SDK call for its full 60-second timeout, while the server itself came up fine</td><td>Without <code>-l</code>, <code>pg_ctl</code> leaves the started server holding the command's stdout, so the SDK never sees EOF</td><td><code>-l /home/user/pgdata/server.log</code>, which returns in about 12 s cold</td></tr>
+</tbody>
+</table>
+<div class="win"><strong>"Installed but not running" is a claim about the init system, not about your
+template.</strong> Not starting a service is not the same as the machine not starting it for you, and
+a diff cannot tell you which you have.</div>
+
+<h3>Numbers from the real runs</h3>
+<table>
+<thead><tr><th>Measurement</th><th>Before</th><th>After #11</th><th>After #19</th></tr></thead>
+<tbody>
+<tr><td><code>Sandbox.create()</code>, median of 3</td><td>519 ms</td><td>654 ms</td><td><strong>543 ms</strong></td></tr>
+<tr><td>First command running</td><td>696 ms</td><td>154 ms</td><td><strong>150 ms</strong></td></tr>
+<tr><td>Postgres to ready</td><td>—</td><td>hung 60 s</td><td><strong>1.3 s</strong></td></tr>
+<tr><td>Redis to ready</td><td>—</td><td>already up</td><td><strong>0.5 s</strong></td></tr>
+<tr><td>Template build</td><td>—</td><td>1 min 11 s, 12 steps</td><td>21 s</td></tr>
+</tbody>
+</table>
+<p>The #11 image also carried Codex 0.154.0 (339 MB) from PR #12, built at the same time — so
+<strong>339 MB and two database servers cost nothing measurable at boot</strong>, and step 1's
+prediction held. The first build of all was a 14-second no-op: the checkout was still on a docs
+branch, and <code>build.mjs</code> cheerfully rebuilt the old template under the live name.</p>
+
+<h3>The combined test, first try</h3>
+<p>One run in <code>#joestar-test</code>. The bot started Postgres, created a <code>visits</code>
+table, wrote a Node server on port 3000 inserting a row and incrementing a Redis key per GET, drove
+three page loads under Playwright, and sent the video. Four rows, hit count four, Postgres ready in
+0.72 s, nothing failed. The fourth hit is the browser asking for the favicon — a detail that exists
+only because something really ran.</p>
+
+<div class="ray"><strong>Three departures from Ray, all of them held up.</strong> The services are
+installed idle rather than running, and the boot numbers say that was free. The design was spelled
+out in the prompt rather than discovered, and that turned a timeout into 75 seconds. And his stated
+reason for building locally — that the sandbox lacks the memory — is simply wrong; the build runs on
+E2B's cloud either way. The real blocker is that <code>E2B_API_KEY</code> never enters a sandbox.</div>
+</details>
+
+
 <div class="part" id="part3" style="--pc:var(--ref)">
   <span class="pn">PART 3</span>
   <h2>Keep for later</h2>
-  <p>The shape the template change takes, the failure table, an honest account of what this page
-  checked, and where the new things live.</p>
+  <p>The shape the template change takes, the failure table with the two real failures in it, an
+  honest account of what this page checked, and where the new things live.</p>
 </div>
 
 <details class="sec" id="template-shape" open style="--sc:var(--ref); --sc2:var(--ref)">
@@ -1225,13 +1369,16 @@ not.</div>
 
 <details class="sec" id="failure-table" open style="--sc:var(--ref); --sc2:var(--ref)">
 <summary><div class="sec-head">
-  <h2 class="sec-t">When something doesn't work<span class="sec-s">Anticipated from the shape of the problem — updated once this lesson has actually been run.</span></h2>
+  <h2 class="sec-t">When something doesn't work<span class="sec-s">Updated after the run. The first two rows are the ones this lesson actually hit.</span></h2>
   <span class="badge b-ref">REFERENCE</span>
 </div></summary>
 
 <table>
 <thead><tr><th>What you see</th><th>What it usually is</th></tr></thead>
 <tbody>
+<tr><td>A service is already running on a machine that starts nothing — <code>redis-cli ping</code> answers before you start anything, or <code>ps</code> shows a pid you did not create</td><td><strong>Hit here.</strong> The sandbox boots <code>/sbin/init</code>, which runs the rc links and systemd wants-links the Debian packages install. Not writing a start command is not enough; the template has to delete those links</td></tr>
+<tr><td>Starting Postgres never returns — the SDK call sits until its timeout, while <code>psql</code> from another command works fine</td><td><strong>Hit here.</strong> <code>pg_ctl</code> without <code>-l</code> gives the started server the command's stdout, and the server holds it open, so the SDK waits for an EOF that never comes. Start it as <code>pg_ctl -D "$PGDATA" -l /home/user/pgdata/server.log -w start</code>, and never in the background</td></tr>
+<tr><td>The build finishes suspiciously fast and the new packages are absent</td><td><strong>Hit here.</strong> <code>e2b/build.mjs</code> reads whatever <code>template.mjs</code> is checked out. A 14-second build after a real change means you are on the wrong branch — and it has already republished the old image under the live name</td></tr>
 <tr><td>The image build fails inside the install step</td><td>The package tried to start a service during installation. Installing without triggering that, or accepting the failure and initialising by hand, is the usual fix</td></tr>
 <tr><td>The server will not start, complaining about a directory</td><td>The data directory is owned by root and the sandbox runs as <code>user</code>. Lesson 11's trap again</td></tr>
 <tr><td>"database does not exist" on the first connection</td><td>A cluster was created but no database inside it, or not one named after the connecting user</td></tr>
@@ -1245,7 +1392,7 @@ not.</div>
 
 <details class="sec" id="verified-vs-untested" open style="--sc:var(--ref); --sc2:var(--ref)">
 <summary><div class="sec-head">
-  <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Written before the lesson was run. Read this before trusting any sentence above.</span></h2>
+  <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Written before the lesson, settled after it. Read this before trusting any sentence above.</span></h2>
   <span class="badge b-ref">REFERENCE</span>
 </div></summary>
 
@@ -1256,10 +1403,13 @@ not.</div>
 <tr><td><code>E2B_API_KEY</code> never reaches a sandbox, so the bot cannot build a template</td><td><strong>Verified</strong> by reading <code>api/_lib/claude.js</code> and <code>api/slack/events.js</code> — it appears only in the function's startup check and in <code>e2b/build.mjs</code></td></tr>
 <tr><td>Ray's stated reason for building locally is memory, and he corrects it later in the same video</td><td><strong>Verified</strong> against the transcript</td></tr>
 <tr><td>Ray does the template change in local Claude Code, not through Slack</td><td><strong>Verified</strong> against the transcript. An earlier note in this repository said he dogfooded lesson 12; that was wrong and is corrected</td></tr>
-<tr><td>Adding these services leaves boot time roughly unchanged</td><td><strong>Untested.</strong> It follows from E2B booting a snapshot, and the before numbers exist to check it — but it is a prediction until step 4</td></tr>
-<tr><td>How long a database takes to become usable from a cold sandbox</td><td><strong>Unknown.</strong> This is the number that decides whether "start on demand" was the right call</td></tr>
-<tr><td>Whether the image build succeeds first time</td><td><strong>Untested</strong>, and unlikely — Ray's needed several attempts, and ours cannot iterate against the builder</td></tr>
-<tr><td>Whether Redis earns its place here</td><td><strong>Unknown and worth revisiting.</strong> Nothing in this repository uses it. It is in because Ray's applications use it, which is a reason to learn the pattern, not evidence that you need the service</td></tr>
+<tr><td>Adding these services leaves boot time roughly unchanged</td><td><strong>Verified</strong> 2026-09-17, three boots: 543 ms median to create against 519 ms before, 150 ms to first command against 696 ms — on an image that also gained Codex 0.154.0, 339 MB, in the same build</td></tr>
+<tr><td>How long a database takes to become usable from a cold sandbox</td><td><strong>Measured:</strong> Postgres 1.3 s, Redis 0.5 s, once started correctly. On demand was the right call. Started <em>incorrectly</em> — <code>pg_ctl</code> with no <code>-l</code> — the call hangs for its whole timeout</td></tr>
+<tr><td>Whether the image build succeeds first time</td><td><strong>It did</strong>, in 1 min 11 s over 12 steps, because the prompt spelled out the design. What failed first was the <em>request</em>: 255 s of research and nothing pushed</td></tr>
+<tr><td>"Installed but not running" is what the template produces</td><td><strong>False as first written.</strong> Redis was up on boot (pid 331, 127.0.0.1:6379) because <code>/sbin/init</code> honours the package's rc and wants-links. True only after PR #19 removed them</td></tr>
+<tr><td>The listeners <code>ss</code> shows on <code>169.254.0.21</code> for 5432 and 6379, owned by no process</td><td><strong>Unexplained.</strong> Consistent with E2B forwarding ports from outside the namespace, but not verified. Nothing on the page depends on it</td></tr>
+<tr><td>Postgres, Redis and Playwright compose in one run</td><td><strong>Verified</strong> in <code>#joestar-test</code>, first try: a seeded <code>visits</code> table, a Node server on :3000 writing a row and an <code>INCR</code> per GET, three Playwright loads, a video, and four rows reported back</td></tr>
+<tr><td>Whether Redis earns its place here</td><td><strong>Still unknown.</strong> Nothing in this repository uses it, and the verification run exercised it only because the test was written to. It is in because Ray's applications use it — a reason to learn the pattern, not evidence that you need the service</td></tr>
 </tbody>
 </table>
 

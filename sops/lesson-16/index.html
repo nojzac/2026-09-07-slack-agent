@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-16/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span><button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div><button id="nav-reset">reset progress</button></div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 16</p>
+<h1>A second opinion from a different model: Codex in the sandbox</h1>
+<p class="standfirst">The bot reviews its own work with its own subagents, which means it checks itself using the same instincts that wrote the code. This lesson puts OpenAI's Codex CLI in the sandbox so Claude can hand a commit to a model that is not Claude and report back what it said. The install is easy. The interesting parts are that the credential is a ChatGPT login rather than an API key, and that the only safe place to put it is a file.</p>
+<div class="facts"><span><b>Ray's video:</b> 2 min 39 s</span><span><b>This page:</b> 90–150 min</span><span><b>At the end:</b> "get a second opinion on this" returns a PASS/FAIL verdict in the thread</span></div>
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig"><svg viewBox="0 0 700 320" width="100%" height="auto" role="img"><title>Per run, the function writes the Codex credential into the sandbox as a file; Claude shells out to the Codex CLI for a review and reports the verdict back to the Slack thread</title><defs><marker id="arrow16a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker><marker id="arrow16b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b6b3a"/></marker></defs><rect x="8" y="8" width="272" height="96" rx="9" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/><text x="24" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#15171c">VERCEL FUNCTION</text><text x="24" y="52" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">CODEX_AUTH_JSON (env var)</text><text x="24" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">setUpCodex() writes it as a file</text><text x="24" y="90" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#a32020">never in envs, never in a command</text><path d="M286,56 L330,56" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow16a)"/><text x="308" y="48" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">once</text><rect x="336" y="8" width="356" height="198" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/><text x="352" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX (per message)</text><rect x="352" y="42" width="152" height="60" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/><text x="366" y="62" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">~/.codex/auth.json</text><text x="366" y="80" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">config.toml</text><text x="366" y="96" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">700 / 600</text><rect x="524" y="42" width="152" height="60" rx="7" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/><text x="538" y="62" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">codex 0.154.0</text><text x="538" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">baked into the image</text><text x="538" y="96" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">339 MB unpacked</text><rect x="352" y="118" width="324" height="74" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/><text x="366" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">claude -p, holding the codex skill</text><text x="366" y="158" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">timeout 150 codex review --commit ...</text><text x="366" y="178" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">one model reviewing another model's diff</text><rect x="8" y="118" width="272" height="88" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/><text x="24" y="140" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#4a154b">SLACK THREAD</text><text x="24" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2b3038">Verdict: FAIL</text><text x="24" y="180" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">mrkdwn.js:64 — [P1] ...</text><text x="24" y="198" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">My read: agreed.</text><path d="M330,162 L286,162" stroke="#0b6b3a" stroke-width="2" marker-end="url(#arrow16b)"/><rect x="8" y="222" width="684" height="42" rx="9" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/><text x="26" y="242" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">The credential is a file inside the box, and nothing else.</text><text x="26" y="258" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Not an env var of the Claude run, not part of any command string. The only process that reads it is codex.</text><rect x="8" y="272" width="684" height="42" rx="9" fill="#fdf6f6" stroke="#a32020" stroke-width="1.5"/><text x="26" y="292" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">It is your ChatGPT account, not a service key.</text><text x="26" y="308" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Anyone who can message the bot can make Codex run under it — the same as every other credential it holds.</text></svg>
+<p class="cap">The split is the whole design: the binary is baked into the image once, the credential is written per run and never enters the environment of anything else.</p></div>
+<ul><li><strong>The Codex CLI in the sandbox image</strong>, pinned, so every run has it with nothing to install.</li><li><strong>A credential written per run as a file</strong> — never an environment variable of anything else.</li><li><strong>A skill with three modes</strong> (review, challenge, consult) and the CLI failures already paid for.</li><li><strong>A verdict in Slack in Codex's own words</strong>, with the agent's own read underneath it.</li>
+</ul></div>
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 15, so the bot has skills, a persona, and opens pull requests against its own repository. You can rebuild the E2B template — <code>bin/with-secrets node e2b/build.mjs</code> — and you have a ChatGPT Plus or Pro subscription you are willing to lend to a bot.</p>
+<p>This lesson spends a personal account rather than a service credential, so it has an explicit decision as step 1. It also contains the most instructive code review on any of these pages.</p></div>
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig"><svg viewBox="0 0 700 148" width="100%" height="auto" role="img"><title>Where lesson 16 sits: lessons 1 to 15 gave the bot a machine and the ability to build and show, lesson 16 gives it a second opinion from a different model, and lesson 17 continues</title><defs><marker id="arrowArc16" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–15</text><text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">It builds and shows</text><text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">code, PRs, browser, skills</text><path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc16)"/><rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/><text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 16 — YOU ARE HERE</text><text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">It can be argued with</text><text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a second model, in the box,</text><text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">reviewing its own diffs</text><path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc16)"/><rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSON 17 ONWARD</text><text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">More of the machine</text><text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">and more ways in</text></svg>
+<p class="cap">Every lesson so far widened what the bot can do. This one is the first that adds a check on whether it did it well — and the first that spends a personal account to get one.</p></div>
+<p><strong>The point is not that Codex is better.</strong> It is that it is different. A second Claude pass shares Claude's blind spots; a second model does not. Ray uses this constantly — in his own bot a feature request went through two rounds of Claude review <em>and</em> a Codex review before he looked at it.</p></div>
+<div class="fm" style="--fc:#1f4fd8">
+<h2>How this page is laid out</h2>
+<ol><li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span><span class="what">Why a second model at all, why the credential is a whole file in one env var, where that file may and may not go, and what 339 MB and a personal account cost. ~25 min.</span></li><li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span><span class="what">Eight steps: a decision, a request, a review that found five things, a squash-merge conflict, a template build, minting the credential, the skill, and a live test with a planted bug. 90–150 min.</span></li><li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span><span class="what">The setup helper written out, the skill's gotchas, the failure table, what this page verified, and where everything lives.</span></li>
+</ol></div>
+<div class="fm" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<div class="danger"><strong>This lesson hands your ChatGPT account to everyone who can message the bot.</strong> There is no per-user scoping here. Any workspace member can trigger a run, and any run can shell out to Codex under your login. That is already true of the bot's GitHub token — the difference is that this one is a consumer subscription with your name on it. If that is not acceptable, use an API key or skip the lesson. <br><br>The second thing to decide before you type: <strong>the credential is a file, never an environment variable of the Claude run.</strong> It is the one design choice in this lesson that is hard to retrofit, because by the time you are reviewing a diff you are arguing with something already built.</div>
+<ul><li><strong>Lesson 15 finished</strong>, and <code>#joestar-dev</code> with the repository in its topic.</li><li><strong>A ChatGPT Plus or Pro account</strong>, and the ability to run <code>codex login</code> locally.</li><li><strong>The ability to rebuild the E2B template</strong>, and patience for a 339 MB layer.</li>
+</ul></div>
+<div class="part" id="part1" style="--pc:var(--understand)"><span class="pn">PART 1</span>
+  <h2>Understand what you're building</h2>
+  <p>Four things: what a second model buys that a second Claude pass does not, why the credential is shaped so strangely, the one place it is allowed to live, and what the whole arrangement costs.</p></div>
+<details class="sec" id="why-a-second-model" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">What Codex is doing here: one model checking another's work<span class="sec-s">A reviewer that does not share Claude's blind spots, running inside the same throwaway box.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>The bot already reviews its own work — lesson 09 gave it subagents, and a second Claude pass catches real bugs. What it cannot do is disagree with itself from outside its own training. Codex is OpenAI's command-line coding agent; put it in the sandbox and Claude can shell out to it mid-run, hand it a commit, and get back findings written by a model that made different mistakes.</p>
+<div class="metaphor"><b>It is a second pair of eyes, not a second opinion you have to ask for.</b> Claude drives it. You say "get a second opinion on this" in the thread; the skill turns that into a <code>codex review</code> call, and what comes back is summarised into the thread rather than pasted.</div>
+<p>Two halves, and they live in completely different places. <strong>The binary</strong> is baked into the E2B image, because a fresh sandbox per message turns every install into a per-message cost — the same argument as Playwright in lesson 11. <strong>The credential</strong> is written per run, because a secret in an image is a secret in every copy of that image forever.</p>
+<div class="ray"><strong>Ray uses <code>@openai/codex@latest</code>; this workshop pins it.</strong> The version lives beside the others in <code>api/_lib/versions.js</code> as <code>CODEX_VERSION = '0.154.0'</code>. A template build has to be reproducible, not silently pick up whatever npm published overnight.</div>
+</details>
+<details class="sec" id="the-credential" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">The credential is a ChatGPT login, not an API key<span class="sec-s">Which is why one environment variable holds the entire contents of a file.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Codex authenticates from <code>~/.codex/auth.json</code>, written by <code>codex login</code>. That command opens a browser. There is no browser in a serverless function and no human at the keyboard of a sandbox, so the login cannot happen there — the only way in is to log in once on your own machine and carry the resulting file across.</p>
+<p>Hence the shape that looks wrong the first time you see it: <strong>one environment variable, <code>CODEX_AUTH_JSON</code>, containing a whole JSON file on a single line.</strong> It is not a key-shaped secret because it is not a key. It is a session.</p>
+<div class="callout"><strong>Ray says the token runs on roughly a ten-day clock and then needs re-pasting. Untested here.</strong> Nothing in this workshop has yet watched one expire, and it is not known whether a stale token fails loudly or just makes Codex go quiet mid-run. Treat "Codex stopped working" as "re-mint the credential" until someone has seen the failure mode.</div>
+<p>You can bill Codex against an API key instead. Ray does not, and neither does this page: the ChatGPT subscription is already paid for, and an API key would mean metered spend on every review.</p>
+</details>
+<details class="sec" id="where-the-credential-goes" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">Where the credential may go, and where it must not<span class="sec-s">A file in the box, at mode 600. Not an env var, not a command string, not a log line.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Since lesson 08 this repository has had one rule about secrets and the sandbox: a capability belongs in the image, a secret does not. Codex adds a second rule, because its secret has to end up <em>inside</em> the box to be usable at all. Where exactly it lands is the whole of the security design.</p>
+<table><thead><tr><th>Route in</th><th>Verdict</th></tr></thead><tbody><tr><td><code>sandbox.files.write</code> to <code>~/.codex/auth.json</code>, then <code>chmod 600</code></td><td><strong>This is what we do.</strong> Only the codex process ever opens it. The chmod command string contains paths and nothing else</td></tr><tr><td>The <code>envs</code> object of the <code>claude -p</code> run</td><td><strong>No.</strong> Every Bash command the model runs would inherit it, and it would sit in the process environment for the life of the run</td></tr><tr><td><code>Sandbox.create</code>'s runtime envs</td><td><strong>Worse.</strong> Same exposure, but for every process in the box including ones we did not start</td></tr><tr><td>Interpolated into any command string</td><td><strong>No.</strong> Process listings and shell history are both readable from inside the box</td></tr><tr><td><code>console.warn(err.message)</code> after a failed parse</td><td><strong>No — and this one shipped.</strong> V8's <code>JSON.parse</code> error message embeds the input it choked on, so a malformed credential would print its own first characters into Vercel logs</td></tr></tbody></table>
+<div class="danger"><strong>The last row is the point of the review step.</strong> It is not a route anybody chose; it is a route that appeared by accident in a line of defensive error handling, and it took a reviewer who asked "what exactly does that message contain?" to find it. Step 3 of this page is where that happens.</div>
+</details>
+<details class="sec" id="what-it-costs" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">What 339 MB and a personal account cost you<span class="sec-s">The image grows, the blast radius grows, and neither is reversible by a revert.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>The linux-x64 platform package for Codex unpacks to <strong>339 MB</strong>, and the sandbox image grows by that. That is a real cost paid on every template build and every cold sandbox boot, in exchange for a reviewer you will use on maybe one message in five.</p>
+<div class="danger"><strong>Anyone who can message the bot can make Codex run under your ChatGPT account.</strong> There is no per-user or per-channel scoping in this bot: every tool it holds is held on behalf of everyone in the workspace. That is already true of the GitHub token and the Exa key; Codex is the first one that is tied to a personal consumer subscription rather than a service credential. Decide that you are fine with it before step 2, not after.</div>
+<div class="win"><strong>The upside is concrete and you can see it in step 8.</strong> A planted one-line bug in <code>mrkdwn.js</code> — bullet conversion silently dropping the item text — was found by Codex, reported as a <code>[P1]</code> at <code>mrkdwn.js:64</code>, in 45 seconds. That is the whole value proposition, tested once.</div>
+</details>
+<div class="part" id="part2" style="--pc:var(--do)"><span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Eight steps. One is a decision, four are the ask–review–fix–merge loop, one is a local build that deploys itself, one is done entirely on your own machine with the clipboard, and the last is a deliberately planted bug.</p></div>
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 1 of 8 — Decide whether this is worth 339 MB and a personal credential<span class="sec-s">Before you ask for anything. Afterwards you are reviewing a diff instead of making a choice.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 1 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Read the cost, not just the feature.</strong> The image grows by 339 MB, and your own ChatGPT session becomes a capability the whole workspace can invoke. If either of those is not acceptable, the right answer is to stop here — the bot loses nothing it already has.</p></li><li><p><strong>Decide the billing model.</strong> This page uses a ChatGPT Plus/Pro login. An API key is the other option and costs money per review.</p></li><li><p><strong>Decide the pin.</strong> Ray installs <code>@latest</code>. Pinning costs you one constant and buys reproducible builds; this workshop pins.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You can say what the bot will be able to do under your account, and you are fine with it.</div>
+</section>
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 2 of 8 — Ask the bot for the template install and the per-run setup<span class="sec-s">One message in #joestar-dev. Ray's prompt is long on purpose — it is a discovery brief, not an instruction.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 2 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Post Ray's prompt, mentioning the bot.</strong> It is reproduced in full below. Note what it does not do: it never names a file. It describes each target by role and tells the agent to stop and report if what it finds is shaped differently.</p>
+<p class="where">Where: Slack → <code>#joestar-dev</code> → mention <code>@joestar</code></p>
+<details class="sub"><summary>Ray's prompt, verbatim — the full "add the OpenAI Codex CLI" brief</summary><pre><code>Add the OpenAI Codex CLI to this repo as a cross-model second opinion for the
+agent — so it can get an independent review/challenge/consult from a non-Claude
+model while working in its sandbox.
+
+This repo is a Slack bot that runs a prompt through Claude Code inside a
+throwaway E2B sandbox and replies in-thread. I'm describing the change by ROLE,
+not by filename, because your copy may differ slightly from the one I'm looking
+at. Start by orienting yourself:
+
+  DISCOVERY (do this first, and tell me what you found before you edit)
+  a) The E2B template definition — the module that builds the sandbox image,
+     exporting something like `Template().fromNodeImage(...)` with a chain of
+     .aptInstall/.npmInstall/.runCmd calls and a template name constant.
+     Likely e2b/template.js, built by an npm script like `template:build`.
+  b) The run module — the one that calls `Sandbox.create(...)` and then
+     `sandbox.commands.run("... | claude -p --output-format stream-json ...")`.
+     Likely lib/claude-sandbox.js. Find its existing helpers for preparing the
+     box (there is probably a `setUpGithub` or similar) and copy their shape.
+  c) The skills folder shipped into the sandbox, probably toolkit/skills/, with
+     one directory per skill each containing a SKILL.md. Find the loader that
+     uploads it so you know whether skills need a template rebuild (they
+     probably don't — check).
+  d) .env.example, and wherever the README lists env vars / sandbox
+     capabilities.
+  If any of these don't exist or are shaped differently, STOP and tell me what
+  you found instead of guessing.
+
+Then make four changes:
+
+1. THE BINARY — bake it into the sandbox image (a).
+   Add a global npm install of `@openai/codex` next to the existing global
+   install of @anthropic-ai/claude-code, using whatever helper that chain
+   already uses (e.g. `.npmInstall("@openai/codex@latest", { g: true })`).
+   Match the existing version-pinning convention: if claude-code is pinned,
+   pin codex; if it's @latest, use @latest.
+   Two constraints:
+     - If the chain ends in `.setStartCmd(...)`, that call CLOSES the builder —
+       your addition must come before it.
+     - If (and only if) this image installs Node somewhere non-standard and
+       symlinks it onto PATH, an unqualified `npm i -g` will install OFF PATH
+       and still report success. In that case pass `--prefix /usr/local` and
+       verify with `codex --version` in the same step. On a stock Node base
+       image this doesn't apply.
+   This requires a template rebuild to take effect — call that out.
+
+2. THE CREDENTIAL AND CONFIG — written per sandbox, not baked in (b).
+   Codex authenticates from a file at ~/.codex/auth.json. The whole contents of
+   that file live in ONE env var, CODEX_AUTH_JSON, and get written into each
+   sandbox.
+   Add a helper (`setUpCodex(sandbox)` or whatever matches local naming)
+   alongside the existing setup helpers, called from the main run function
+   before Claude is spawned. It must:
+     - read process.env.CODEX_AUTH_JSON; if unset, log one line and return.
+       Follow whatever "optional integration" convention this repo already uses
+       for its other optional env vars — unset means "no codex here", not
+       "broken".
+     - JSON.parse it purely as a validity check, and warn + return if that
+       throws. This makes a corrupt secret show up in OUR logs instead of as a
+       baffling codex error inside the box.
+     - write it to /home/user/.codex/auth.json (adjust the home path if this
+       sandbox's user differs).
+     - write /home/user/.codex/config.toml containing exactly:
+         model_reasoning_effort = "high"
+         approval_policy = "never"
+         sandbox_mode = "danger-full-access"
+       Setting this GLOBALLY is what lets the skill invoke codex with no
+       approval flags at all. Full access is safe for the same reason Claude
+       already runs with --dangerously-skip-permissions here: the microVM is the
+       isolation boundary, not the CLI's own sandbox.
+     - chmod 700 the directory and 600 the auth file.
+     - never throw — wrap it and log. A broken codex seed must not stop the bot
+       from answering Slack.
+   CRITICAL: the credential goes in as a FILE ONLY. Do NOT add CODEX_AUTH_JSON
+   to the `envs` object of the claude run. It belongs to the codex process that
+   reads it, not to the shell environment of every Bash command the model runs.
+
+3. THE SKILL — toolkit/skills/codex/SKILL.md (c).
+   Frontmatter with `name: codex` and a description that fires on "codex
+   review", "second opinion", "have codex check this", "challenge this code",
+   "ask codex". State plainly in the body that the agent HAS live authenticated
+   access and must not claim codex isn't set up.
+   Three modes: review (independent diff review with a PASS/FAIL gate),
+   challenge (adversarial "find how this breaks in production"), consult (ask
+   anything). Include this CLI trivia — every item is a real failure that has
+   bitten this before, so don't trim them:
+     - ALWAYS end the command with `&lt; /dev/null`. Codex slurps stdin when it
+       isn't a TTY and will sit forever waiting for EOF.
+     - Run it from INSIDE a git repo. Outside one, codex refuses but still
+       EXITS 0 — so check the output, not the exit code.
+     - Never `--json` (buffers and hangs). Never `--enable web_search_cached`
+       (removed; silent exit).
+     - `codex review` cannot take a prompt together with `--base`/`--commit` —
+       the CLI errors out. Run it promptless; its built-in review mandate is
+       already good. Anything with a custom focus goes through
+       `codex exec "&lt;prompt&gt;"` instead.
+     - Verdict rule: any `[P1]` finding =&gt; FAIL; only `[P2]` or none =&gt; PASS.
+     - Do NOT pass `-s` or `--dangerously-bypass-approvals-and-sandbox`, and
+       don't restate `-c model_reasoning_effort` — config.toml sets both
+       globally. The one worthwhile override is `xhigh` on a genuinely large or
+       subtle change.
+     - For a diff review, resolve the base branch first (gh pr view's
+       baseRefName, else the repo's default branch, else main) and `git fetch`
+       it — a stale origin/&lt;base&gt; reviews already-merged commits too.
+     - Silent exit (codex exits 0 echoing the prompt with no response block):
+       retry once after ~10s, then report it as a transient codex issue rather
+       than inventing a verdict.
+     - Codex runs full-access, so it CAN write files. Its jobs are
+       review/challenge/consult only; anything that changes the repo is the
+       agent's own job.
+     - If codex fails to authenticate, do NOT work around it (no `codex login`,
+       no API key) — tell the user the CODEX_AUTH_JSON secret is missing or
+       stale and needs re-pasting from a fresh local ~/.codex/auth.json.
+   TIMEOUT — this is the part you must adapt to THIS repo rather than copy.
+   Find the per-run timeout (an env var like CLAUDE_TIMEOUT_MS, and the
+   serverless function's maxDuration) and work out the actual budget. The whole
+   turn — Claude's reasoning, the codex call, and posting the answer — lives
+   inside it. Write a concrete minute figure into the skill that leaves clear
+   headroom, and tell the agent to prefer a single-commit review
+   (`codex review --commit "$(git rev-parse HEAD)"`) over a broad multi-commit
+   one, so a review can't consume the whole turn and leave the thread with
+   nothing. Tell me what numbers you found and what you chose.
+   REPORTING — this agent answers in Slack, not a terminal. The skill must say:
+   don't dump raw codex logs; lead with the verdict, then each finding as
+   file:line plus the one-line problem, preserving codex's own wording; trim
+   token counts, session ids and progress spam. Then add a short "My read:"
+   line — where the agent agrees and where it thinks codex is wrong, and never
+   silently drop a P1 it disagrees with. Check how this repo streams progress
+   and posts its reply before writing this section; do not invent commands the
+   sandbox doesn't have.
+
+4. DOCS (d).
+   Add CODEX_AUTH_JSON to .env.example in the optional block: paste the whole
+   contents of your local ~/.codex/auth.json on a single line; unset simply
+   means no codex. Update the README wherever it enumerates env vars or what
+   the sandbox can do.
+
+Match the surrounding code style exactly — module system, quoting, and above all
+comment register: if the existing comments explain at length WHY a line exists
+and what broke without it, write yours the same way rather than restating what
+the code does.
+
+Do not build the template or deploy. Finish by telling me: what you found in
+discovery, the timeout numbers and the codex budget you chose, the exact
+commands I need to run, and the env var I need to add to my hosting provider.</code></pre></details></li><li><p><strong>Expect it to branch off whatever is in flight.</strong> Here it stacked the work on the branch of the still-open PR #11, which is reasonable and costs you step 4.</p>
+<div class="ray"><strong>Ray asks for the skill in the same prompt; this workshop split it.</strong> The template and <code>setUpCodex</code> went in as PR #12, the skill as PR #15, with the credential minted in between. The split is deliberate: the skill is untestable until the credential exists, and a PR you cannot test is a PR you approve on faith.</div></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>👀 on your message, a discovery report naming the files it found, and a pull request.</div>
+</section>
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 3 of 8 — Review the pull request — one round, five findings<span class="sec-s">The most valuable half-hour on this page. Three of the five were invisible to a green test suite.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 3 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Read the diff against the question "where could the credential end up?"</strong> That single lens found the first two.</p></li><li><p><strong>Read the tests against the question "what would still pass if this were broken?"</strong> Six mutations were run against the suite by hand; three survived until the fixes went in.</p>
+<table><thead><tr><th>What the review found</th><th>Why it mattered</th></tr></thead><tbody><tr><td>The parse-failure <code>console.warn</code> printed <code>err.message</code></td><td>V8 embeds the input in the <code>JSON.parse</code> message, so a malformed credential put its first ten or so characters into Vercel logs. Fixed to a fixed string</td></tr><tr><td>The "never leaks" test checked only command strings</td><td>Leaking the credential into <code>SANDBOX_RUNTIME_ENVS</code> — which goes to <code>Sandbox.create</code>, and therefore to every process — passed green. Fixed to assert both</td></tr><tr><td><code>config.toml</code> content was never asserted</td><td>The three settings are the reason the skill can call codex with no approval flags. Nothing checked they were written</td></tr><tr><td>No test that <code>setUpCodex</code> never throws</td><td>Its entire contract is "degrade to no Codex, never fail the run". That contract was untested</td></tr><tr><td><code>.env.op</code> referenced a vault field that did not exist yet</td><td><code>op run</code> refuses to start on an unresolvable reference, so this would have broken <em>every</em> <code>bin/with-secrets</code> call, template builds included. Shipped commented out; uncommented in PR #18 once the field existed</td></tr></tbody></table></li>
+</ol>
+<div class="danger"><strong>The <code>.env.op</code> one is the silent failure of this lesson.</strong> Nothing in CI runs <code>op run</code>. The breakage would have appeared the next time you tried to build the template, as an unrelated-looking secrets error, hours after the merge that caused it.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>Fixes pushed, the "never leaks" test now fails if you delete either guard, and no secret value appears in any log path.</div>
+</section>
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 4 of 8 — Resolve the conflict the squash-merge created<span class="sec-s">PR #12 was stacked on PR #11. Squash-merging #11 made #12 CONFLICTING. Merge, do not rebase.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 4 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Understand what happened.</strong> A squash merge replaces the whole of #11's branch with one new commit on <code>main</code>. #12's branch still carries the originals, so GitHub now sees the same changes twice and marks the PR conflicting. Nothing is wrong with the code.</p></li><li><p><strong>Fix it with <code>git merge origin/main</code>, not a rebase.</strong> A rebase rewrites the branch and needs a force-push, and this repository's push guard blocks force-pushes.</p>
+<div class="callout"><strong>Then stop stacking.</strong> Every later request in this lesson was based on <code>main</code>. Stacking saves nothing once the base is squash-merged; it just moves the cost to you.</div></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The PR shows mergeable again, and its diff contains only the Codex changes.</div>
+</section>
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 5 of 8 — Merge, then rebuild the E2B template<span class="sec-s">The merge deploys the code. Only a local build deploys the image — and it does so immediately.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 5 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Merge the pull request</strong> once CI is green.</p></li><li><p><strong>Rebuild the image:</strong> <code>bin/with-secrets node e2b/build.mjs</code>. Here one build covered both #11 and #12, because both had landed by then.</p>
+<div class="danger"><strong>The build deploys straight to production from whatever branch you are standing on.</strong> No review, no CI, no rollback when you revert the commit. The next message anyone sends the bot boots the new image. Expect the Codex layer to be slow the first time: it is 339 MB.</div></li><li><p><strong>Check for a fresh build id</strong>, not merely the absence of errors. A stale image of the same name shadows your change silently — the lesson-08 trap.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A new build id, and the image now carries <code>codex</code> even though nothing can authenticate it yet.</div>
+</section>
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 6 of 8 — Mint the credential and store it, without ever looking at it<span class="sec-s">Four commands on your own machine. The value goes to the clipboard and never to the screen.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 6 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Install and log in locally.</strong></p><pre><code>npm i -g @openai/codex@0.154.0
+codex login          # opens a browser; sign in with ChatGPT Plus/Pro</code></pre></li><li><p><strong>Flatten the file to one line, straight into the clipboard.</strong> It is printed nowhere.</p><pre><code>node -e 'process.stdout.write(JSON.stringify(JSON.parse(require("fs").readFileSync(process.env.HOME + "/.codex/auth.json","utf8"))))' | pbcopy</code></pre></li><li><p><strong>Paste it twice:</strong> into Vercel → Project → Settings → Environment Variables as <code>CODEX_AUTH_JSON</code> (Production), and into the 1Password item as the field <code>codex_auth_json</code>.</p>
+<p class="where">Where: Vercel dashboard, then 1Password → SlackAgentOS → 2026-09-07-slack-agent</p></li><li><p><strong>Clear the clipboard:</strong> <code>pbcopy &lt; /dev/null</code>.</p>
+<div class="ray"><strong>Ray says Claude will read your local <code>auth.json</code> and add it to Vercel for you.</strong> This workshop did it by hand. The rule here is that no agent reads a secret's value and no secret is ever displayed — a clipboard round trip costs two minutes and keeps the credential out of a transcript.</div></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Vercel has <code>CODEX_AUTH_JSON</code> in Production, 1Password has <code>codex_auth_json</code>, your clipboard is empty, and you never saw the value.</div>
+</section>
+<section class="sec" id="step7" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 7 of 8 — Ask for the codex skill<span class="sec-s">A second, smaller request. The skill is a list of CLI failures someone has already paid for.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 7 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Ask for <code>toolkit/skills/codex/SKILL.md</code></strong>, using the skill section of Ray's prompt above as the brief. It went in as PR #15.</p></li><li><p><strong>Insist on the gotchas surviving review.</strong> Every one of them reads like trivia and every one is a real hang or a false pass. The full list is in Part 3; the two that will bite first are <code>&lt; /dev/null</code> and "it exits 0 outside a git repo".</p>
+<div class="callout"><strong>The timeout number is the part to adapt, not copy.</strong> The whole turn — Claude's reasoning, the Codex call, and posting the reply — has to fit the run budget. This skill writes <code>timeout 150</code> per call against a run budget of about four minutes, which leaves room to write the report after Codex returns.</div></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The skill is merged, and it starts with a precondition — <code>test -f ~/.codex/auth.json</code> — rather than assuming.</div>
+</section>
+<section class="sec" id="step8" style="--sc:var(--do); --sc2:var(--do)"><div class="sec-head"><h2 class="sec-t">Step 8 of 8 — Verify it live, with a bug you planted on purpose<span class="sec-s">A review that finds nothing proves nothing. Give it something real to find.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 8 of 8</title><rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Conflict</text><rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text><rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Mint</text><rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Skill</text><rect x="613.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">8 · Verify</text></svg></div>
+<ol class="steps"><li><p><strong>Ask the bot to plant a bug on a throwaway branch and review it.</strong> Here: in <code>mrkdwn.js</code>, make bullet conversion drop the item text. It is one line, it is plausible, and no test covered it.</p>
+<p class="where">Where: Slack → <code>#joestar-dev</code></p></li><li><p><strong>Read what comes back, and check the shape as well as the answer.</strong> The real run returned <code>Verdict: FAIL</code>, one <code>[P1]</code> finding at <code>mrkdwn.js:64</code> in Codex's own wording, then a <code>My read:</code> line agreeing with it. The Codex call itself took 45 s. Nothing was pushed.</p></li><li><p><strong>Confirm the credential arrived</strong> by having it check <code>~/.codex/auth.json</code> exists — that is the same precondition the skill runs.</p>
+<div class="win"><strong>Two things are proven at once</strong>: that Codex can authenticate inside the box, and that the skill's report format survives the trip into Slack. The second is the one that decays quietly if nobody looks.</div></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A FAIL verdict in the thread naming the line you broke, in Codex's words, with the agent's own read underneath.</div>
+</section>
+<div class="part" id="part3" style="--pc:var(--ref)"><span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>The setup helper with its reasoning attached, the skill's list of paid-for failures, the troubleshooting table, an honest account of what was checked, and where the new things live.</p></div>
+<details class="sec" id="code-walk" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">What Claude wrote: setUpCodex, and the two files it writes<span class="sec-s">Thirty lines in <code>api/_lib/claude.js</code>, three of which are the whole security argument.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary><pre><code>const CODEX_CONFIG_TOML = `model_reasoning_effort = "high"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+`;
+
+export async function setUpCodex(sandbox) {
+  const authJson = process.env.CODEX_AUTH_JSON;
+  if (!authJson) return;                       // unset means "no codex here", not "broken"
+
+  try { JSON.parse(authJson); } catch {
+    // Never log err.message: V8's SyntaxError embeds a slice of the input.
+    console.warn('[codex] CODEX_AUTH_JSON is not valid JSON');
+    return;
+  }
+
+  try {
+    await sandbox.files.write(`${SANDBOX_HOME}/.codex/auth.json`, authJson);
+    await sandbox.files.write(`${SANDBOX_HOME}/.codex/config.toml`, CODEX_CONFIG_TOML);
+    const res = await sandbox.commands.run(
+      `chmod 700 ${SANDBOX_HOME}/.codex &amp;&amp; chmod 600 ${SANDBOX_HOME}/.codex/auth.json`,
+    );
+    if (res.exitCode !== 0) console.warn('[codex] chmod exited', res.exitCode);
+  } catch (err) {
+    console.warn('[codex] could not configure the sandbox for codex:', err.message);
+  }
+}</code></pre><table><thead><tr><th>Line</th><th>Why it is written that way</th></tr></thead><tbody><tr><td><code>if (!authJson) return;</code></td><td>Optional integration. No credential means a bot with no Codex, not a bot that fails</td></tr><tr><td><code>JSON.parse</code> as a validity check only</td><td>A corrupt secret shows up in our logs as one clear line, instead of as a baffling codex error inside the box</td></tr><tr><td>the bare <code>catch</code> with a fixed string</td><td>The fix from review finding 1. There is no safe way to print a parse error about a secret</td></tr><tr><td><code>sandbox_mode = "danger-full-access"</code></td><td>Safe for the same reason Claude runs with <code>--dangerously-skip-permissions</code>: the microVM is the isolation boundary, not the CLI's own sandbox. Setting it globally is what lets the skill call codex with no approval flags</td></tr><tr><td>the whole body wrapped so it never throws</td><td>An enabler, not a gate. A broken credential must not stop the bot answering Slack</td></tr><tr><td>called once per run, before <code>claude</code> spawns</td><td>So the CLI is already configured if a skill decides to shell out to it mid-run</td></tr></tbody></table>
+</details>
+<details class="sec" id="the-skill" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">The skill, and the CLI failures it encodes<span class="sec-s">Every gotcha below is a real hang, a false pass, or an invented verdict.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary>
+<p><strong>Three modes:</strong> <em>review</em> (an independent diff review with a PASS/FAIL gate — any <code>[P1]</code> means FAIL), <em>challenge</em> (argue the other side of a change), <em>consult</em> (ask it anything). The precondition runs first: <code>test -f ~/.codex/auth.json</code>, and if that fails the answer is "Codex is not configured on this bot" and nothing else.</p>
+<table><thead><tr><th>Gotcha</th><th>What happens without it</th></tr></thead><tbody><tr><td>End every <code>codex exec</code> with <code>&lt; /dev/null</code></td><td>Codex slurps stdin when it is not a TTY and sits forever waiting for an EOF that never comes</td></tr><tr><td>Run it inside a git repo, and check <code>git rev-parse --is-inside-work-tree</code> first</td><td>Outside a repo it refuses — and still exits 0. The exit code is not the signal</td></tr><tr><td>Never <code>--json</code></td><td>Buffers and hangs</td></tr><tr><td><code>codex review</code> cannot take a prompt together with <code>--base</code> or <code>--commit</code></td><td>The CLI errors out. Anything with a custom focus goes through <code>codex exec</code> instead</td></tr><tr><td>Silent exit: wait 10 s, retry once, then give up</td><td>Otherwise the agent either loops or invents a verdict. A transient codex issue reported as one is fine; a fabricated PASS is not</td></tr><tr><td><code>timeout 150</code> on every call</td><td>The whole turn lives inside one run budget. A broad multi-commit review can eat it and leave the thread with nothing — prefer <code>codex review --commit "$(git rev-parse HEAD)"</code></td></tr><tr><td>Never <code>codex login</code>, never an API-key workaround</td><td>It opens a browser that does not exist there. An auth failure means the operator re-pastes <code>CODEX_AUTH_JSON</code>, full stop</td></tr></tbody></table>
+<div class="callout"><strong>The report format is not decoration.</strong> Lead with the verdict; one line per finding as <code>file:line — codex's own words</code>; then a line starting <code>My read:</code>. Preserving Codex's wording is what keeps the second opinion a second opinion instead of a Claude paraphrase of one — and the skill says never to silently drop a <code>[P1]</code> it disagrees with.</div>
+</details>
+<details class="sec" id="troubleshooting" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">When something doesn't work<span class="sec-s">Most Codex failures are silent or mislabelled. These are the ones already paid for.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>What you see</th><th>What it usually is</th></tr></thead><tbody><tr><td>The bot says Codex is not set up</td><td>The precondition failed: no <code>~/.codex/auth.json</code> in the box. Either <code>CODEX_AUTH_JSON</code> is unset in Vercel Production, or <code>setUpCodex</code> bailed on a parse failure — check the logs for <code>[codex]</code></td></tr><tr><td><code>codex</code>: command not found</td><td>The template was not rebuilt after the merge. The code deploys on merge; the image only deploys when you build it</td></tr><tr><td>The call hangs until the run times out</td><td>A missing <code>&lt; /dev/null</code>, or <code>--json</code></td></tr><tr><td>Codex reports no findings on a repo it clearly cannot see</td><td>It was run outside a git repo and exited 0 anyway</td></tr><tr><td>It exits immediately, echoing the prompt with no response</td><td>The known silent exit. Retry once after 10 s, then report it as transient</td></tr><tr><td>Every <code>bin/with-secrets</code> command fails with a secrets error</td><td>An <code>.env.op</code> line pointing at a vault field that does not exist. <code>op run</code> refuses to start; add the field or comment the line</td></tr><tr><td>An auth error mid-run</td><td>Re-mint the credential (step 6). Do not let the agent work around it</td></tr></tbody></table>
+</details>
+<details class="sec" id="verified-vs-untested" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">A cold reader cannot tell a checked claim from a repeated one. This table is the difference.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Claim</th><th>Status</th></tr></thead><tbody><tr><td>Codex authenticates inside the sandbox from a written <code>auth.json</code></td><td><strong>Verified</strong> 2026-09-17 in <code>#joestar-dev</code> — <code>~/.codex/auth.json</code> existed and the call succeeded</td></tr><tr><td>Codex finds a real planted bug and reports it in the skill's format</td><td><strong>Verified</strong> — <code>Verdict: FAIL</code>, one <code>[P1]</code> at <code>mrkdwn.js:64</code> in its own wording, plus a <code>My read:</code> line. Nothing was pushed</td></tr><tr><td>A <code>codex review --commit</code> call fits the run budget</td><td><strong>Verified</strong> at <strong>45 s</strong> for the call, inside a 150 s per-call timeout. One data point, on a one-line diff</td></tr><tr><td>The linux-x64 Codex package is 339 MB unpacked and the image grows by that</td><td><strong>Verified</strong> from the build output</td></tr><tr><td>The credential never reaches <code>envs</code> or a command string</td><td><strong>Verified</strong> by reading <code>api/_lib/claude.js</code> and by a test that now fails if either guard is removed</td></tr><tr><td><code>JSON.parse</code>'s error message embeds the input</td><td><strong>Verified</strong> — it is why the <code>console.warn</code> was changed to a fixed string</td></tr><tr><td><code>op run</code> refuses to start on an unresolvable secret reference</td><td><strong>Verified</strong> — which is why the <code>.env.op</code> line shipped commented out and was uncommented in PR #18</td></tr><tr><td>The ChatGPT token expires on roughly a ten-day clock</td><td><strong>Unverified.</strong> Ray says so; nothing here has watched one expire</td></tr><tr><td>Whether a stale token fails loudly or goes quiet mid-run</td><td><strong>Unverified.</strong> Unknown which symptom to expect</td></tr><tr><td>Codex's behaviour in a repo with no commits</td><td><strong>Unverified.</strong> The documented trap is "outside a repo it exits 0"; an empty repo was never tried</td></tr></tbody></table>
+</details>
+<details class="sec" id="where-everything-lives" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">Where everything lives<span class="sec-s">What this lesson adds to the map.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Thing</th><th>Where</th></tr></thead><tbody><tr><td>The Codex install</td><td><code>joestar-agent/e2b/template.mjs</code> — <code>.npmInstall(`@openai/codex@${'$'}{CODEX_VERSION}`, { g: true })</code></td></tr><tr><td>The version pin</td><td><code>CODEX_VERSION</code> in <code>joestar-agent/api/_lib/versions.js</code></td></tr><tr><td>The per-run setup</td><td><code>setUpCodex</code> in <code>joestar-agent/api/_lib/claude.js</code></td></tr><tr><td>The skill</td><td><code>joestar-agent/toolkit/skills/codex/SKILL.md</code></td></tr><tr><td>The credential, locally</td><td>1Password → SlackAgentOS → 2026-09-07-slack-agent → <code>codex_auth_json</code>, referenced from <code>.env.op</code></td></tr><tr><td>The credential, in production</td><td>Vercel → Environment Variables → <code>CODEX_AUTH_JSON</code> (Production)</td></tr><tr><td>Rebuilding the image</td><td><code>bin/with-secrets node e2b/build.mjs</code></td></tr><tr><td>The pull requests</td><td>#12 (template and setup), #15 (skill), #18 (uncommented the <code>.env.op</code> line)</td></tr><tr><td>Ray's prompt, verbatim</td><td><code>course/transcripts/16-0-to-1--adding-codex.md</code></td></tr><tr><td>Traps already paid for</td><td><code>TRAPS.md</code></td></tr></tbody></table>
+</details>
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l16-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l16-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l16-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l16-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
