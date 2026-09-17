@@ -235,10 +235,20 @@ Lesson 09, "Dogfooding" — transcript at
 `course/transcripts/09-0-to-1--dogfooding.md`. Build `sops/lesson-09/index.html`
 from it following `docs/lessons.md`, show it, get a yes, then do the lesson.
 
-**Decide before lesson 09:** whether to buy GitHub Pro. Dogfooding means pointing
-the bot at real work, and every real repo here is private — where a ruleset does
-not enforce on the free plan, silently. Until that is settled, do not give the
-bot write access to a private repo that matters.
+**Settled 2026-09-16: stay on the GitHub free plan until the end of the course.**
+Not an open question — don't re-raise it each lesson. What follows from it, and
+must be respected for the rest of the course:
+
+- **The bot gets write access to `nojzac/joestar-sandbox` and nothing else.**
+  That repo is public, so its ruleset actually enforces, and it holds nothing
+  real.
+- **No private repo gets `contents: write`.** On the free plan a private repo's
+  branch protection does not enforce, and does not say so — so "private" here
+  means "unprotected", which is the opposite of how it reads.
+- If a lesson wants the bot writing to a real private repo (lesson 09,
+  dogfooding, is the likely one), the choice at that point is: use the public
+  sandbox instead, do the work by hand, or revisit the plan. Do not quietly
+  install the App on a private repo.
 
 Thirteen lessons remain: 09–17 finish the "0 to 1" chapter, and 18–21 are the
 "Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
