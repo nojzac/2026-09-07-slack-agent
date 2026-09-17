@@ -406,6 +406,38 @@ test('uploads what the model left in the output directory, into the thread', asy
   assert.equal(done.body.thread_ts, '111.222', 'the file belongs in the thread');
 });
 
+test('a file with a file_id (already uploaded from the sandbox) skips uploadFile and only completes it', async () => {
+  const calls = captureSlack();
+  globalThis.__claudeRunner = async () => ({
+    answer: 'done',
+    files: [{ name: 'video.mp4', file_id: 'F999' }],
+  });
+
+  await POST(signedRequest(mention()));
+  await settle();
+
+  assert.equal(calls.filter(c => c.method === 'files.getUploadURLExternal').length, 0,
+    'a file_id file must not go through uploadFile\'s own getUploadURL step');
+  const done = calls.find(c => c.method === 'files.completeUploadExternal');
+  assert.ok(done, 'completeUpload should still be called to share it');
+  assert.equal(done.body.thread_ts, '111.222');
+});
+
+test('a file with raw bytes (no file_id) goes through uploadFile\'s own URL dance', async () => {
+  const calls = captureSlack();
+  globalThis.__claudeRunner = async () => ({
+    answer: 'done',
+    files: [{ name: 'poem.txt', bytes: new Uint8Array([1, 2]) }],
+  });
+
+  await POST(signedRequest(mention()));
+  await settle();
+
+  assert.ok(calls.find(c => c.method === 'files.getUploadURLExternal'),
+    'a bytes-only file must request its own upload URL via uploadFile');
+  assert.ok(calls.find(c => c.method === 'upload-bytes'));
+});
+
 test('a failed upload still leaves the answer standing', async () => {
   const calls = captureSlack({ failUpload: true });
   globalThis.__claudeRunner = async () => ({

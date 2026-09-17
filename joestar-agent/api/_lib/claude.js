@@ -38,6 +38,17 @@ const MAX_OUTPUT_FILES = 5;
 // window; raise it only alongside runClaude's timeout math.
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
+// Carved out of the sandbox's own lifetime, not the function's 300s. Uploads
+// now run inside the sandbox, after the claude command returns but before
+// sandbox.kill() — so the claude command cannot be given the sandbox's full
+// timeoutMs, or the sandbox is already at its deadline when collectOutputs
+// starts and every file is dropped. Split as: claude gets (timeoutMs -
+// UPLOAD_BUDGET_MS), collectOutputs gets a share of UPLOAD_BUDGET_MS per file
+// (UPLOAD_BUDGET_MS / MAX_OUTPUT_FILES each), so the two budgets sum to
+// exactly timeoutMs — the sandbox outlives the run by exactly as much as
+// uploading is allotted, no more.
+const UPLOAD_BUDGET_MS = 30_000;
+
 // e2b's Template.setEnvs (e2b/template.mjs) only applies during the template
 // build — it's gone by the time a sandbox actually runs a command. Playwright
 // needs both variables again here, at runtime, or a browser launched as `user`
@@ -62,8 +73,14 @@ export const SANDBOX_RUNTIME_ENVS = {
  * GitHub work: the first two dogfooding requests (2026-09-16) both died with
  * "connection to sandbox ended before the stream completed" while Claude was
  * still working. 285s is as close to the function's own 300s maxDuration as is
- * safe — the remaining 15s covers editing the placeholder, uploading files and
- * adding the terminal reaction, all of which happen after the run returns.
+ * safe — the remaining 15s covers editing the placeholder, calling
+ * completeUploadExternal and adding the terminal reaction, all of which happen
+ * after runClaude returns.
+ *
+ * The 285s itself is not all given to the claude command: collectOutputs now
+ * streams output files to Slack from *inside* this same sandbox, after the
+ * command returns and before sandbox.kill() in the `finally` below runs. See
+ * UPLOAD_BUDGET_MS for how that 285s is split between the two.
  *
  * That raises the ceiling; it does not remove it. Work needing more than five
  * minutes cannot be done inside a Vercel function at all, and moving it out is
@@ -76,6 +93,11 @@ export async function runClaude({
   slackToken = null,
   timeoutMs = 285_000,
 }) {
+  // The sandbox itself gets the full timeoutMs — it has to stay alive long
+  // enough for both the run and the uploads that follow it. The claude command
+  // gets less, so it cannot itself run the sandbox out the clock.
+  const runTimeoutMs = Math.max(timeoutMs - UPLOAD_BUDGET_MS, 0);
+
   const sandbox = await Sandbox.create(TEMPLATE, {
     envs: {
       // Billed through the Claude subscription that created this token, not
@@ -139,7 +161,7 @@ export async function runClaude({
     const result = await sandbox.commands.run(
       `claude -p ${shellQuote(prompt)} --dangerously-skip-permissions --output-format json` +
         ` --mcp-config ${MCP_CONFIG_PATH} --strict-mcp-config`,
-      { timeoutMs, envs },
+      { timeoutMs: runTimeoutMs, envs },
     );
 
     // Uploads happen here, inside the try, while the sandbox is still up —
@@ -148,7 +170,7 @@ export async function runClaude({
     // sandbox.kill() below, against a sandbox that no longer exists.
     return {
       answer: parseAnswer(result.stdout),
-      files: await collectOutputs(sandbox, slackToken),
+      files: await collectOutputs(sandbox, slackToken, UPLOAD_BUDGET_MS),
     };
   } finally {
     // Always kill it: a sandbox left running is a sandbox still being billed.
@@ -197,13 +219,17 @@ async function configureGitHub(sandbox) {
  * just text — and a file that cannot be uploaded should not lose the answer
  * with it.
  */
-async function collectOutputs(sandbox, slackToken) {
+export async function collectOutputs(sandbox, slackToken, uploadBudgetMs = UPLOAD_BUDGET_MS) {
   let entries;
   try {
     entries = await sandbox.files.list(OUTPUT_DIR);
   } catch {
     return [];
   }
+
+  // Split evenly across the files this call could possibly upload, so one
+  // slow file cannot eat the whole budget and starve the rest.
+  const perFileTimeoutMs = Math.max(Math.floor(uploadBudgetMs / MAX_OUTPUT_FILES), 1);
 
   const files = [];
   for (const entry of entries ?? []) {
@@ -226,15 +252,17 @@ async function collectOutputs(sandbox, slackToken) {
       // curl, not fetch — the bytes live in the sandbox, so the POST has to
       // run there too. --data-binary sends the file exactly as-is, the same
       // raw body our own fetch(upload_url, { body: bytes }) sends elsewhere
-      // in the codebase (see uploadFile in slack.js). One real difference:
-      // curl's -d/--data flags default to a
-      // application/x-www-form-urlencoded Content-Type, which fetch never
-      // sends here, so it's pinned to application/octet-stream to match.
+      // in the codebase (see uploadFile in slack.js). That fetch call sends no
+      // Content-Type at all for a raw byte body, and curl's -d/--data flags
+      // default to application/x-www-form-urlencoded, so the header is
+      // stripped outright with `-H 'Content-Type:'` rather than pinned to
+      // some guessed value — this is the only way for the two paths to send
+      // an identical request.
       const cmd =
         `curl -sS -X POST --data-binary @${shellQuote(entry.path)} ` +
-        `-H 'Content-Type: application/octet-stream' ` +
+        `-H 'Content-Type:' ` +
         `-o /dev/null -w '%{http_code}' ${shellQuote(upload_url)}`;
-      const res = await sandbox.commands.run(cmd);
+      const res = await sandbox.commands.run(cmd, { timeoutMs: perFileTimeoutMs });
       const status = Number(res.stdout?.trim());
       if (!(status >= 200 && status < 300)) {
         console.warn(`[claude] upload POST for ${entry.name} failed: HTTP ${res.stdout}`);
