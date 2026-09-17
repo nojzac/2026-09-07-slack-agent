@@ -23,3 +23,31 @@ test('a plain URL inside a sentence is left unchanged', () => {
     'See https://example.com/x for details.',
   );
 });
+
+test('a bolded angle-bracketed URL followed by a real ">" keeps that ">" outside the link', () => {
+  assert.equal(
+    toMrkdwn('**<https://example.com/x>**> more'),
+    '*<https://example.com/x>*> more',
+  );
+});
+
+test('a bolded bare URL with a query string is not truncated at "&"', () => {
+  assert.equal(
+    toMrkdwn('**https://example.com/x?a=1&b=2**'),
+    '*<https://example.com/x?a=1&b=2>*',
+  );
+});
+
+test('a bolded bare URL inside backticks is left untouched', () => {
+  assert.equal(
+    toMrkdwn('`**https://example.com/x**`'),
+    '`**https://example.com/x**`',
+  );
+});
+
+test('a bolded bare URL followed by a period keeps the period outside the link', () => {
+  assert.equal(
+    toMrkdwn('See **https://example.com/x**.'),
+    'See *<https://example.com/x>*.',
+  );
+});
