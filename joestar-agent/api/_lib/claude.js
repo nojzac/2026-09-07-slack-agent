@@ -69,7 +69,13 @@ const UPLOAD_BUDGET_MS = 30_000;
 // out of the claude command's share when memory is actually requested for
 // this run — a run with no memoryRepo pays nothing for a feature it isn't
 // using.
-const MEMORY_BUDGET_MS = 20_000;
+const MEMORY_BUDGET_MS = 25_000;
+const MEMORY_SETUP_TIMEOUT_MS = 8_000;
+const MEMORY_PUSH_TIMEOUT_MS = 12_000;
+
+if (MEMORY_SETUP_TIMEOUT_MS + MEMORY_PUSH_TIMEOUT_MS + 5_000 > MEMORY_BUDGET_MS) {
+  throw new Error('MEMORY_BUDGET_MS too small for its two commands plus 5 s margin');
+}
 
 // Where memory is cloned to inside the sandbox. Referenced both by
 // setUpMemory/pushMemory (as the git working directory) and by the
@@ -339,7 +345,7 @@ export async function setUpMemory(sandbox, { memoryRepo, channelId, envs }) {
       `mkdir -p ${shellQuote(`${MEMORY_DIR}/channels/${channelId}`)} ${shellQuote(`${MEMORY_DIR}/shared`)}`,
     ].join(' && ');
 
-    const res = await sandbox.commands.run(cmd, { timeoutMs: 8_000, envs });
+    const res = await sandbox.commands.run(cmd, { timeoutMs: MEMORY_SETUP_TIMEOUT_MS, envs });
     if (res.exitCode !== 0) {
       console.warn('[memory] setup failed:', res.stderr || `exit ${res.exitCode}`);
       return false;
@@ -387,7 +393,7 @@ export async function pushMemory(sandbox, { envs, channelId }) {
     `git push -q origin HEAD:main`;
 
   try {
-    const res = await sandbox.commands.run(cmd, { timeoutMs: 12_000, envs });
+    const res = await sandbox.commands.run(cmd, { timeoutMs: MEMORY_PUSH_TIMEOUT_MS, envs });
     if (res.exitCode === 0) {
       console.log('[memory] push ok');
       return;
