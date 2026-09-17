@@ -29,6 +29,16 @@ export const OUTPUT_DIR = '/tmp/outputs';
 const MAX_OUTPUT_FILES = 5;
 const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
 
+// e2b's Template.setEnvs (e2b/template.mjs) only applies during the template
+// build — it's gone by the time a sandbox actually runs a command. Playwright
+// needs both variables again here, at runtime, or a browser launched as `user`
+// falls back to ~/.cache/ms-playwright (nothing there — "Executable doesn't
+// exist") and `require('playwright')` from a /tmp script can't resolve at all.
+export const SANDBOX_RUNTIME_ENVS = {
+  PLAYWRIGHT_BROWSERS_PATH: '/opt/ms-playwright',
+  NODE_PATH: '/usr/local/lib/node_modules',
+};
+
 /**
  * Run one prompt through Claude Code in a throwaway cloud sandbox.
  *
@@ -63,6 +73,7 @@ export async function runClaude({ prompt, inputs = [], githubToken = null, timeo
       // Claude waits up to ten minutes for background tasks before exiting.
       // Our whole budget is five, so cap the wait well under it.
       CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS: '5000',
+      ...SANDBOX_RUNTIME_ENVS,
     },
     timeoutMs,
   });

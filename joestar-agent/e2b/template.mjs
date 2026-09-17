@@ -45,6 +45,14 @@ export const template = Template()
   // NODE_PATH points at npm's global install directory so `require('playwright')`
   // resolves from a script anywhere, including one in /tmp — a bare global
   // install isn't on a /tmp script's module search path otherwise.
+  //
+  // setEnvs only affects the commands below, during THIS build — per the e2b
+  // SDK's own types, "Environment variables defined here are available only
+  // during template build." They are gone by the time a sandbox actually runs.
+  // That's fine for the install step itself, but the running sandbox needs
+  // both variables again, set separately at runtime in Sandbox.create's `envs`
+  // (api/_lib/claude.js) — build-time and run-time environments are two
+  // different things and there's no build-time way to make one imply the other.
   .setEnvs({
     PLAYWRIGHT_BROWSERS_PATH: '/opt/ms-playwright',
     NODE_PATH: '/usr/local/lib/node_modules',
