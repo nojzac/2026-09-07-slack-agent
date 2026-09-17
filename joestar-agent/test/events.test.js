@@ -632,3 +632,51 @@ test('unset AGENT_MEMORY_REPO and a topic-less channel: no memory repo, no token
     assert.equal(seen.memoryRepo, undefined);
     assert.equal(seen.githubToken, null);
   }));
+
+// ---------------------------------------------------------------------------
+// Memory + channelId validation, passed straight through to runClaude
+// ---------------------------------------------------------------------------
+
+test('a valid AGENT_MEMORY_REPO: runClaude receives both memoryRepo and channelId', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'nojzac/mem-repo';
+    captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.equal(seen.memoryRepo, 'nojzac/mem-repo');
+    assert.equal(seen.channelId, 'C123');
+  }));
+
+test('AGENT_MEMORY_REPO unset: memoryRepo is undefined', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.equal(seen.memoryRepo, undefined);
+  }));
+
+test('AGENT_MEMORY_REPO set to a value that fails the repo shape check: memoryRepo is undefined', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'bad value';
+    captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.equal(seen.memoryRepo, undefined);
+  }));
+
+test('a valid AGENT_MEMORY_REPO but an invalid event.channel: runClaude receives memoryRepo undefined', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'nojzac/mem-repo';
+    captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention({ channel: 'bad channel!' })));
+    await settle();
+    assert.equal(seen.memoryRepo, undefined);
+  }));
