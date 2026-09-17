@@ -9,6 +9,7 @@
 // The .mjs build imports chalk properly and loads in both places.
 import { Sandbox } from 'e2b/dist/index.mjs';
 import { HOOK_PATH, HOOK_SOURCE, HOOK_SETTINGS, gitSetupScript } from './git-guard.js';
+import { MCP_CONFIG_PATH, buildMcpConfig } from './mcp.js';
 
 const TEMPLATE = process.env.E2B_TEMPLATE ?? 'joestar-claude';
 
@@ -75,6 +76,12 @@ export async function runClaude({ prompt, inputs = [], githubToken = null, timeo
       await sandbox.files.write(file.path, new Blob([file.bytes]));
     }
 
+    // Written fresh every run, never conditional on a key existing: deepwiki
+    // needs no credential at all, and exa is simply left out of the object
+    // when EXA_API_KEY is unset (see mcp.js for why that matters).
+    const hasExaKey = Boolean(process.env.EXA_API_KEY);
+    await sandbox.files.write(MCP_CONFIG_PATH, JSON.stringify(buildMcpConfig({ hasExaKey })));
+
     // Everything the sandbox needs to do GitHub work, set up only when there is
     // a token to do it with. Without one the sandbox has no git identity, no
     // credential helper and no hook — which is correct: it cannot reach GitHub
@@ -87,17 +94,25 @@ export async function runClaude({ prompt, inputs = [], githubToken = null, timeo
     // it means any code the model runs can read it. It is not compartmentalised
     // and should not be described as if it were; the mitigation is that it
     // expires in an hour, not that it is hidden.
-    const envs = githubToken
-      ? { GH_TOKEN: githubToken, HOME: SANDBOX_HOME, HISTFILE: '/dev/null' }
-      : {};
+    // EXA_API_KEY rides along the same way GH_TOKEN does: passed to this one
+    // command, never to Sandbox.create and never baked into the template.
+    // Claude Code expands the "${EXA_API_KEY}" placeholder in mcp.json from
+    // this process env only when it actually opens the exa connection.
+    const envs = {
+      ...(githubToken ? { GH_TOKEN: githubToken, HOME: SANDBOX_HOME, HISTFILE: '/dev/null' } : {}),
+      ...(hasExaKey ? { EXA_API_KEY: process.env.EXA_API_KEY } : {}),
+    };
 
     // -p is non-interactive: no TTY, no trust dialog, no onboarding to hang on.
     // --dangerously-skip-permissions is safe only because this machine is empty
     // and about to be destroyed. NOT --bare: it makes auth "strictly
     // ANTHROPIC_API_KEY or apiKeyHelper (OAuth and keychain are never read)",
     // which would silently break the subscription token we authenticate with.
+    // --mcp-config plus --strict-mcp-config: the only MCP servers available are
+    // the ones written above, not whatever a cloned repo's own .mcp.json asks for.
     const result = await sandbox.commands.run(
-      `claude -p ${shellQuote(prompt)} --dangerously-skip-permissions --output-format json`,
+      `claude -p ${shellQuote(prompt)} --dangerously-skip-permissions --output-format json` +
+        ` --mcp-config ${MCP_CONFIG_PATH} --strict-mcp-config`,
       { timeoutMs, envs },
     );
 

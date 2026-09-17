@@ -19,8 +19,10 @@ Files here:
 - `api/slack/events.js` — the Slack Events API endpoint (Vercel function). POST only; anything else gets 405.
 - `api/_lib/slack.js` — signature verification, `chat.postMessage`, `chat.update`.
 - `api/_lib/claude.js` — boots the E2B sandbox and runs Claude Code headless.
+- `api/_lib/mcp.js` — the MCP servers every sandbox gets (exa, deepwiki).
 - `e2b/template.mjs` — the sandbox image; built with `../bin/with-secrets node e2b/build.mjs`.
 - `test/events.test.js` — `npm test` (no network, `fetch` is stubbed).
+- `test/mcp.test.js` — the MCP config shape, independent of any real sandbox.
 
 ## Environment variables (set in the Vercel project, Production)
 | Name | Where it comes from |
@@ -32,6 +34,34 @@ Files here:
 | `GITHUB_APP_ID` | GitHub App → General tab (numeric) |
 | `GITHUB_INSTALLATION_ID` | the number ending `github.com/settings/installations/…` — **not** the App ID |
 | `GITHUB_APP_PRIVATE_KEY` | the App's `.pem`, **base64-encoded, single line** — see below |
+| `EXA_API_KEY` | exa.ai dashboard → API keys. Optional — see below |
+
+## MCP servers
+
+Every sandbox gets two MCP servers, both remote HTTP, both written into the
+sandbox fresh at run time and passed to `claude` with `--mcp-config
+--strict-mcp-config` — so a repo the bot happens to be working in cannot add
+tools of its own via a checked-in `.mcp.json`.
+
+- **`deepwiki`** — `https://mcp.deepwiki.com/mcp`. No credential of any kind.
+- **`exa`** — `https://mcp.exa.ai/mcp`. Needs `EXA_API_KEY`, sent as an
+  `x-api-key` header.
+
+**The key is never written to a file or a command line.** `api/_lib/mcp.js`
+writes the literal string `${EXA_API_KEY}` into the config; Claude Code
+expands that from its own process environment only when it actually opens the
+connection. The real value is passed to the `claude` command as an env var,
+the same way `GH_TOKEN` already is — never at `Sandbox.create`, never baked
+into the E2B template.
+
+**If `EXA_API_KEY` is unset, `exa` is left out of the config entirely** —
+`deepwiki` is unaffected. This matters because of something found while
+testing this on 2026-09-17: **Exa does not check the key until `tools/call`.**
+A bad key, and even the unexpanded literal `${EXA_API_KEY}`, both complete
+`initialize` and `tools/list` with HTTP 200 and the full tool list — "the MCP
+server connected" proves nothing about the key being real. `deepwiki` needing
+no credential at all is deliberate: it is the control that tells you whether a
+broken run is the Exa key or the `--mcp-config` wiring itself.
 
 ### The GitHub App
 
