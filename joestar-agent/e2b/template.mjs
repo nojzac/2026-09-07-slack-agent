@@ -1,5 +1,5 @@
 import { Template } from 'e2b/dist/index.mjs'; // see api/_lib/claude.js
-import { PLAYWRIGHT_VERSION, POSTGRES_MAJOR } from '../api/_lib/versions.js';
+import { PLAYWRIGHT_VERSION, POSTGRES_MAJOR, CODEX_VERSION } from '../api/_lib/versions.js';
 
 /**
  * The machine Claude Code runs on. Node 24 plus the three tools Claude reaches
@@ -33,6 +33,9 @@ export const template = Template()
     { user: 'root' },
   )
   .npmInstall('@anthropic-ai/claude-code@latest', { g: true })
+  // The Codex CLI, for a second-opinion review from a different model.
+  // Pinned to CODEX_VERSION, same reasoning as PLAYWRIGHT_VERSION above.
+  .npmInstall(`@openai/codex@${CODEX_VERSION}`, { g: true })
   // Playwright + Chromium only (no Firefox/WebKit) for driving a headless
   // browser: screenshots, video, exercising a local dev server.
   //

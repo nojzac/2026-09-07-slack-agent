@@ -143,6 +143,10 @@ export async function runClaude({
     // clear "not configured" into a confusing auth prompt.
     if (githubToken) await configureGitHub(sandbox);
 
+    // Codex second-opinion reviewer: configured once per run, before claude
+    // spawns, so the CLI is ready if a later skill decides to shell out to it.
+    await setUpCodex(sandbox);
+
     // The token is passed per command, never at Sandbox.create. Anything Claude
     // spawns inherits it — that is required for git and gh to work at all, and
     // it means any code the model runs can read it. It is not compartmentalised
@@ -205,6 +209,49 @@ async function configureGitHub(sandbox) {
     if (res.exitCode !== 0) console.warn('[github] git setup exited', res.exitCode);
   } catch (err) {
     console.warn('[github] could not configure the sandbox for git:', err.message);
+  }
+}
+
+// Exactly what config.toml needs to contain: reasoning effort turned up, and
+// approvals/sandboxing both switched off because the sandbox itself — not
+// Codex — is the isolation boundary here.
+const CODEX_CONFIG_TOML = `model_reasoning_effort = "high"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+`;
+
+/**
+ * Give the sandbox a Codex CLI credential, for a second-opinion reviewer.
+ *
+ * The credential is a FILE, never an env var — it must never be passed via
+ * `envs` (Sandbox.create or any command), and never interpolated into a
+ * command string, or it would sit in sandbox process listings and shell
+ * history for the run's lifetime.
+ *
+ * Never throws, same as configureGitHub: this is an enabler, not a gate, so a
+ * broken or missing credential should degrade to "no Codex" rather than fail
+ * the whole run.
+ */
+export async function setUpCodex(sandbox) {
+  const authJson = process.env.CODEX_AUTH_JSON;
+  if (!authJson) return;
+
+  try {
+    JSON.parse(authJson);
+  } catch (err) {
+    console.warn('[codex] CODEX_AUTH_JSON is not valid JSON:', err.message);
+    return;
+  }
+
+  try {
+    await sandbox.files.write(`${SANDBOX_HOME}/.codex/auth.json`, authJson);
+    await sandbox.files.write(`${SANDBOX_HOME}/.codex/config.toml`, CODEX_CONFIG_TOML);
+    const res = await sandbox.commands.run(
+      `chmod 700 ${SANDBOX_HOME}/.codex && chmod 600 ${SANDBOX_HOME}/.codex/auth.json`,
+    );
+    if (res.exitCode !== 0) console.warn('[codex] chmod exited', res.exitCode);
+  } catch (err) {
+    console.warn('[codex] could not configure the sandbox for codex:', err.message);
   }
 }
 
