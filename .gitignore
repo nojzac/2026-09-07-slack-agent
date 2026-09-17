@@ -26,3 +26,12 @@ node_modules/
 # Local junk
 .DS_Store
 .venv*
+
+# Private keys must never be committed. The GitHub App's .pem landed inside the
+# repo during lesson 08 (2026-09-16) because it was saved next to the checkout;
+# it was caught before staging. This is the backstop, not the control — the
+# control is that secrets live in 1Password and never on disk here.
+*.pem
+*.p12
+*.key
+id_rsa*

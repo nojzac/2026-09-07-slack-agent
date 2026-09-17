@@ -1,0 +1,1955 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-08/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 08</p>
+<h1>Give the bot GitHub access, without giving it the keys</h1>
+<p class="standfirst">Ask joestar in Slack to fix something and it clones the repo, branches, commits,
+pushes and opens a pull request. It does that with a token minted fresh for each request that dies in
+an hour — and it never holds the credential that mints tokens.</p>
+
+<div class="facts">
+  <span><b>Ray's video:</b> 6 min 09 s</span>
+  <span><b>This page:</b> 2–3 hours</span>
+  <span><b>At the end:</b> a bot that opens pull requests</span>
+</div>
+
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 250" width="100%" height="auto" role="img">
+  <title>A Slack thread where the bot is asked to fix a typo, and replies with a link to a pull request it opened</title>
+  <rect x="8" y="8" width="684" height="234" rx="10" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="26" y="34" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#4a154b"># joestar-test</text>
+  <line x1="26" y1="46" x2="674" y2="46" stroke="#e2e6ec" stroke-width="1"/>
+
+  <circle cx="40" cy="70" r="11" fill="#1a6ce7"/>
+  <text x="60" y="68" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">Noj</text>
+  <text x="60" y="86" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">@joestar there's a typo in the README of agentic-coding-school —</text>
+  <text x="60" y="104" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">fix it and open a PR</text>
+  <rect x="60" y="112" width="34" height="19" rx="9" fill="#f4f6f8" stroke="#d7dde5" stroke-width="1"/>
+  <text x="77" y="126" text-anchor="middle" font-size="11.5">👀</text>
+
+  <line x1="46" y1="142" x2="46" y2="228" stroke="#e2e6ec" stroke-width="2"/>
+
+  <circle cx="72" cy="162" r="11" fill="#4a154b"/>
+  <text x="92" y="160" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">joestar</text>
+  <text x="147" y="160" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">APP</text>
+  <text x="92" y="180" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Fixed — "recieve" → "receive". Branch</text>
+  <text x="92" y="198" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" fill="#1a6ce7">fix/readme-typo</text>
+  <text x="92" y="216" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">PR #12 is open for review.</text>
+  <rect x="290" y="204" width="34" height="19" rx="9" fill="#f4f6f8" stroke="#d7dde5" stroke-width="1"/>
+  <text x="307" y="218" text-anchor="middle" font-size="11.5">✅</text>
+</svg>
+<p class="cap">The bot cannot merge this. It cannot push to the default branch. It cannot touch
+<code>.github/workflows/</code>. Everything it did here is a proposal a human approves.</p>
+</div>
+<ul>
+  <li><strong>A GitHub App</strong> installed on repositories you choose by name — not on your account.</li>
+  <li><strong>A token minted per request</strong>, valid one hour, that expires long before anyone could reuse it.</li>
+  <li><strong>The private key in the Vercel function only.</strong> The thing that mints tokens never enters the sandbox.</li>
+  <li><strong>Branch rulesets</strong> that make the default branch refuse force-pushes and deletions regardless of what the bot is told to do.</li>
+</ul>
+</div>
+
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 07, so the bot holds a conversation, reads files and reacts in a thread.</p>
+<p>This lesson assumes you own or administer <strong>the repositories you are about to grant access
+to</strong>, and that you can add environment variables in Vercel. It does not assume you have made a
+GitHub App before.</p>
+<p>It is the longest lesson so far, and most of that time is browser work and reading a diff — not
+waiting on code.</p>
+</div>
+
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
+  <title>Where lesson 08 sits: lessons 1 to 7 build a bot you can talk to, lesson 8 gives it the ability to act on repositories, and lessons 9 onward add further tools</title>
+  <defs>
+    <marker id="arrowArc8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+  <rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–07</text>
+  <text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">A bot that talks,</text>
+  <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">and only talks</text>
+  <path d="M194,71 L236,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc8)"/>
+  <rect x="242" y="20" width="216" height="102" rx="9" fill="#f3f0f7" stroke="#7a3d9c" stroke-width="2.5"/>
+  <text x="260" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 08 — YOU ARE HERE</text>
+  <text x="260" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#15171c">It starts to act</text>
+  <text x="260" y="90" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">Clone, branch, commit, push, open a PR</text>
+  <text x="260" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#a32020">the first lesson with a blast radius</text>
+  <path d="M464,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc8)"/>
+  <rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 09–21</text>
+  <text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">Voice, MCP, browsers,</text>
+  <text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">memory, delegation</text>
+  <text x="350" y="141" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Every previous lesson made the bot better at answering. This one lets it change things.</text>
+</svg>
+</div>
+<p>Up to now the worst a broken bot could do was post nonsense in a channel. From this lesson on it
+can write to repositories. That is the whole point — and it is why this page spends its first section
+on the threat model rather than on clicking through GitHub's settings.</p>
+</div>
+<div class="map">
+<h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span>
+  <span class="what">The threat model, why a GitHub App rather than a token, where the private key
+  lives, and what actually holds the line. Read this one properly. ~25 min.</span></li>
+<li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span>
+  <span class="what">Eight steps: create the App, install it narrowly, mint a key, protect the
+  branches, store three variables, run the prompt, rebuild the sandbox, verify. 2–3 hours.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span>
+  <span class="what">The prompt verbatim, the failure table, the done checklist, and what this
+  page could not verify.</span></li>
+</ol>
+</div>
+
+<div class="fm" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<ul>
+  <li><strong>Lesson 07 finished and verified.</strong> Run <code>bin/preflight</code>; it should
+  report all seven Slack scopes.</li>
+  <li><strong>A repository you are willing to let a bot write to.</strong> Pick one deliberately —
+  this is the blast radius, and it is set by the install, not by the code.</li>
+  <li><strong>Admin rights on it</strong>, to add a branch ruleset.</li>
+  <li><strong>A repository where rulesets are actually available.</strong> Verified on this account:
+  a <em>private</em> repo on the free plan cannot have them — the API answers
+  <code>403 — "Upgrade to GitHub Pro or make this repository public to enable this feature."</code>
+  Rulesets are free on <em>public</em> repos. Check before you choose, because step 4 is not
+  optional.</li>
+  <li><strong>Somewhere safe for a <code>.pem</code> file.</strong> GitHub shows the private key
+  once, at generation, and cannot show it again.</li>
+</ul>
+<div class="danger"><strong>Read Part 1 before clicking anything in GitHub.</strong> The permissions
+you grant and the repositories you pick are the security model. The code cannot make a bad choice
+there safe, and undoing it later means regenerating keys and reinstalling.</div>
+</div>
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what you're building</h2>
+  <p>One uncomfortable idea, stated plainly, and then four design decisions that follow from it.</p>
+</div>
+
+<details class="sec" id="threat-08" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What you are actually granting<span class="sec-s">Anyone who can mention the bot can run code on your repositories. Design from there.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>The sandbox runs Claude Code with <code>--dangerously-skip-permissions</code>. That is not an
+oversight — it is what lets the bot work unattended. But combined with this lesson it means:</p>
+
+<div class="danger"><strong>Anyone who can <code>@joestar</code> can run arbitrary prompts, and
+therefore arbitrary code, against whatever GitHub access the bot holds.</strong> In a workspace where
+that is only you, the risk is your own mistakes. In a shared workspace it is everyone in it. The
+channel membership list <em>is</em> the access control list.</div>
+
+<p>So the useful question is not "how do we stop the model misbehaving?" It is: <strong>when the model
+does something wrong, what refuses it?</strong> There are only two honest answers, and neither of them
+is the prompt.</p>
+
+<table>
+<thead><tr><th>Layer</th><th>Stops</th><th>Worth</th></tr></thead>
+<tbody>
+<tr><td>Telling the model what not to do</td><td>An agent that was going to comply anyway</td><td>Saves it minutes discovering walls by hitting them. Not a control.</td></tr>
+<tr><td>A hook inside the sandbox</td><td>A careless <code>git push --force</code></td><td>Defence in depth. Defeatable by <code>G=push; git $G --force</code>.</td></tr>
+<tr><td><strong>Permissions you never granted</strong></td><td>Anything outside them, including by injected code</td><td><strong>This is the real boundary.</strong></td></tr>
+<tr><td><strong>Branch rulesets</strong></td><td>Force-push and deletion on the default branch</td><td><strong>Enforced by GitHub, not by you.</strong></td></tr>
+</tbody>
+</table>
+
+<div class="metaphor"><b>It is the difference between a rule and a lock.</b> Telling a contractor not
+to go into the server room is a rule. Not giving them a key to the server room is a lock. The prompt
+and the hook are rules; the App's permissions and the branch ruleset are locks. This lesson is about
+spending your effort on the locks.</div>
+
+<details class="sub"><summary>Why the sandbox being throwaway does not help here</summary>
+<p>Everything the bot does <em>inside</em> the sandbox is erased when the run ends, which is why there
+is no point adding a general dangerous-command denylist — <code>rm -rf</code> in a container that is
+about to be destroyed costs nothing. But a push leaves the sandbox before the sandbox dies. The
+throwaway property protects the machine; it protects nothing on GitHub.</p>
+</details>
+</details>
+
+<details class="sec" id="app-vs-pat-08" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Why a GitHub App, not a personal access token<span class="sec-s">The fast way gives the bot your identity. The slow way gives it an hour of narrow capability.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Ray names both routes and takes the safer one. The difference is worth stating precisely, because
+the fast one is genuinely five minutes' work and it is tempting.</p>
+
+<table>
+<thead><tr><th></th><th>Personal access token</th><th>GitHub App</th></tr></thead>
+<tbody>
+<tr><td>Acts as</td><td><strong>You.</strong> Commits carry your name</td><td>Its own identity, <code>joestar-bot[bot]</code></td></tr>
+<tr><td>Reaches</td><td>Everything you can reach, typically</td><td>Only repositories you selected at install</td></tr>
+<tr><td>Lives for</td><td>Until you remember to revoke it</td><td><strong>One hour</strong>, minted per request</td></tr>
+<tr><td>If it leaks</td><td>Your whole account, until noticed</td><td>Those repos, for the rest of the hour</td></tr>
+<tr><td>Audit trail</td><td>Indistinguishable from your own work</td><td>Attributable to the bot</td></tr>
+</tbody>
+</table>
+
+<div class="fig">
+<svg viewBox="0 0 700 250" width="100%" height="auto" role="img">
+  <title>The private key stays in the Vercel function and mints a one-hour installation token, which is the only credential the sandbox ever sees</title>
+  <defs>
+    <marker id="arrKey8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+
+  <rect x="12" y="20" width="200" height="96" rx="9" fill="#ffffff" stroke="#24292f" stroke-width="2"/>
+  <text x="112" y="44" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#24292f">GitHub App</text>
+  <text x="112" y="64" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">installed on repos you named</text>
+  <text x="112" y="82" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">contents + PRs, nothing else</text>
+  <text x="112" y="103" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#0b6b3a">the blast radius, set here</text>
+
+  <rect x="250" y="20" width="200" height="96" rx="9" fill="#15171c"/>
+  <text x="350" y="44" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#ffffff">Vercel function</text>
+  <text x="350" y="64" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#c9d1d9">holds the private key</text>
+  <text x="350" y="82" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#c9d1d9">signs a 9-minute JWT</text>
+  <text x="350" y="103" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#f0b429">mints tokens · never leaves</text>
+
+  <path d="M218,68 L244,68" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrKey8)"/>
+
+  <rect x="488" y="20" width="200" height="96" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="588" y="44" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">E2B sandbox</text>
+  <text x="588" y="64" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">gets <tspan font-family="ui-monospace,SFMono-Regular,Menlo,monospace">GH_TOKEN</tspan> only</text>
+  <text x="588" y="82" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">expires in 1 hour</text>
+  <text x="588" y="103" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#a32020">assume anything here is readable</text>
+
+  <path d="M456,68 L482,68" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrKey8)"/>
+
+  <line x1="470" y1="8" x2="470" y2="130" stroke="#a32020" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="470" y="146" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#a32020">the line the private key never crosses</text>
+
+  <rect x="12" y="170" width="676" height="66" rx="8" fill="#f4f6f8" stroke="#d7dde5" stroke-width="1"/>
+  <text x="28" y="192" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#15171c">Why the split is the whole design</text>
+  <text x="28" y="212" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">Code in the sandbox can read anything the sandbox holds. So it holds a capability that expires,</text>
+  <text x="28" y="229" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">never the key that mints capabilities. Leak the token and you lose an hour; leak the key and you lose the App.</text>
+</svg>
+</div>
+
+<div class="ray"><b>Where this differs from Ray.</b> In the video Ray reaches the install screen, says
+you can pick some repositories or all of them, and clicks through. His own written brief says
+<strong>selected repositories only</strong>, and gives the reason: that selection is your blast radius.
+This page follows the brief. It is one click either way and it is the single most consequential click
+in the lesson.</div>
+</details>
+<details class="sec" id="withheld-08" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">The two permissions you deliberately withhold<span class="sec-s">Each one would turn a compromised prompt into something much worse.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Four permissions go on. Two stay off on purpose, and the reasons are worth understanding rather
+than copying.</p>
+
+<table>
+<thead><tr><th>Permission</th><th>Level</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td><code>Contents</code></td><td>Read and write</td><td>Clone, commit, push</td></tr>
+<tr><td><code>Pull requests</code></td><td>Read and write</td><td>Open and comment on PRs</td></tr>
+<tr><td><code>Metadata</code></td><td>Read-only</td><td>Mandatory, selected for you</td></tr>
+<tr><td><code>Issues</code></td><td>Read-only, optional</td><td>Only if it should read issues</td></tr>
+<tr><td><code>Workflows</code></td><td><strong>No access</strong></td><td>Would let injected code rewrite CI — and CI holds secrets. A bot that can edit <code>.github/workflows/</code> can print your Actions secrets to a log.</td></tr>
+<tr><td><code>Administration</code></td><td><strong>No access</strong></td><td>Would let it remove the branch protection that is the other half of this design.</td></tr>
+</tbody>
+</table>
+
+<div class="danger"><strong>These two are not paranoia — they are the escalation paths.</strong> Every
+other control here assumes the bot cannot rewrite CI and cannot disable branch protection. Grant
+either and the rest of the lesson stops meaning anything.</div>
+
+<div class="metaphor"><b>Withholding <code>administration</code> is why the lock works.</b> A lock
+whose key is in a drawer marked "lock settings" is decoration. Branch protection only protects you if
+the thing being protected against cannot turn it off.</div>
+</details>
+
+<details class="sec" id="rules-08" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What branch rulesets actually cover, and the gap they leave<span class="sec-s">They protect the default branch. Every other branch stays writable — which is why there is one hook.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>A ruleset on the default branch requires a pull request with an approval, blocks force pushes, and
+restricts deletions. GitHub enforces it; nothing in the sandbox can talk it out of that.</p>
+
+<p>But it covers <em>that branch</em>. With <code>contents: write</code> the bot can still force-push
+over, or delete, any other branch in the repository — including someone else's work in progress. That
+is the one destructive capability this design permits, and it is the reason for the single hook in the
+sandbox rather than none.</p>
+
+<div class="fig">
+<svg viewBox="0 0 700 208" width="100%" height="auto" role="img">
+  <title>What refuses the bot: GitHub refuses pushes to the protected default branch and workflow edits, the hook discourages force pushes on other branches, and nothing prevents token exfiltration</title>
+  <rect x="12" y="16" width="216" height="118" rx="9" fill="#eefaf2" stroke="#0b6b3a" stroke-width="2"/>
+  <text x="120" y="40" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">GitHub refuses</text>
+  <text x="28" y="64" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• push to the default branch</text>
+  <text x="28" y="83" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• force-push or delete it</text>
+  <text x="28" y="102" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• edit .github/workflows/</text>
+  <text x="28" y="121" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• touch any repo not installed</text>
+
+  <rect x="242" y="16" width="216" height="118" rx="9" fill="#fff8e8" stroke="#8a5a00" stroke-width="2"/>
+  <text x="350" y="40" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#8a5a00">The hook discourages</text>
+  <text x="258" y="64" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• force-push to other branches</text>
+  <text x="258" y="83" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• deleting other branches</text>
+  <text x="258" y="106" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8a5a00">defeated by: G=push; git $G -f</text>
+  <text x="258" y="123" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8a5a00">a nudge, not a control</text>
+
+  <rect x="472" y="16" width="216" height="118" rx="9" fill="#fdeeee" stroke="#a32020" stroke-width="2"/>
+  <text x="580" y="40" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">Nothing prevents</text>
+  <text x="488" y="64" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• sending the token outward</text>
+  <text x="488" y="83" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">• writing anything to a branch</text>
+  <text x="488" y="106" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#a32020">E2B allows outbound network;</text>
+  <text x="488" y="123" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#a32020">the mitigation is the 1-hour life</text>
+
+  <text x="350" y="166" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Only the green column is a control. The amber column is worth having and worth not trusting.</text>
+  <text x="350" y="190" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">The red column is why the token expires in an hour instead of never.</text>
+</svg>
+</div>
+
+<div class="callout"><strong>One narrow hook, not a denylist.</strong> The hook blocks destructive
+push refspecs — <code>--force</code>, <code>--delete</code>, a leading <code>+</code>,
+<code>--mirror</code>, <code>--prune</code>, colon-delete. It does not try to police shell commands
+generally. A denylist that catches the obvious cases and misses the rest is worse than none, because
+it reads as protection while <code>X=$GH_TOKEN</code> walks straight past it.</div>
+
+<div class="danger"><strong>Whether the hook fires at all is genuinely unknown here.</strong> The bot
+runs Claude with <code>--dangerously-skip-permissions</code>. The documentation says
+<code>PreToolUse</code> hooks run regardless of permission mode; there are open reports claiming that
+flag skips the hook layer entirely. This cannot be settled by reading — it has to be tested, and
+step 8 tests it. Treat the hook as a nudge whatever the result.</div>
+</details>
+
+<details class="sec" id="words-08" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Words used in this lesson<span class="sec-s">Seven terms, and two numbers people mix up.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Term</th><th>What it means here</th></tr></thead>
+<tbody>
+<tr><td>App ID</td><td>Identifies the App itself. On the General tab. Goes in <code>GITHUB_APP_ID</code>.</td></tr>
+<tr><td>Installation ID</td><td>Identifies <em>this App installed on this account</em>. It is the number at the end of the install's settings URL. Different from the App ID, and mixing them up gives a <code>404</code>.</td></tr>
+<tr><td>Private key (<code>.pem</code>)</td><td>Proves the function is the App. Shown once at generation and never again. Lives in the function only.</td></tr>
+<tr><td>JWT</td><td>A short-lived signed assertion — here 9 minutes — that says "I am this App". Exchanged for an installation token; never used against repositories directly.</td></tr>
+<tr><td>Installation token</td><td>The actual working credential, valid <strong>one hour</strong>, scoped to the installed repositories. This is the only one the sandbox sees.</td></tr>
+<tr><td>Ruleset</td><td>GitHub's branch protection. Enforced server-side, so it holds regardless of what runs in the sandbox.</td></tr>
+<tr><td><code>GH_TOKEN</code></td><td>The environment variable the <code>gh</code> CLI reads automatically — which avoids <code>gh auth login</code>, a command that wants an interactive terminal the sandbox does not have.</td></tr>
+</tbody>
+</table>
+
+<div class="danger"><strong>Two traps hide in that table.</strong> <code>GITHUB_APP_PRIVATE_KEY</code>
+holds <strong>base64, not raw PEM</strong> — the name does not say so, and pasting a raw
+<code>.pem</code> there produces <code>error:1E08010C:DECODER routines::unsupported</code>, an error
+that points at nothing. And <code>git</code> does <em>not</em> read <code>GH_TOKEN</code>; only
+<code>gh</code> does. Git needs a credential helper, which is its own step.</div>
+</details>
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Eight steps. Five are browser work in GitHub and Vercel; one runs a prompt; one rebuilds the
+  sandbox image; one verifies. The browser work is the security model, so it comes first.</p>
+</div>
+
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 1 of 8 — Create the GitHub App<span class="sec-s">Its name becomes the commit author. The webhook toggle matters more than it looks.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Open the new-App form.</strong></p>
+  <p class="where">Where: GitHub → <b>Settings</b> → <b>Developer settings</b> → <b>GitHub Apps</b> →
+  <b>New GitHub App</b> — <a href="https://github.com/settings/apps">github.com/settings/apps</a></p>
+  <p>If the repositories belong to an organisation, create it there instead:
+  <code>github.com/organizations/&lt;ORG&gt;/settings/apps</code>. An org-owned App survives you
+  leaving; a personal one does not.</p>
+</li>
+<li>
+  <p><strong>Name it.</strong></p>
+  <p>The name must be unique across all of GitHub, so <code>joestar-bot</code> may be taken. Whatever
+  you choose becomes the commit author, suffixed: <code>joestar-bot[bot]</code>. Pick something you
+  will be happy to see in a blame view.</p>
+</li>
+<li>
+  <p><strong>Homepage URL: anything.</strong></p>
+  <p>Required, never used. Your repository URL is fine. Include the <code>https://</code> — Ray
+  forgets it in the video and the form rejects it.</p>
+</li>
+<li>
+  <p><strong>Untick <b>Active</b> under Webhook.</strong></p>
+  <div class="callout"><strong>This is not cosmetic.</strong> You are calling GitHub's API, not
+  receiving events from it. Leave the webhook active with no endpoint and GitHub keeps attempting
+  deliveries and retrying the failures — noise that looks like a problem later and is not.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The form is filled in, the webhook is off, and you have not
+yet pressed Create — permissions come first, on the same page.</div>
+</section>
+
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 2 of 8 — Set permissions and install on selected repositories<span class="sec-s">The most consequential clicks in the lesson. This is where the blast radius is set.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Set exactly these four, and leave everything else at "No access".</strong></p>
+  <table>
+  <thead><tr><th>Permission</th><th>Level</th></tr></thead>
+  <tbody>
+  <tr><td>Contents</td><td>Read and write</td></tr>
+  <tr><td>Pull requests</td><td>Read and write</td></tr>
+  <tr><td>Metadata</td><td>Read-only (selected for you)</td></tr>
+  <tr><td>Issues</td><td>Read-only — only if it should read issues</td></tr>
+  </tbody>
+  </table>
+  <div class="danger"><strong>Do not grant Workflows or Administration.</strong> Workflows lets
+  injected code rewrite CI, and CI holds secrets. Administration lets it remove the branch protection
+  you are about to add. See Part 1 — these are the escalation paths, not a style preference.</div>
+</li>
+<li>
+  <p><strong>"Where can this GitHub App be installed?" → Only on this account.</strong></p>
+</li>
+<li>
+  <p><strong>Create the App, and note the App ID.</strong></p>
+  <p class="where">Where: the <b>General</b> tab, after creation</p>
+</li>
+<li>
+  <p><strong>Install it — on selected repositories only.</strong></p>
+  <p class="where">Where: left sidebar → <b>Install App</b> → <b>Install</b> next to your account</p>
+  <p>Choose <b>Only select repositories</b> and pick them by name.</p>
+  <div class="danger"><strong>This selection is the blast radius for writes.</strong> Not the prompt,
+  not the hook, not the model's judgement. Everything the bot can ever <em>change</em> on GitHub is
+  decided here, and the only way to shrink it later is to come back and change it.</div>
+  <div class="callout"><strong>Reads are wider than your selection, and GitHub says so on the
+  screen.</strong> Verified: under both options the small print reads <em>"Also includes public
+  repositories (read-only)."</em> So the App can read public repositories you never selected. That is
+  not an escalation in the usual sense — public repositories are world-readable anyway, and it is
+  read-only, so nothing destructive follows from it. What it does mean is that the bot can pull
+  content from repositories you did not choose, which is a prompt-injection surface: text it reads
+  can try to instruct it. The same is true of the open internet, since E2B allows outbound network.
+  <br><br>Ray's brief calls the selection your blast radius without qualification. That is right about
+  writes and overstated about reads.</div>
+  <div class="ray"><b>Where this differs from Ray.</b> In the video Ray says you can choose some repos
+  or all of them, and clicks straight through. His own written brief says selected repositories only,
+  and gives this reason. Follow the brief.</div>
+  <div class="danger"><strong>Do not choose the bot's own repository for this.</strong> Two reasons,
+  and the first is specific to this project. A push to <code>main</code> here <em>is</em> a
+  production deploy — so a bot that can push to <code>main</code> can deploy itself, unreviewed, at
+  the request of anyone who can post in Slack. And this repo holds the bot's own loop guards,
+  signature verification and secrets rules; pointing it at its own source for a first test is the
+  worst possible place to discover the credential helper does not work.</div>
+  <div class="callout"><strong>Use a throwaway repo for this lesson.</strong> Create one with nothing
+  but a README, and decide about real repositories afterwards, when you have seen what the bot
+  actually does.</div>
+  <div class="win"><b>What was done here:</b> <code>nojzac/joestar-sandbox</code>, created
+  <strong>private</strong>. For a throwaway, branch protection is not protecting anything — there is
+  nothing of value in the repo. Its only job in this lesson is letting you <em>watch</em> GitHub
+  refuse a direct push to <code>main</code>, which is the one control that is not advisory. So the
+  plan is: run the lesson private, flip to public for the few minutes it takes to add the ruleset and
+  see the refusal, then flip back.
+  <pre><code>gh repo edit nojzac/joestar-sandbox --visibility public   # before step 4
+gh repo edit nojzac/joestar-sandbox --visibility private  # after step 8</code></pre>
+  The repo is public only while it holds a README and test commits.</div>
+</li>
+<li>
+  <p><strong>Grab the Installation ID from the URL you land on.</strong></p>
+  <pre><code>https://github.com/settings/installations/1234567
+                                            ^^^^^^^ this number</code></pre>
+  <p>For an org: <code>github.com/organizations/&lt;ORG&gt;/settings/installations/1234567</code>.</p>
+  <div class="callout"><strong>This is not the App ID.</strong> Two different numbers, both numeric,
+  and swapping them produces a <code>404</code> at token-minting time with no hint as to which one is
+  wrong.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You have two numbers written down — App ID and Installation
+ID — and the install page lists only the repositories you intended.</div>
+</section>
+
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 3 of 8 — Generate the private key and base64 it<span class="sec-s">GitHub shows this once. Encode it before it goes anywhere near an environment variable.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Generate the key.</strong></p>
+  <p class="where">Where: the App's <b>General</b> tab → scroll to <b>Private keys</b> →
+  <b>Generate a private key</b></p>
+  <p>A <code>.pem</code> downloads. <strong>GitHub cannot show it to you again.</strong> If you lose
+  it, generate a new one and delete the old.</p>
+</li>
+<li>
+  <p><strong>Base64 it to a single line.</strong></p>
+  <pre><code>base64 -i ~/Downloads/joestar-bot.*.private-key.pem | tr -d '\n' | pbcopy</code></pre>
+  <p>The <code>tr</code> is not optional decoration: GNU <code>base64</code> wraps at 76 characters by
+  default, and the wrapping breaks the decode at the other end. The <code>.pem</code> is multiline,
+  and multiline values get mangled often enough on the way into environment variables that removing
+  the ambiguity is worth one command.</p>
+  <div class="callout"><strong>This is a secret and it is now on your clipboard.</strong> Do not paste
+  it into a chat, a file, a commit, or this page. It goes into exactly two places, in step 5.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A single-line base64 string is on your clipboard, and the
+<code>.pem</code> is somewhere you can find it again.</div>
+</section>
+
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 4 of 8 — Protect the default branch<span class="sec-s">The half of the design GitHub enforces for you. Do it before the bot can push, not after.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<div class="danger"><strong>Check this is available before you get here.</strong> Verified on this
+account: rulesets are <strong>not available on a private repository on the free plan</strong>. The
+API answers <code>403</code> with "Upgrade to GitHub Pro or make this repository public to enable
+this feature", and the Settings page hides the option. They <em>are</em> free on public repositories.
+<br><br>Ray's brief says to add a ruleset and does not mention that it depends on your plan and the
+repository's visibility. If you cannot add one, you have three honest options — use a public repo,
+pay for Pro, or proceed without the lock and know that <code>contents: write</code> then means the
+bot can push directly to your default branch. Do not pretend the third is the same as the first.</div>
+
+<ol class="steps">
+<li>
+  <p><strong>Add a ruleset on each repository you installed the App on.</strong></p>
+  <p class="where">Where: repo → <b>Settings</b> → <b>Rules</b> → <b>Rulesets</b> →
+  <b>New branch ruleset</b></p>
+  <p>Target the default branch, and set:</p>
+  <ul>
+    <li><b>Require a pull request before merging</b>, with 1 approval</li>
+    <li><b>Block force pushes</b></li>
+    <li><b>Restrict deletions</b></li>
+    <li><b>An empty bypass list</b> — a bypass list containing your App undoes the whole thing</li>
+  </ul>
+</li>
+<li>
+  <p><strong>Understand what it does not cover.</strong></p>
+  <p>Every branch that is not the default stays fully writable, including force-push and delete. That
+  gap is why there is one hook in the sandbox — see Part 1.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The default branch refuses a direct push, force-push and
+deletion, and the ruleset's bypass list is empty.</div>
+<div class="ray"><b>Where this differs from Ray.</b> The video does not do this step at all; his
+written brief requires it. Without it, <code>contents: write</code> means the bot can push straight to
+your default branch, and the pull-request workflow the whole lesson describes is a convention the bot
+is free to ignore.</div>
+</section>
+
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 5 of 8 — Store the three values<span class="sec-s">Vercel so the function can read them, 1Password so they are not lost.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<table>
+<thead><tr><th>Variable</th><th>Value</th><th>Sensitive?</th></tr></thead>
+<tbody>
+<tr><td><code>GITHUB_APP_ID</code></td><td>numeric App ID, from step 2</td><td>No</td></tr>
+<tr><td><code>GITHUB_INSTALLATION_ID</code></td><td>numeric installation ID, from step 2</td><td>No</td></tr>
+<tr><td><code>GITHUB_APP_PRIVATE_KEY</code></td><td><strong>base64</strong> string, from step 3</td><td><strong>Yes</strong></td></tr>
+</tbody>
+</table>
+
+<ol class="steps">
+<li>
+  <p><strong>Add all three to Vercel, Production.</strong></p>
+  <p class="where">Where: Vercel → <b>joestar-agent</b> → <b>Settings</b> → <b>Environment
+  Variables</b></p>
+  <p>Mark the private key sensitive; the two IDs need not be.</p>
+  <div class="callout"><strong>Add the two IDs as <code>--type config</code>, not the default.</strong>
+  The Vercel CLI stores new variables as <em>Secret</em> unless told otherwise, which hides them in the
+  dashboard and makes them unreadable afterwards. That is right for the private key and wrong for the
+  two IDs: if you later need to check which App is configured, a hidden App ID leaves you guessing.
+  <pre><code>printf '&lt;app id&gt;' | vercel env add GITHUB_APP_ID production --type config</code></pre>
+  Run it from <code>joestar-agent/</code>, where the Vercel link lives — the repo root is not linked
+  and answers <code>not_linked</code>.</div>
+</li>
+<li>
+  <p><strong>Add the private key to 1Password as well.</strong></p>
+  <p class="where">Where: 1Password → vault <b>SlackAgentOS</b> → item
+  <b>2026-09-07-slack-agent</b> → new field <code>github_app_private_key</code></p>
+  <div class="danger"><strong>Noj does this, in the 1Password app.</strong> Claude never reads or
+  writes a secret value. Add the matching <code>op://</code> reference to <code>.env.op</code> if
+  local tooling ever needs it — that file holds references, never values.</div>
+  <div class="ray"><b>Where this differs from Ray.</b> Ray puts the key in Vercel only. Here every
+  credential lives in 1Password too, because Vercel's sensitive variables cannot be read back — lose
+  the <code>.pem</code> and the Vercel copy and the only way forward is generating a new key.</div>
+</li>
+<li>
+  <p><strong>Remember what the name does not say.</strong></p>
+  <p><code>GITHUB_APP_PRIVATE_KEY</code> holds base64, not PEM. The code must decode it before
+  signing, and that deserves a comment where it happens:</p>
+  <pre><code>// Stored base64-encoded to survive multiline env var handling.
+const privateKey = Buffer.from(
+  process.env.GITHUB_APP_PRIVATE_KEY,
+  'base64',
+).toString('utf8');</code></pre>
+  <p>If the decoded value does not start with <code>-----BEGIN</code>, the code should throw saying so
+  — otherwise the failure surfaces as
+  <code>error:1E08010C:DECODER routines::unsupported</code>, which names nothing.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Three variables exist in Vercel Production, the private key
+is in 1Password, and you have not pasted the key into anything else.</div>
+</section>
+
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 6 of 8 — Run the prompt in a fresh Claude Code session<span class="sec-s">The prompt is explicit that it must not commit, push or deploy. Hold it to that.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 6 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Start a new session at the repo root and paste the prompt from <a href="#prompt-08">Part 3</a>.</strong></p>
+  <p>It is written for a repo shaped like this one but not identical to it. The paths it names do not
+  all exist here:</p>
+  <table>
+  <thead><tr><th>The prompt says</th><th>This repo has</th></tr></thead>
+  <tbody>
+  <tr><td><code>lib/claude-sandbox.js</code></td><td><code>joestar-agent/api/_lib/claude.js</code></td></tr>
+  <tr><td><code>lib/slack.js</code></td><td><code>joestar-agent/api/_lib/slack.js</code></td></tr>
+  <tr><td><code>lib/github.js</code> (new)</td><td><code>joestar-agent/api/_lib/github.js</code></td></tr>
+  <tr><td><code>e2b/template.js</code></td><td><code>joestar-agent/e2b/template.mjs</code></td></tr>
+  <tr><td><code>npm run template:build</code></td><td><code>bin/with-secrets node e2b/build.mjs</code> — <em>verified: there is no <code>template:build</code> script in this repo</em></td></tr>
+  </tbody>
+  </table>
+  <p>The prompt's first instruction is to read the existing code before changing anything, which is
+  how it discovers these. Let it.</p>
+</li>
+<li>
+  <p><strong>Read the diff. Four things specifically.</strong></p>
+  <ul>
+    <li>The private key is decoded from base64, and the code throws a legible error if it is not base64.</li>
+    <li>Token minting happens in the <strong>function</strong>, never in the sandbox.</li>
+    <li>The token reaches the sandbox <strong>per command</strong> — <code>sandbox.commands.run(cmd, { envs })</code> — not at <code>Sandbox.create</code>. Environment variables set at creation do not reach spawned processes; that lesson is already load-bearing for the Claude OAuth token and must not regress.</li>
+    <li>The token is never logged, never put in a remote URL, never passed as a command-line argument.</li>
+  </ul>
+  <div class="callout"><strong>Fail soft matters here.</strong> If minting fails the bot must still
+  answer non-GitHub questions. And "no GitHub App configured at all" should be silent, not a scary
+  warning on every message — distinguish it from "configured but broken".</div>
+</li>
+<li>
+  <p><strong>Do not let it commit, push or deploy.</strong></p>
+  <p>The prompt ends by saying so explicitly. On this repo a push to <code>main</code> is a production
+  deploy, and it needs Noj's separate word.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>npm test</code> passes, a new
+<code>api/_lib/github.js</code> exists, and nothing is committed.</div>
+</section>
+
+<section class="sec" id="step7" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 7 of 8 — Rebuild the sandbox image, then deploy<span class="sec-s">The sandbox has no git CLI. Verified — nothing works until this is rebuilt.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 7 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">8 · Verify</text>
+</svg></div>
+
+<div class="danger"><strong>The sandbox does not have <code>gh</code>.</strong> Verified by reading
+<code>e2b/template.mjs</code>: it installs <code>curl</code>, <code>git</code> and
+<code>ripgrep</code>, and nothing else. <code>gh</code> is also not in the base image's default apt
+sources, so <code>aptInstall(['gh'])</code> may not resolve — it needs GitHub's own apt repository
+added as root, or the release <code>.deb</code> installed directly.</div>
+
+<ol class="steps">
+<li>
+  <p><strong>Rebuild the template.</strong></p>
+  <pre><code>cd joestar-agent &amp;&amp; ../bin/with-secrets node e2b/build.mjs</code></pre>
+  <div class="danger"><strong>A stale template of the same name silently shadows a new one.</strong>
+  This is already in <code>TRAPS.md</code>. Skip the rebuild and every symptom points at your new code
+  rather than at an image that never changed.</div>
+</li>
+<li>
+  <p><strong>Prove the tools are in there before debugging anything else.</strong></p>
+  <p>Boot a sandbox and run <code>gh --version</code> and <code>git --version</code>. If either does
+  not answer, stop — nothing downstream can work, and every error you see until then will be
+  misleading.</p>
+</li>
+<li>
+  <p><strong>Commit, then push with Noj's explicit go.</strong></p>
+  <p>The push runs <code>test.yml</code>, which tests and then deploys to production. Confirm the run
+  is green and a GET against the endpoint returns <code>405</code>.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>gh --version</code> answers inside a freshly built
+sandbox, the Actions run is green, and production returns <code>405</code>.</div>
+<div class="win"><b>What the probe found here.</b> After the rebuild: <code>gh 2.101.0</code>,
+<code>git 2.39.5</code>, <code>node v24.21.0</code>, running as <code>user</code> with
+<code>$HOME=/home/user</code> — which confirmed the value the code pins for
+<code>--global</code> git config, previously a guess. Then the whole chain in one sandbox: mint,
+clone, branch, empty commit, push, and <code>gh pr create</code> returning a PR URL. <b>The inline
+credential helper worked and <code>gh auth setup-git</code> was not needed</b> — that is the open
+question in Ray's brief, settled by testing rather than choosing.</div>
+<details class="sub"><summary>The fifteen-line sandbox probe, and why it is the best debugging tool here</summary>
+<p>When the bot misbehaves, the first question is "is it my code or is it the machine?" — and that is
+answerable in a minute:</p>
+<pre><code>// keep it OUTSIDE the repo so it does not show up in git status
+import { Sandbox } from '&lt;repo&gt;/joestar-agent/node_modules/e2b/dist/index.mjs';
+
+const sb = await Sandbox.create('joestar-claude', { timeoutMs: 120_000 });
+try {
+  const r = await sb.commands.run('gh --version', { envs: { HOME: '/home/user' } });
+  console.log(r.exitCode, r.stdout, r.stderr);
+} finally {
+  await sb.kill();   // always — a live sandbox is a billed sandbox
+}</code></pre>
+<p>Run it with <code>bin/with-secrets node /tmp/probe.mjs</code>. Two snags: a script outside the repo
+cannot resolve <code>e2b</code>, hence the absolute import path; and an abandoned sandbox keeps
+running and keeps costing, hence the <code>finally</code>.</p>
+</details>
+<div class="danger"><strong>Do not check a command's result through a pipe.</strong>
+<code>git push origin main 2>&1 | tail -2</code> reports <em>tail's</em> exit code, which is
+<code>0</code> whether or not the push was refused — so the check passes against a repository with no
+protection at all. This was written, run, and believed here for about a minute before the output text
+contradicted it. Read the command's own exit status.</div>
+</section>
+
+<section class="sec" id="step8" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 8 of 8 — Verify with a real repository<span class="sec-s">An empty commit first, then a pull request. And the one open question this lesson cannot answer by reading.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 8 of 8</title>
+  <rect x="8.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · App</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Install</text>
+  <rect x="181.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · Key</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Protect</text>
+  <rect x="354.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Vars</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Prompt</text>
+  <rect x="527.0" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">7 · Rebuild</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="653.0" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">8 · Verify</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Smoke test with the smallest possible change.</strong></p>
+  <p>In <code>#joestar-test</code>, ask it to clone one of the installed repositories and make an
+  empty commit on a branch. An empty commit proves clone, credential helper, identity and push
+  without touching a file.</p>
+  <div class="callout"><strong><code>git commit</code> fails outright without
+  <code>user.name</code> and <code>user.email</code>.</strong> They are set from environment
+  variables; the values do not matter. This is a common first failure and it is not a permissions
+  problem, which is what it looks like.</div>
+</li>
+<li>
+  <p><strong>Then ask for a pull request.</strong></p>
+  <p><code>gh pr create</code> fails unless the branch is already pushed. And the base branch must be
+  the repository's actual default — do not assume <code>main</code>.</p>
+</li>
+<li>
+  <p><strong>Test the one thing that cannot be settled by reading: does the hook fire?</strong></p>
+  <p>Ask the bot to force-push to a throwaway branch. Then record what happened, and on which Claude
+  Code version:</p>
+  <ul>
+    <li><strong>Blocked</strong> — the hook runs under <code>--dangerously-skip-permissions</code>.</li>
+    <li><strong>Not blocked</strong> — the flag skips the hook layer. The documented fallback is a
+    single narrow <code>permissions.deny</code> rule, which applies in every mode including
+    <code>bypassPermissions</code>. One guard, still not a denylist.</li>
+  </ul>
+  <div class="danger"><strong>Do not skip this because the code looks right.</strong> The
+  documentation and the field reports disagree. Whatever you observe, write it into
+  <code>TRAPS.md</code> with the version you saw it on — it is the kind of fact that ages.</div>
+</li>
+<li>
+  <p><strong>Confirm the locks hold.</strong></p>
+  <p>Ask it to push directly to the default branch. GitHub should refuse. That is the control, and it
+  is worth seeing refuse once.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A pull request exists that the bot opened, a direct push to
+the default branch was refused by GitHub, and you have recorded whether the hook fired.</div>
+<div class="win"><b>The bot can do work now, not just describe it.</b> From here it has a way to act
+on the world that is auditable, expiring, and narrower than your own access.</div>
+</section>
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>The prompt, the failure table, the checklist, and an honest list of what this page could not
+  check for you.</p>
+</div>
+
+<details class="sec" id="prompt-08" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">The prompt, kept verbatim<span class="sec-s">Ray's, unedited. The clearest example in the course of a brief that names its own threat model.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<p>Paste this into a fresh session at the repo root. It begins by telling Claude to read the existing
+code, which is how it finds this repo's real paths rather than the ones it names.</p>
+
+<div class="callout"><strong>Worth reading rather than pasting blind.</strong> This prompt states a
+threat model and then refuses to soften it — "guardrails inside the sandbox are defence-in-depth only;
+the boundary that actually holds is what GitHub itself refuses to do", and "don't write comments
+claiming more safety than the design provides". That instruction is doing more work than any line of
+code it produces.</div>
+
+<details class="sub"><summary>The full prompt text</summary>
+<pre><code># Give the sandboxed Claude Code agent short-lived GitHub access
+
+This repo is a Slack bot: a Vercel function receives a Slack event, boots a throwaway E2B sandbox, and runs Claude Code inside it with `--dangerously-skip-permissions`.
+
+READ the existing code first — `api/slack/events.js`, `lib/claude-sandbox.js`, `lib/slack.js`, `e2b/template.js`, and the README — before changing anything. Match the existing style and comment density.
+
+## Goal
+
+Let the agent do real GitHub work in response to a Slack message — clone a repo, branch, commit, push, open a PR, read issues — using a token minted fresh per request that expires in 1 hour.
+
+## Threat model (assume this, don't soften it)
+
+Anyone who can @mention the bot can run arbitrary prompts AND arbitrary code inside the sandbox. Guardrails inside the sandbox are defence-in-depth only; the boundary that actually holds is what GitHub itself refuses to do. Design accordingly, and don't write comments claiming more safety than the design provides.
+
+## Set this up yourself before starting (it is not code)
+
+Create a GitHub App, install it on **selected repositories only**, and generate a private key:
+
+- Permissions: `contents` read+write, `pull_requests` read+write, `metadata` read. Deliberately NOT `workflows` (would let injected code rewrite CI and escalate into Actions secrets) and NOT `administration` (would let it remove branch protection).
+- Add a ruleset on each default branch: PR required with 1 approval, force pushes blocked, deletions restricted, empty bypass list.
+- Base64-encode the `.pem` to a single line before putting it in Vercel — multiline env vars do not survive the round trip cleanly:
+
+      base64 -i your-app.private-key.pem | tr -d '\n' | pbcopy
+
+Three env vars in Vercel:
+
+| Var                      | Contents                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `GITHUB_APP_ID`          | numeric App ID                                                                |
+| `GITHUB_INSTALLATION_ID` | numeric installation ID (the number at the end of the install's settings URL) |
+| `GITHUB_APP_PRIVATE_KEY` | the App's `.pem`, **base64-encoded, single line**                             |
+
+## 0. The sandbox has no `gh`
+
+`e2b/template.js` installs `curl`, `git`, `ripgrep`, and the Claude CLI — that's all. The GitHub CLI is not there, and it is not in the base image's default apt sources either, so `aptInstall(["gh"])` may not resolve. Add it via GitHub's own apt repo with `runCmd(..., { user: "root" })`, or install the release `.deb` directly.
+
+**None of this works until you re-run `npm run template:build`.** The README already documents how a stale template of the same name silently shadows a new one — you will hit that here if you skip the rebuild. Verify inside a sandbox that `gh --version` and `git --version` both answer before debugging anything else.
+
+## 1. Mint the installation token in the Vercel function
+
+Put this in a new `lib/github.js`. It runs in the **function**, never in the sandbox — the App private key must not enter the sandbox. That separation is the entire point: the sandbox holds an expiring capability, not the thing that mints capabilities.
+
+**Decode the key first.** Despite the variable name, the value is base64, not raw PEM:
+
+    // Stored base64-encoded to survive multiline env var handling.
+    const privateKey = Buffer.from(
+      process.env.GITHUB_APP_PRIVATE_KEY,
+      "base64",
+    ).toString("utf8");
+
+If the decoded value doesn't start with `-----BEGIN`, throw with a message saying the variable is expected to be base64. Otherwise you get an opaque OpenSSL `error:1E08010C:DECODER routines::unsupported` that points at nothing.
+
+**Sign an RS256 JWT** with exactly three claims — `{ iat, exp, iss }`:
+
+- `iat` ~60 seconds in the past, to absorb clock skew. GitHub rejects future-dated JWTs.
+- `exp` no more than 10 minutes out. Use 9 to leave yourself margin.
+- `iss` the App ID. (GitHub's docs now recommend the App's *client ID* here and treat the numeric App ID as the older form. Both work; the numeric ID is what the env var above holds, so use it — just know why the docs look different.)
+
+Prefer Node's built-in `node:crypto` (`createSign("RSA-SHA256")` plus base64url encoding) over adding a JWT dependency. This repo has already been bitten once by an ESM-only package breaking Vercel's bundler; a ~15-line signer avoids repeating that. If you judge a library is genuinely worth it, say why before adding it.
+
+**Exchange it** for an installation token:
+
+    POST https://api.github.com/app/installations/{GITHUB_INSTALLATION_ID}/access_tokens
+    Authorization: Bearer &lt;jwt&gt;
+    Accept: application/vnd.github+json
+    X-GitHub-Api-Version: 2022-11-28
+
+That version header is not the newest — GitHub's REST API is date-versioned and the current release is `2026-03-10`. `2022-11-28` is still supported (through **10 March 2028**) and is what an unversioned request defaults to, so pinning it is a deliberate, stable choice, not a stale one. Pin it explicitly with a comment saying so; don't silently omit the header and inherit whatever the default becomes later. Check the current table at docs.github.com/en/rest/about-the-rest-api/api-versions yourself rather than trusting this brief — it will age.
+
+The response gives `{ token, expires_at }`, one hour out. That lifetime is fixed and cannot be extended, which is fine — the sandbox lives minutes.
+
+**Never log the token**, and never parse or assume its format or length. On a non-2xx, surface GitHub's own `message` field plus the status: `401` means a bad JWT or a skewed clock, `404` means the wrong installation ID.
+
+**Fail soft.** If minting fails, the bot must still answer non-GitHub questions. Run without the token and have the Slack reply say GitHub access is unavailable — don't take the whole request down. Distinguish *not configured* (no GitHub App set up at all — stay silent, the feature is simply off) from *configured but broken* (say so in the reply). Otherwise every student without a GitHub App gets a scary warning on every message.
+
+**Decide eager vs lazy minting and justify it.** Lazy means only minting when the request looks GitHub-shaped — which in practice means keyword-sniffing the prompt. Before choosing that, consider the threaded follow-up "now open a PR for that", which contains no keyword at all. Also consider where minting sits: it runs after the Slack ack, inside `waitUntil`, on a path that already takes minutes. Whatever you choose, say why. If you cache the token across warm invocations, say explicitly what that means for the "fresh per request" story.
+
+## 2. Get it into the sandbox
+
+- Pass it per command via `sandbox.commands.run(cmd, { envs: { ... } })`. Passing envs at `Sandbox.create` does **not** reach spawned processes — that lesson is already load-bearing for the Claude OAuth token. Do not regress it.
+- Set `GH_TOKEN` (the `gh` CLI reads it automatically; no `gh auth login` needed, which matters because that command wants an interactive TTY).
+- Also set `HISTFILE=/dev/null` so nothing lands in shell history.
+- Everything Claude spawns inherits these. That's required for `git` and `gh` to work, and it means any code the model runs can read the token. Comment it honestly; don't pretend the env var is compartmentalised.
+
+## 3. Let git use it without leaking it
+
+- **`git` does not read `GH_TOKEN`.** It needs a credential helper. Two candidates: `gh auth setup-git`, or an inline helper configured yourself. `gh auth setup-git` is known to behave differently when auth comes from an env var rather than stored credentials, so **test both in a real sandbox and ship the one that actually works.** Don't assume, and don't ship the untested one.
+- The inline form to test looks like this — note that what lands on disk is the literal string `$GH_TOKEN`, expanded only when git runs the helper:
+
+      git config --global credential.https://github.com.helper \
+        '!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
+
+- **Do not embed the token in the remote URL** (`https://x-access-token:TOKEN@github.com/...`). It persists in `.git/config` in plaintext for anything later in the run to read.
+- Do not pass the token as a command-line argument — it's visible in `ps`.
+- `git commit` fails outright without `user.name` / `user.email`. Set them from env vars; the exact values don't matter for this task.
+- Confirm `HOME` is the same for your setup command and for the `claude` command, or `--global` config written by one won't be seen by the other.
+
+## 4. In-sandbox guardrail: one narrow PreToolUse hook
+
+Add exactly one hook, and be honest in its comments about what it does and doesn't do.
+
+**What it blocks:** destructive `git push` refspecs — `--force`, `-f`, `--force-with-lease`, `--delete`, `-d`, a leading `+` in a refspec, and colon-delete (`git push origin :branch`). Consider `--mirror` and `--prune` too: both delete remote refs, so they belong to the same capability. Exit code 2, with a stderr message the model will read: "Force-push and branch deletion are disabled. Push a new branch and open a PR instead."
+
+**Why only this:** the branch ruleset protects the default branch only, so `contents: write` can still force-push over or delete any other branch. That's the one destructive capability GitHub permits and nobody wants. Everything else is either already refused by GitHub (protected main, `.github/workflows/`) or unenforceable by string-matching (token exfiltration via `curl`/`python`/`nc`/an attacker-controlled remote — `X=$GH_TOKEN` alone defeats any pattern you write).
+
+Do NOT add a general dangerous-command denylist. The sandbox is a throwaway container killed after every run; `rm -rf` inside it costs nothing, and a denylist that stops the obvious cases while missing the non-obvious ones is worse than none because it reads as protection.
+
+**Implementation notes:**
+
+- Config schema is `"hooks": { "PreToolUse": [ { "matcher": "Bash", "hooks": [ { "type": "command", "command": "..." } ] } ] }`. Write it to the sandbox user's settings file (`~/.claude/settings.json`), and add *only* the `hooks` key — this repo has already been burned by a baked-in `apiKeyHelper` in that same file overriding `CLAUDE_CODE_OAUTH_TOKEN`.
+- The hook receives tool input as **JSON on stdin** — parse it. Do not expect template arguments.
+- There's no `jq` in the image, but there is Node. Write the hook in Node and keep its source as an exported string in a module rather than a file read at runtime, so Vercel's bundler can't leave it behind.
+- Exit 2 blocks and feeds stderr back to the model; exit 1 does not block. The docs also describe an exit-0-plus-JSON form — pick one mechanism, not both, because JSON is ignored on exit 2.
+- **Verify empirically whether the hook fires at all under `--dangerously-skip-permissions`, and report what you observe.** The docs say PreToolUse runs before the permission prompt for every tool, and the hook payload can carry `permission_mode: "bypassPermissions"`, which implies it does fire. But there are open reports claiming the flag skips the hook layer entirely, and older ones where the hook fired asynchronously and the command ran anyway. This cannot be settled by reading. Test it, state the version you tested on, and treat the hook as a nudge either way.
+- One thing that *is* documented and worth knowing: `permissions.deny` rules apply in **every** mode including `bypassPermissions` (only `allow` rules become no-ops there). So if the hook proves inert, a single narrow deny rule is the documented fallback — same one guard, not a denylist. Propose it, don't add it unasked.
+- Comment plainly that the hook is defeatable — an alias, a shell function, indirection like `G=push; git $G --force`, or invoking `git-receive-pack` directly all walk straight past a string match. It prevents an agent's bad decision, not an attacker's.
+
+## 5. Update the README
+
+Document the three env vars, that `GITHUB_APP_PRIVATE_KEY` holds **base64** and must be decoded, the App permissions to grant (and the two to withhold, with reasons), the required branch protection, and the template rebuild. Keep the existing config table format.
+
+## Gotchas to handle or document
+
+- `gh pr create` fails unless the branch is already pushed to the remote.
+- Get the PR base branch right; don't assume `main` — read the repo's actual default branch.
+- GitHub secret-scanning push protection will block a push containing a token.
+- An expired token returns `401` — fail loudly and legibly rather than mysteriously.
+- E2B allows outbound network by default, so token exfiltration via `curl` is possible. Note this limitation honestly rather than implying it's solved.
+- Tell the model in its prompt what it can and cannot do (branch-and-PR only, no force-push, no `.github/workflows/`, token dies in an hour). Otherwise it burns minutes rediscovering the walls by hitting them.
+
+## Constraints
+
+- No hardcoded repo names, org names, App IDs, or installation IDs anywhere in the code — everything through env vars, with placeholders in the README.
+- Do not weaken or remove the existing Slack signature verification, the loop/dedup guards, the thread-transcript replay, or the per-command env pattern.
+- Do NOT commit, push, or deploy. Show me the diff and wait.</code></pre>
+</details>
+</details>
+
+<details class="sec" id="unverified-08" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">A cold reader cannot tell a verified claim from a repeated one. So here is the list.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<p>Two errors in lesson 07 were course claims taken on trust and stated as fact. This section exists
+so that cannot happen quietly again.</p>
+
+<table>
+<thead><tr><th>Claim</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>The sandbox has no <code>gh</code></td><td><strong>Verified</strong> — <code>e2b/template.mjs</code> installs <code>curl</code>, <code>git</code>, <code>ripgrep</code> only</td></tr>
+<tr><td>There is no <code>npm run template:build</code> here</td><td><strong>Verified</strong> — <code>package.json</code> has one script, <code>test</code></td></tr>
+<tr><td>A push to <code>main</code> deploys to production</td><td><strong>Verified</strong> — <code>.github/workflows/test.yml</code>, tests then <code>vercel deploy --prod</code></td></tr>
+<tr><td>The repo paths the prompt names do not all exist here</td><td><strong>Verified</strong> — see the table at step 6</td></tr>
+<tr><td>The sandbox has <code>gh</code> after rebuilding, and <code>$HOME</code> is <code>/home/user</code></td><td><strong>Verified</strong> — booted a real sandbox: <code>gh 2.101.0</code>, <code>git 2.39.5</code>, <code>node v24.21.0</code>, user <code>user</code></td></tr>
+<tr><td>The inline credential helper works; <code>gh auth setup-git</code> is not needed</td><td><strong>Verified</strong> — full clone → commit → push → PR succeeded in a sandbox</td></tr>
+<tr><td>A branch ruleset actually refuses a push to the default branch</td><td><strong>Verified</strong> — <code>GH013: Repository rule violations found for refs/heads/main</code>, exit code 1</td></tr>
+<tr><td>"Only select repositories" still grants read-only access to public repositories</td><td><strong>Verified</strong> — GitHub's own small print on the Repository access screen, under both options</td></tr>
+<tr><td>Rulesets are unavailable on a private repo on the free plan</td><td><strong>Verified</strong> — <code>gh api /repos/&lt;owner&gt;/&lt;repo&gt;/rulesets</code> returned <code>403</code> with GitHub's upgrade message</td></tr>
+<tr><td>Unticking the webhook stops GitHub retrying deliveries</td><td>Ray's brief; <strong>untested here</strong></td></tr>
+<tr><td>The commit author appears as <code>name[bot]</code></td><td>Ray's brief; <strong>untested here</strong> — confirm at step 8</td></tr>
+<tr><td>App ID and Installation ID confusion produces a <code>404</code></td><td>Ray's brief; <strong>untested here</strong></td></tr>
+<tr><td>API version <code>2022-11-28</code> is supported through March 2028</td><td>Ray's brief; <strong>untested, and it will age</strong> — check the current table at docs.github.com before relying on it</td></tr>
+<tr><td>A <code>PreToolUse</code> hook fires under <code>--dangerously-skip-permissions</code></td><td><strong>Genuinely unknown</strong> — docs and field reports disagree; step 8 tests it</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Where a row says untested, it is not a warning that it is wrong.</strong>
+It is a note that nobody here has seen it, so if the lesson goes sideways at that point, doubt the
+claim before doubting your own work.</div>
+</details>
+
+<details class="sec" id="broken-08" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When something doesn't work<span class="sec-s">The failures here are mostly legible. Two are not, and both name the wrong culprit.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Symptom</th><th>Most likely cause</th><th>Check</th></tr></thead>
+<tbody>
+<tr><td><code>error:1E08010C:DECODER routines::unsupported</code></td><td>A raw <code>.pem</code> was pasted where base64 was expected</td><td>The variable holds base64. Re-run the <code>base64 … | tr -d '\n'</code> command</td></tr>
+<tr><td>The decode produces garbage but no error</td><td><code>base64</code> wrapped at 76 characters</td><td>The <code>tr -d '\n'</code> was omitted</td></tr>
+<tr><td><code>401</code> minting the token</td><td>Bad JWT, or clock skew</td><td><code>iat</code> should be ~60s in the past; <code>exp</code> no more than 10 minutes out</td></tr>
+<tr><td><code>404</code> minting the token</td><td>App ID used where the Installation ID belongs</td><td>Two different numbers — see step 2</td></tr>
+<tr><td><code>gh: command not found</code></td><td>The template was not rebuilt, or a stale one shadowed it</td><td>Rebuild, then <code>gh --version</code> inside a real sandbox</td></tr>
+<tr><td><code>git</code> asks for a password</td><td><code>git</code> does not read <code>GH_TOKEN</code></td><td>The credential helper. Test <code>gh auth setup-git</code> <em>and</em> the inline helper; ship the one that works</td></tr>
+<tr><td><code>git commit</code> refuses</td><td>No <code>user.name</code> / <code>user.email</code></td><td>Set from env vars. Looks like a permissions problem and is not</td></tr>
+<tr><td>Config set by one command is invisible to another</td><td>Different <code>HOME</code></td><td><code>--global</code> writes relative to <code>HOME</code>; it must match between setup and the <code>claude</code> run</td></tr>
+<tr><td><code>gh pr create</code> fails</td><td>The branch was never pushed</td><td>Push first; and read the repo's actual default branch rather than assuming <code>main</code></td></tr>
+<tr><td>A push is rejected mentioning a secret</td><td>GitHub secret-scanning push protection</td><td>Working as intended — something in the diff looks like a credential</td></tr>
+<tr><td><code>401</code> mid-run, after working</td><td>The installation token expired</td><td>One hour, fixed, cannot be extended. Long runs need a fresh mint</td></tr>
+</tbody>
+</table>
+</details>
+
+<details class="sec" id="done-08" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">You're done when<span class="sec-s">Four of these are things you should watch refuse.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<ul class="check">
+<li>Asking in Slack produces a real pull request, opened by <code>name[bot]</code>.</li>
+<li>A direct push to the default branch is <strong>refused by GitHub</strong>.</li>
+<li>The App is installed on named repositories only, and you can list them.</li>
+<li>Workflows and Administration are <strong>not</strong> granted.</li>
+<li>The ruleset's bypass list is empty.</li>
+<li>The private key is in Vercel and 1Password, and nowhere else.</li>
+<li><code>gh --version</code> answers inside a freshly built sandbox.</li>
+<li>You have tested whether the hook fires, and written down the answer either way.</li>
+<li>A non-GitHub question still gets answered if minting fails.</li>
+<li><code>npm test</code> passes and the Actions run is green.</li>
+<li><code>README.md</code> documents the three variables, that the key is base64, and the rebuild.</li>
+<li><code>RESUME.md</code> and <code>TRAPS.md</code> record what happened.</li>
+</ul>
+</details>
+
+<details class="sec" id="where-08" style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where everything lives<span class="sec-s">Including the two numbers people mix up.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+<thead><tr><th>Thing</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Token minting</td><td><code>joestar-agent/api/_lib/github.js</code> — runs in the function, never the sandbox</td></tr>
+<tr><td>The sandbox image</td><td><code>joestar-agent/e2b/template.mjs</code>; rebuild with <code>bin/with-secrets node e2b/build.mjs</code></td></tr>
+<tr><td>The App</td><td><a href="https://github.com/settings/apps">github.com/settings/apps</a></td></tr>
+<tr><td>App ID</td><td><code>4970890</code> — the App's General tab</td></tr>
+<tr><td>Installation ID</td><td><code>162319448</code> — from <code>github.com/settings/installations/162319448</code></td></tr>
+<tr><td>Test repository</td><td><code>nojzac/joestar-sandbox</code> — private, the only repo with write access</td></tr>
+<tr><td>Private key</td><td>Vercel (sensitive) and 1Password <code>SlackAgentOS</code> — generated once, never shown again</td></tr>
+<tr><td>Branch rulesets</td><td>Each repo → Settings → Rules → Rulesets</td></tr>
+<tr><td>Test channel</td><td><code>#joestar-test</code> — <code>C0C1QB5PCNB</code></td></tr>
+<tr><td>Deploy path</td><td>push to <code>main</code> → <code>test.yml</code> → tests → <code>vercel deploy --prod</code></td></tr>
+<tr><td>Secrets rules</td><td><code>docs/secrets.md</code></td></tr>
+<tr><td>Verification</td><td><code>docs/verifying.md</code></td></tr>
+<tr><td>Traps already paid for</td><td><code>TRAPS.md</code></td></tr>
+</tbody>
+</table>
+</details>
+
+
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l8-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l8-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l8-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l8-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import {
   uploadFile,
 } from '../_lib/slack.js';
 import { runClaude, sandboxInputPath, OUTPUT_DIR } from '../_lib/claude.js';
+import { tryMintInstallationToken } from '../_lib/github.js';
 import { isFromBot, renderTranscript, buildPrompt, THINKING } from '../_lib/thread.js';
 import { toMrkdwn } from '../_lib/mrkdwn.js';
 
@@ -26,6 +27,23 @@ const FAILED = 'x';
 // someone dropping twenty photos in a channel from becoming twenty downloads.
 const MAX_INPUT_FILES = 5;
 const MAX_INPUT_BYTES = 8 * 1024 * 1024;
+
+/**
+ * What the model is told about its own GitHub access.
+ *
+ * Every line here is a wall it would otherwise find by walking into it, and
+ * each refusal costs a minute of a five-minute budget. Stated as capabilities
+ * and limits, not as a plea: these are enforced by GitHub, not by good
+ * behaviour.
+ */
+const GITHUB_CAPABILITIES = [
+  'You have GitHub access via the `gh` CLI and `git`, already authenticated.',
+  'It is scoped to the repositories the App was installed on. Other repositories are not reachable for writing.',
+  'Work by branching and opening a pull request. The default branch refuses direct pushes.',
+  'Force-push and branch deletion are disabled. Do not attempt them.',
+  'You cannot modify .github/workflows/ — that permission was deliberately withheld.',
+  'The credential expires one hour after this message. It cannot be renewed from in here.',
+].join('\n');
 
 /** Strip the leading <@U123> mention so Claude gets the question, not the ping. */
 export function promptFrom(text) {
@@ -234,24 +252,47 @@ export async function POST(request) {
     try {
       const inputs = await collectInputs({ token, files: event.files });
 
+      // Minted here, on every request, rather than lazily when the question
+      // looks GitHub-shaped. Lazy minting means keyword-sniffing the prompt, and
+      // the obvious counter-example is a thread reply reading "now open a PR for
+      // that" — no keyword, and by then the transcript is the only thing that
+      // makes it GitHub work. This runs after the Slack ack, inside waitUntil,
+      // on a path that already takes minutes; one HTTP round trip against a
+      // sandbox boot is not worth optimising by guessing.
+      //
+      // Nothing is cached across warm invocations: "fresh per request" stays
+      // literally true, and an hour-long credential is not worth reusing to save
+      // 200ms.
+      const github = await tryMintInstallationToken();
+
       const prompt = buildPrompt({
         question: promptFrom(event.text) || 'The user sent this with no text. Respond to the attached file.',
         transcript,
         inputPaths: inputs.map(f => f.path),
         outputDir: OUTPUT_DIR,
+        // Tell the model where the walls are. Without this it spends minutes
+        // rediscovering them by hitting them — trying to push to main, trying to
+        // force-push — and reports the refusals as failures.
+        github: github.token ? GITHUB_CAPABILITIES : null,
       });
 
       // Swappable so the tests can run the whole path without booting a real
       // sandbox; in production this is always runClaude.
       const run = globalThis.__claudeRunner ?? runClaude;
-      const result = await run({ prompt, inputs });
+      const result = await run({ prompt, inputs, githubToken: github.token });
       // Tolerate a bare string so a stubbed runner stays trivial to write.
       const { answer, files } = typeof result === 'string' ? { answer: result, files: [] } : result;
+
+      // Say so only when GitHub is configured AND broken. A workspace with no
+      // GitHub App at all gets nothing: the feature is simply off, and a warning
+      // on every message about a capability nobody asked for is worse than
+      // silence.
+      const githubNote = github.reason ? `\n\n_GitHub access is unavailable for this run._` : '';
 
       await updateMessage({
         token, channel, ts: placeholder.ts,
         // Converted here, in code. Models ignore being asked for mrkdwn.
-        text: toMrkdwn(answer) || '_Claude finished but said nothing._',
+        text: (toMrkdwn(answer) || '_Claude finished but said nothing._') + githubNote,
       });
 
       for (const file of files ?? []) {

@@ -91,6 +91,71 @@ Slack's dispatch: unsaved settings first, app-needs-reinstall second.
 - Production deploys come from GitHub Actions only — `joestar-agent/vercel.json`
   disables Vercel's own git trigger so the tests gate production.
 
+## A private key inside the repository (lesson 08)
+
+The GitHub App's `.pem` downloads to wherever your browser puts it, and it is
+easy to file it "next to the project" — which on 2026-09-16 meant a folder
+inside the checkout. It sat there untracked for about two minutes. Nothing was
+staged and nothing was pushed, but `git add -A` was the very next command in
+the lesson, and this repo pushes to GitHub.
+
+Three things now stand between that and a leak, in order of how much they are
+worth:
+
+1. **The key does not belong on disk here at all.** It goes into Vercel and
+   1Password and is then deletable; the base64 in the vault is the copy of
+   record. Keep the `.pem` outside the repo, or nowhere.
+2. **`.gitignore` covers `*.pem`, `*.key`, `*.p12`, `id_rsa*`.** A backstop, not
+   a control — it only helps for names it recognises.
+3. **GitHub secret-scanning push protection** would likely reject the push. Last
+   line, and depends on GitHub recognising the format.
+
+The general shape: a credential that arrives as a *downloaded file* behaves
+differently from one that arrives as a *string to paste*. Every other secret in
+this project was pasted straight into 1Password and never existed as a file. This
+one has a physical copy by default, and the default location is wrong.
+
+## Checking tools that pass green while blind
+
+Three instances now, all the same shape, all found by accident. Treat a green
+check as a claim about a specific scope, and go and read what that scope is.
+
+- **`bin/preflight` checked two scopes out of seven** (lesson 07). Its list was
+  hard-coded to lesson 04's. Fixed: it reads the required scopes out of
+  `slack-app-manifest.yml`.
+- **`bin/smoke` tests the lesson-04 bot.** Its five probes cover the mention →
+  reply chain and nothing added since. Remove every reaction call, or the whole
+  mrkdwn conversion, and it still passes 5/5.
+- **`bin/smoke` probe 5 asserts a status code, not a reply.** It checks the
+  endpoint returned 200, but `events.js` returns 200 for skipped events too — so
+  it cannot tell a handler that replied from one that ignored the event, and it
+  prints "posted into the thread above" either way. It also forges the mention
+  text as a literal `<@bot>` rather than the real bot id, which is harmless only
+  while the `app_mention` path ignores the text. Tighten that path to require a
+  real id match and the probe breaks silently, still green.
+  **It is most wrong when the bot is most broken:** every return path in
+  `events.js` is a 200, including the one taken when `auth.test` fails and the
+  handler refuses to dispatch at all. With a completely dead bot token, probe 5
+  still prints that the handler replied. A probe whose claim is affirmatively
+  false exactly when the system has failed is worse than no probe.
+  **The fix, when someone takes it:** assert an outcome, not a status — read the
+  thread afterwards and check a new message from the bot appeared under `rootTs`.
+  Smoke already holds the token and the timestamp, so it is one
+  `conversations.replies` call and a length comparison, and it makes the forged
+  mention text irrelevant because it stops caring what the handler did internally
+  and checks what landed in Slack.
+
+- **A piped command reports the pipe's exit code, not the command's** (lesson 08).
+  Checking `git push origin main 2>&1 | tail -2` asserts on `tail`, which exits 0
+  whether or not the push was refused — so the check passes on a repository with
+  no protection at all. Found in a probe written by Claude on 2026-09-16, minutes
+  after documenting the same shape in `bin/smoke`. Drop the pipe and read the
+  command's own status; if you need the output too, capture it separately.
+
+The general rule: a tool that silently narrows is more dangerous than no tool,
+because it answers the question you asked with the wrong scope of truth. When a
+check passes after a change, ask what it would have had to see to fail.
+
 ## Slack traps found in lesson 07
 
 - **A reinstall does not always mint a new bot token.** With

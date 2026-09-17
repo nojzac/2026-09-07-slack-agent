@@ -35,9 +35,21 @@ Slack's Event Subscriptions page does nothing until you click Save Changes.
 
 ## Before starting a lesson
 Run `bin/preflight` (about 20s, read-only). After any Slack or Vercel config
-change, run `bin/smoke`. Together they cover the two failure modes that cost an
-evening in lesson 04: an unmet prerequisite found late, and a silent break
-somewhere in the mention → reply chain.
+change, run `bin/smoke`.
+
+**Know what smoke does not cover.** It was written for the lesson-04 bot and
+tests the mention → reply chain only. Since lesson 07 the bot does six things,
+and smoke tests none of the new five: no thread reply, no reaction, no file in
+either direction, no mrkdwn conversion. Delete every reaction call and smoke
+still passes 5/5. The end-to-end table in `docs/verifying.md` is what covers
+those, by hand.
+
+**And probe 5 is weaker than its name.** It asserts the endpoint returned 200 —
+but `events.js` returns 200 for every event including ones it skips, so the probe
+cannot distinguish a handler that replied from one that ignored the event, while
+printing "posted into the thread above". It also forges the mention text as the
+literal `<@bot>` rather than the real `U0C1T5AQ0G6`; that is harmless only
+because the `app_mention` path never checks the text.
 
 ## Known unknown
 
@@ -174,11 +186,19 @@ stopped, file out, file in.
 
 ## Open, not blocking
 
-- `bin/preflight` prints `secret <field> resolves — NN chars`. The rule in
-  `docs/secrets.md` is never to read a secret's value, "not a prefix, not a
-  length". A length is a weak leak but the tool contradicts the rule. Noj's call
-  whether it becomes a bare pass/fail.
-
+- **`bin/smoke` needs extending to the lesson-07 bot** — see TRAPS.md. Probe 5
+  should assert an outcome rather than a status: read the thread afterwards and
+  check a new message from the bot appeared under `rootTs` (one
+  `conversations.replies` call — smoke already has the token and the timestamp). Not urgent: `docs/verifying.md` covers the same ground by
+  hand, and smoke is not lying about the chain it does test, only about the
+  bot it was written for.
+- **A 1Password → Vercel sync would make two-place updates cheap.** Every
+  credential here lives in both, and updating means two manual copy-pastes with
+  the value on screen. One command would do it without the value touching a
+  screen or a disk:
+  `bin/with-secrets sh -c 'printf %s "$SLACK_BOT_TOKEN" | vercel env add SLACK_BOT_TOKEN production'`.
+  Raised twice, never taken up or declined. Lesson 08 adds a GitHub App private
+  key that lives in both places too, so the cost grows.
 ## Next step
 
 Lesson 08, "Connecting to GitHub" — transcript at

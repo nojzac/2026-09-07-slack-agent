@@ -73,3 +73,35 @@ progress strip repeated at the head of each step section showing where the reade
 - Where the workshop departs from Ray's video, say so in a `.ray` note at that step.
 - Metaphors are welcome where they carry weight; cleverness in headings is not.
 - No quizzes or self-tests (declined 2026-09-06). No Google Fonts.
+
+### Platform claims: treat Ray as the hypothesis, not the source
+
+Added 2026-09-16, after two errors in one day that were both course claims taken
+on trust.
+
+Before a page asserts how a **platform** behaves — what a reinstall does, what a
+scope grants, what an API returns, what a dashboard saves, what a toggle turns
+off — check it, or mark it unchecked. Most checks are one read-only command.
+
+- **Verified** claims can be stated plainly.
+- **Unverified** claims say so: "Ray says X; untested here." That sentence is
+  worth more than a clean one that might be wrong, because it tells the reader
+  exactly where to be careful.
+- Where Ray's video and his written prompt disagree, say which one this workshop
+  follows and why. They have disagreed at least once (lesson 07: the video says a
+  thread reply resumes the same Claude session; the prompt says choose by
+  runtime; this bot destroys its sandbox, so neither is automatic).
+
+**Why this rule and not a resolution to be careful.** A cold reader cannot tell a
+verified claim from a repeated one — they read identically on the page. The rest
+of these rules test whether a page can be *followed*; none of them test whether
+it is *true*. That gap is this rule's job.
+
+Two that got through before the rule existed, both corrected:
+
+- "Reinstalling mints a new bot token" (lesson 07). Ray states it universally. It
+  is false with `token_rotation_enabled: false` and a same-workspace scope change.
+  One command would have caught it.
+- A fact that aged rather than lied: `bin/preflight`'s scope list was correct when
+  written and silently stopped being so. Re-check claims about your own tooling
+  at the lesson that changes it.

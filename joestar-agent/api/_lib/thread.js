@@ -83,8 +83,12 @@ export function renderTranscript({ messages, botUserId, skipTs }) {
  * we asked for. This does not make it safe — it makes the boundary explicit,
  * which is the part that can actually be reasoned about.
  */
-export function buildPrompt({ question, transcript, inputPaths = [], outputDir }) {
+export function buildPrompt({ question, transcript, inputPaths = [], outputDir, github = null }) {
   const parts = [];
+
+  // Before the thread, because it frames what the model can do with everything
+  // that follows — and pointedly NOT inside <thread>, which is untrusted data.
+  if (github) parts.push(github, '');
 
   if (transcript) {
     parts.push(

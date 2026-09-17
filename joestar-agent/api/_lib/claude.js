@@ -8,8 +8,15 @@
 // cannot do it, not the Node version: raising engines.node does not help.
 // The .mjs build imports chalk properly and loads in both places.
 import { Sandbox } from 'e2b/dist/index.mjs';
+import { HOOK_PATH, HOOK_SOURCE, HOOK_SETTINGS, gitSetupScript } from './git-guard.js';
 
 const TEMPLATE = process.env.E2B_TEMPLATE ?? 'joestar-claude';
+
+// --global git config and the Claude settings file are both written relative to
+// HOME, so the setup command and the claude command must agree about it. If they
+// ever disagree, the credential helper is configured somewhere claude never
+// looks and git asks for a password instead.
+const SANDBOX_HOME = '/home/user';
 
 /** Where attachments land, and where anything to send back is collected from. */
 export const INPUT_DIR = '/tmp/inputs';
@@ -31,7 +38,7 @@ const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
  * `inputs` are files the user attached, written in before the run.
  * Returns the answer plus whatever the model left in OUTPUT_DIR.
  */
-export async function runClaude({ prompt, inputs = [], timeoutMs = 240_000 }) {
+export async function runClaude({ prompt, inputs = [], githubToken = null, timeoutMs = 240_000 }) {
   const sandbox = await Sandbox.create(TEMPLATE, {
     envs: {
       // Billed through the Claude subscription that created this token, not
@@ -57,6 +64,22 @@ export async function runClaude({ prompt, inputs = [], timeoutMs = 240_000 }) {
       await sandbox.files.write(file.path, new Blob([file.bytes]));
     }
 
+    // Everything the sandbox needs to do GitHub work, set up only when there is
+    // a token to do it with. Without one the sandbox has no git identity, no
+    // credential helper and no hook — which is correct: it cannot reach GitHub
+    // anyway, and a credential helper referencing an unset variable would turn a
+    // clear "not configured" into a confusing auth prompt.
+    if (githubToken) await configureGitHub(sandbox);
+
+    // The token is passed per command, never at Sandbox.create. Anything Claude
+    // spawns inherits it — that is required for git and gh to work at all, and
+    // it means any code the model runs can read it. It is not compartmentalised
+    // and should not be described as if it were; the mitigation is that it
+    // expires in an hour, not that it is hidden.
+    const envs = githubToken
+      ? { GH_TOKEN: githubToken, HOME: SANDBOX_HOME, HISTFILE: '/dev/null' }
+      : {};
+
     // -p is non-interactive: no TTY, no trust dialog, no onboarding to hang on.
     // --dangerously-skip-permissions is safe only because this machine is empty
     // and about to be destroyed. NOT --bare: it makes auth "strictly
@@ -64,7 +87,7 @@ export async function runClaude({ prompt, inputs = [], timeoutMs = 240_000 }) {
     // which would silently break the subscription token we authenticate with.
     const result = await sandbox.commands.run(
       `claude -p ${shellQuote(prompt)} --dangerously-skip-permissions --output-format json`,
-      { timeoutMs },
+      { timeoutMs, envs },
     );
 
     return {
@@ -74,6 +97,30 @@ export async function runClaude({ prompt, inputs = [], timeoutMs = 240_000 }) {
   } finally {
     // Always kill it: a sandbox left running is a sandbox still being billed.
     await sandbox.kill().catch(() => {});
+  }
+}
+
+/**
+ * Give the sandbox a git identity, a credential helper, and one push guard.
+ *
+ * Never throws. Every piece of this is an enabler, not a gate: if the hook
+ * cannot be written the run should still happen, because the hook was never the
+ * thing keeping anyone safe — the App's permissions and the branch ruleset are.
+ * Failing the whole request over a missing nudge would be the wrong trade.
+ */
+async function configureGitHub(sandbox) {
+  try {
+    await sandbox.files.write(HOOK_PATH, HOOK_SOURCE);
+    await sandbox.files.write(
+      `${SANDBOX_HOME}/.claude/settings.json`,
+      JSON.stringify(HOOK_SETTINGS, null, 2),
+    );
+    const res = await sandbox.commands.run(gitSetupScript(), {
+      envs: { HOME: SANDBOX_HOME },
+    });
+    if (res.exitCode !== 0) console.warn('[github] git setup exited', res.exitCode);
+  } catch (err) {
+    console.warn('[github] could not configure the sandbox for git:', err.message);
   }
 }
 
