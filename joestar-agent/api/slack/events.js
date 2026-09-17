@@ -9,6 +9,7 @@ import {
   addReaction,
   downloadFile,
   uploadFile,
+  completeUpload,
 } from '../_lib/slack.js';
 import { runClaude, sandboxInputPath, OUTPUT_DIR } from '../_lib/claude.js';
 import { tryMintInstallationToken, repoFromTopic } from '../_lib/github.js';
@@ -317,7 +318,7 @@ export async function POST(request) {
       // Swappable so the tests can run the whole path without booting a real
       // sandbox; in production this is always runClaude.
       const run = globalThis.__claudeRunner ?? runClaude;
-      const result = await run({ prompt, inputs, githubToken: github.token });
+      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token });
       // Tolerate a bare string so a stubbed runner stays trivial to write.
       const { answer, files } = typeof result === 'string' ? { answer: result, files: [] } : result;
 
@@ -335,10 +336,20 @@ export async function POST(request) {
 
       for (const file of files ?? []) {
         try {
-          await uploadFile({
-            token, channel_id: channel, thread_ts,
-            filename: file.name, title: file.name, bytes: file.bytes,
-          });
+          if (file.file_id) {
+            // Already uploaded from inside the sandbox (see collectOutputs in
+            // claude.js) — this is just the completeUploadExternal step,
+            // telling Slack where to share it.
+            await completeUpload({
+              token, channel_id: channel, thread_ts,
+              file_id: file.file_id, title: file.name,
+            });
+          } else {
+            await uploadFile({
+              token, channel_id: channel, thread_ts,
+              filename: file.name, title: file.name, bytes: file.bytes,
+            });
+          }
         } catch (err) {
           console.error(`[slack] could not upload ${file.name}:`, err.message);
         }

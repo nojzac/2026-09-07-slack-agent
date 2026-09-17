@@ -10,6 +10,7 @@
 import { Sandbox } from 'e2b/dist/index.mjs';
 import { HOOK_PATH, HOOK_SOURCE, HOOK_SETTINGS, gitSetupScript } from './git-guard.js';
 import { MCP_CONFIG_PATH, buildMcpConfig } from './mcp.js';
+import { getUploadURL } from './slack.js';
 
 const TEMPLATE = process.env.E2B_TEMPLATE ?? 'joestar-claude';
 
@@ -27,7 +28,15 @@ export const OUTPUT_DIR = '/tmp/outputs';
 // model that decides to write a hundred files from turning into a hundred
 // uploads.
 const MAX_OUTPUT_FILES = 5;
-const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
+
+// Ours, not Slack's or E2B's — nothing platform-side forces this number. Now
+// that output files stream from the sandbox straight to Slack's upload URL
+// instead of passing through this function's memory, the real ceiling is
+// time, not RAM: the file has to finish moving while the sandbox is still
+// alive, inside the 300-second function budget, alongside everything else
+// runClaude does. 64 MiB is a guess at what a slow upload can clear in that
+// window; raise it only alongside runClaude's timeout math.
+const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
 // e2b's Template.setEnvs (e2b/template.mjs) only applies during the template
 // build — it's gone by the time a sandbox actually runs a command. Playwright
@@ -60,7 +69,13 @@ export const SANDBOX_RUNTIME_ENVS = {
  * minutes cannot be done inside a Vercel function at all, and moving it out is
  * an architectural decision rather than a constant to bump. See RESUME.md.
  */
-export async function runClaude({ prompt, inputs = [], githubToken = null, timeoutMs = 285_000 }) {
+export async function runClaude({
+  prompt,
+  inputs = [],
+  githubToken = null,
+  slackToken = null,
+  timeoutMs = 285_000,
+}) {
   const sandbox = await Sandbox.create(TEMPLATE, {
     envs: {
       // Billed through the Claude subscription that created this token, not
@@ -127,9 +142,13 @@ export async function runClaude({ prompt, inputs = [], githubToken = null, timeo
       { timeoutMs, envs },
     );
 
+    // Uploads happen here, inside the try, while the sandbox is still up —
+    // collectOutputs streams bytes from inside the sandbox to Slack. Moving
+    // this into the `finally` or into the caller would run it after
+    // sandbox.kill() below, against a sandbox that no longer exists.
     return {
       answer: parseAnswer(result.stdout),
-      files: await collectOutputs(sandbox),
+      files: await collectOutputs(sandbox, slackToken),
     };
   } finally {
     // Always kill it: a sandbox left running is a sandbox still being billed.
@@ -162,12 +181,23 @@ async function configureGitHub(sandbox) {
 }
 
 /**
- * Everything the model left in OUTPUT_DIR, read out before the sandbox dies.
+ * Everything the model left in OUTPUT_DIR, uploaded to Slack before the
+ * sandbox dies — never read into this function's memory.
  *
- * Never throws: a missing directory is the normal case — most answers are just
- * text — and a file that cannot be read should not lose the answer with it.
+ * For each file: ask Slack for a one-time upload_url bound to that filename
+ * and byte length (files.getUploadURLExternal, via getUploadURL), then run
+ * curl *inside the sandbox* to POST the file's own bytes at that URL. The
+ * only things that cross into the sandbox are the URL and a shell command;
+ * no Slack token goes in, and the URL is spent after this one POST. What
+ * comes back out is just {name, file_id} — completeUploadExternal (from the
+ * function, using file_id/channel_id/thread_ts) still happens after this
+ * returns, same as it always has.
+ *
+ * Never throws: a missing directory is the normal case — most answers are
+ * just text — and a file that cannot be uploaded should not lose the answer
+ * with it.
  */
-async function collectOutputs(sandbox) {
+async function collectOutputs(sandbox, slackToken) {
   let entries;
   try {
     entries = await sandbox.files.list(OUTPUT_DIR);
@@ -187,10 +217,33 @@ async function collectOutputs(sandbox) {
       continue;
     }
     try {
-      const bytes = await sandbox.files.read(entry.path, { format: 'bytes' });
-      if (bytes?.length) files.push({ name: entry.name, bytes });
+      const { upload_url, file_id } = await getUploadURL({
+        token: slackToken,
+        filename: entry.name,
+        length: entry.size,
+      });
+
+      // curl, not fetch — the bytes live in the sandbox, so the POST has to
+      // run there too. --data-binary sends the file exactly as-is, the same
+      // raw body our own fetch(upload_url, { body: bytes }) sends elsewhere
+      // in the codebase (see uploadFile in slack.js). One real difference:
+      // curl's -d/--data flags default to a
+      // application/x-www-form-urlencoded Content-Type, which fetch never
+      // sends here, so it's pinned to application/octet-stream to match.
+      const cmd =
+        `curl -sS -X POST --data-binary @${shellQuote(entry.path)} ` +
+        `-H 'Content-Type: application/octet-stream' ` +
+        `-o /dev/null -w '%{http_code}' ${shellQuote(upload_url)}`;
+      const res = await sandbox.commands.run(cmd);
+      const status = Number(res.stdout?.trim());
+      if (!(status >= 200 && status < 300)) {
+        console.warn(`[claude] upload POST for ${entry.name} failed: HTTP ${res.stdout}`);
+        continue;
+      }
+
+      files.push({ name: entry.name, file_id });
     } catch (err) {
-      console.warn(`[claude] could not read ${entry.name}:`, err.message);
+      console.warn(`[claude] could not upload ${entry.name}:`, err.message);
     }
   }
   return files;

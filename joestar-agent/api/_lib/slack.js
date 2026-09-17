@@ -189,32 +189,55 @@ export async function downloadFile({ token, url }) {
 // ---------------------------------------------------------------------------
 
 /**
- * Upload a file to a thread.
+ * files.upload (v1) was retired in March 2025, so getting a file into a
+ * thread is a three-step v2 dance: ask for a URL (this function), POST the
+ * bytes to it, then tell Slack the upload is complete and where to share it
+ * (completeUpload below). (Ray's prompt calls step two a PUT; Slack's docs
+ * say POST, and POST is what works.)
  *
- * files.upload (v1) was retired in March 2025, so this is the three-step v2
- * dance: ask for a URL, POST the bytes to it, then tell Slack the upload is
- * complete and where to share it. (Ray's prompt calls step two a PUT; Slack's
- * docs say POST, and POST is what works.) Hand-rolled rather than via @slack/web-api's
- * files.uploadV2, to keep this function's bundle to the two dependencies it
- * already has — see TRAPS.md on what a surprise dependency did here in lesson 05.
+ * Split out from the single-shot uploadFile below so the middle step — the
+ * actual POST of bytes — can happen somewhere other than this process. A
+ * sandbox streaming a 40 MB output file straight to this URL never has to
+ * hand those bytes to the function; the function only ever sees this small
+ * JSON response and, later, the file_id.
  */
-export async function uploadFile({ token, channel_id, thread_ts, filename, title, bytes }) {
-  const length = bytes.byteLength ?? bytes.length;
+export async function getUploadURL({ token, filename, length }) {
   if (!length) throw new Error(`refusing to upload an empty file: ${filename}`);
-
   const { upload_url, file_id } = await callForm('files.getUploadURLExternal', token, {
     filename,
     length,
   });
+  return { upload_url, file_id };
+}
+
+/**
+ * Step three of the v2 dance: tell Slack an upload is done and where to share
+ * it. channel_id and thread_ts belong here, not on getUploadURL — the file
+ * exists after step two but is shared nowhere until this call.
+ */
+export function completeUpload({ token, channel_id, thread_ts, file_id, title }) {
+  return call('files.completeUploadExternal', token, {
+    files: [{ id: file_id, title: title ?? file_id }],
+    channel_id,
+    thread_ts,
+  });
+}
+
+/**
+ * Upload a file to a thread in one call, POSTing the bytes from this process.
+ * Fine for small files the function already holds in memory; the sandbox
+ * output path bypasses this and calls getUploadURL / completeUpload directly
+ * around a POST made from inside the sandbox instead. Hand-rolled rather than
+ * via @slack/web-api's files.uploadV2, to keep this function's bundle to the
+ * two dependencies it already has — see TRAPS.md on what a surprise
+ * dependency did here in lesson 05.
+ */
+export async function uploadFile({ token, channel_id, thread_ts, filename, title, bytes }) {
+  const length = bytes.byteLength ?? bytes.length;
+  const { upload_url, file_id } = await getUploadURL({ token, filename, length });
 
   const sent = await fetch(upload_url, { method: 'POST', body: bytes });
   if (!sent.ok) throw new Error(`upload POST to ${filename} failed: HTTP ${sent.status}`);
 
-  // channel_id and thread_ts belong on this call, not the first one: the file
-  // exists after step two but is shared nowhere until here.
-  return call('files.completeUploadExternal', token, {
-    files: [{ id: file_id, title: title ?? filename }],
-    channel_id,
-    thread_ts,
-  });
+  return completeUpload({ token, channel_id, thread_ts, file_id, title: title ?? filename });
 }
