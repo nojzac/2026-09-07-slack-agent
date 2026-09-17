@@ -11,7 +11,7 @@ process.env.E2B_API_KEY = 'e2b-test';
 process.env.CLAUDE_CODE_OAUTH_TOKEN = 'oauth-test';
 
 const CLAUDE_JS_PATH = fileURLToPath(new URL('../api/_lib/claude.js', import.meta.url));
-const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex, runClaude, mergeSettings } = await import('../api/_lib/claude.js');
+const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex, runClaude, mergeSettings, setUpMemory, pushMemory } = await import('../api/_lib/claude.js');
 const { sandboxFiles } = await import('../api/_lib/sandbox-files.js');
 const { Sandbox } = await import('e2b/dist/index.mjs');
 
@@ -518,6 +518,42 @@ test('a failing memory setup leaves the run alive and memory off', async () => {
   assert.ok(
     !commandCalls.some((c) => c.cmd.includes('git push -q origin "HEAD:$b"')),
     'no memory push should run when setup failed',
+  );
+});
+
+test('unborn HEAD in the memory repo: setUpMemory checks out main, pushMemory still pushes to it', async () => {
+  const commandCalls = [];
+  const sandbox = {
+    files: { write: async () => {} },
+    commands: {
+      run: async (cmd, opts) => {
+        commandCalls.push({ cmd, opts });
+        // An empty remote (nothing pushed yet) clones fine but leaves HEAD
+        // unborn — this stub always succeeds, same as a real empty clone.
+        return { exitCode: 0, stdout: '', stderr: '' };
+      },
+    },
+  };
+  const envs = { GH_TOKEN: 'gh-token' };
+
+  const active = await setUpMemory(sandbox, { memoryRepo: 'nojzac/memory', channelId: 'C123', envs });
+  assert.equal(active, true, 'memory should be active after a clean clone of an empty repo');
+
+  const setupCmd = commandCalls.find((c) => c.cmd.includes('git clone --depth 1'));
+  assert.ok(setupCmd, 'the clone command should have run');
+  assert.match(
+    setupCmd.cmd,
+    /git rev-parse -q --verify HEAD >\/dev\/null \|\| git checkout -b main/,
+    'the unborn-HEAD fallback must create and check out main',
+  );
+
+  await pushMemory(sandbox, { envs, channelId: 'C123' });
+  const pushCmd = commandCalls.find((c) => c.cmd.includes('git push -q origin'));
+  assert.ok(pushCmd, 'the push command should have run');
+  assert.match(
+    pushCmd.cmd,
+    /b=\$\(git rev-parse --abbrev-ref HEAD\) && git push -q origin "HEAD:\$b"/,
+    'the push must resolve $b from the checked-out branch and target it',
   );
 });
 
