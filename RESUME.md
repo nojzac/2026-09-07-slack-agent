@@ -356,7 +356,10 @@ count rises when a run starts and never again.
   can message the bot. As of 2026-09-17 the bot has uploaded 6 files totalling
   19.2 MiB, of which one 19.1 MiB test artefact is 99.4%. No retention policy,
   no cleanup, and the course never raises it. Worth a decision before
-  recordings become routine.
+  recordings become routine. `bin/bot-files` lists everything the bot has
+  uploaded, newest first, with the delete command for each — **Slack's folders
+  are UI-only, there is no folder method in the Web API**, so asking Slack for
+  the inventory is the only approach that a script can take.
 
 - **The browser briefing duplicates one line the prompt already has.**
   `browserCapabilities()` says "write it into /tmp/outputs" and the `outputDir`

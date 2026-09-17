@@ -1,0 +1,43 @@
+#!/bin/sh
+# Inventory every file the bot has uploaded, newest first, with the command to
+# delete each one.
+#
+#   bin/with-secrets bin/bot-files            # everything
+#   bin/with-secrets bin/bot-files 1048576    # only files over 1 MiB
+#
+# Why this exists: output files go sandbox -> Slack directly, so Slack is the
+# only copy once the machine dies. Slack's folders are UI-only (no Web API), so
+# the way to find them all is to ask Slack, not to file them by hand.
+#
+# It never deletes anything. It prints the command; you run it. Deleting is a
+# one-way door and it should be a deliberate keystroke.
+set -eu
+
+min=${1:-0}
+
+curl -sS -G https://slack.com/api/files.list \
+  -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+  --data-urlencode "count=200" |
+node -e '
+let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+  const body = JSON.parse(s);
+  if (!body.ok) { console.error("slack said:", body.error); process.exit(1); }
+  const min = Number(process.argv[1] || 0);
+  const files = (body.files || []).filter(f => (f.size || 0) >= min)
+    .sort((a, b) => b.created - a.created);
+
+  let total = 0;
+  for (const f of files) {
+    total += f.size || 0;
+    const mib = ((f.size || 0) / 1048576).toFixed(2).padStart(8);
+    const when = new Date(f.created * 1000).toISOString().slice(0, 16).replace("T", " ");
+    console.log(`${mib} MiB  ${when}  ${f.id}  ${f.name}`);
+  }
+  console.log("");
+  console.log(`${files.length} file(s), ${(total / 1048576).toFixed(1)} MiB`);
+  if (files.length) {
+    console.log("");
+    console.log("To delete one (permanent, immediate, visible to everyone):");
+    console.log(`  bin/with-secrets sh -c '"'"'curl -sS -X POST https://slack.com/api/files.delete -H "Authorization: Bearer $SLACK_BOT_TOKEN" -d file=<ID>'"'"'`);
+  }
+});' "$min"
