@@ -7,10 +7,24 @@
 // request with it. Vercel runs Node 24, so it is the bundler's loader that
 // cannot do it, not the Node version: raising engines.node does not help.
 // The .mjs build imports chalk properly and loads in both places.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Sandbox } from 'e2b/dist/index.mjs';
 import { HOOK_PATH, HOOK_SOURCE, HOOK_SETTINGS, gitSetupScript } from './git-guard.js';
 import { MCP_CONFIG_PATH, buildMcpConfig } from './mcp.js';
+import { sandboxFiles } from './sandbox-files.js';
 import { getUploadURL } from './slack.js';
+
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+// Vercel's task root is not this module's own directory, and it is not
+// necessarily process.cwd() either — so try both places a `toolkit/` next to
+// the deployed bundle could actually land.
+function resolveToolkitDir() {
+  const candidates = [path.join(process.cwd(), 'toolkit'), path.resolve(MODULE_DIR, '../../toolkit')];
+  return candidates.find((p) => fs.existsSync(p));
+}
 
 const TEMPLATE = process.env.E2B_TEMPLATE ?? 'joestar-claude';
 
@@ -125,6 +139,16 @@ export async function runClaude({
     // The output directory has to exist before the run, or "write your answer
     // to /tmp/outputs/x.md" is a path error the model has to recover from.
     await sandbox.files.makeDir(OUTPUT_DIR).catch(() => {});
+
+    // Persona + skills, written fresh every run: the sandbox is destroyed
+    // after each one, so nothing written here ever survives to a "next
+    // time". Never a gate — a broken toolkit should degrade to "no persona
+    // this run", not fail the whole request.
+    try {
+      await sandbox.files.write(sandboxFiles({ toolkitDir: resolveToolkitDir() }));
+    } catch (err) {
+      console.warn('[sandbox-files] could not write persona/skills:', err.message);
+    }
 
     for (const file of inputs) {
       await sandbox.files.write(file.path, new Blob([file.bytes]));
