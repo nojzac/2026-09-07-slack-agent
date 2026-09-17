@@ -289,8 +289,22 @@ export async function POST(request) {
       // Long-term memory is a git repo the sandbox clones at the start of a run
       // and pushes at the end. `AGENT_MEMORY_REPO` is the kill switch: unset
       // means memory is off, full stop, regardless of what's in the topic.
-      const memoryRepo = process.env.AGENT_MEMORY_REPO || undefined;
-      console.log(memoryRepo ? `[memory] repo: ${memoryRepo}` : '[memory] off');
+      // Both the repo and the channel id are validated before use, and never
+      // printed on failure — only their shape, not their value, is worth logging.
+      const rawMemoryRepo = process.env.AGENT_MEMORY_REPO;
+      let memoryRepo;
+      if (!rawMemoryRepo) {
+        memoryRepo = undefined;
+      } else if (!/^[\w.-]+\/[\w.-]+$/.test(rawMemoryRepo)) {
+        console.log('[memory] off (invalid repo)');
+        memoryRepo = undefined;
+      } else if (!/^[A-Z0-9]+$/.test(channel ?? '')) {
+        console.log('[memory] off (invalid channel)');
+        memoryRepo = undefined;
+      } else {
+        memoryRepo = rawMemoryRepo;
+      }
+
 
       // Minted here, on every request, rather than lazily when the question
       // looks GitHub-shaped. Lazy minting means keyword-sniffing the prompt, and
@@ -325,7 +339,7 @@ export async function POST(request) {
       // Swappable so the tests can run the whole path without booting a real
       // sandbox; in production this is always runClaude.
       const run = globalThis.__claudeRunner ?? runClaude;
-      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token, memoryRepo });
+      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token, memoryRepo, channelId: channel });
       // Tolerate a bare string so a stubbed runner stays trivial to write.
       const { answer, files } = typeof result === 'string' ? { answer: result, files: [] } : result;
 

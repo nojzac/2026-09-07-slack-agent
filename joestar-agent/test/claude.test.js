@@ -11,7 +11,7 @@ process.env.E2B_API_KEY = 'e2b-test';
 process.env.CLAUDE_CODE_OAUTH_TOKEN = 'oauth-test';
 
 const CLAUDE_JS_PATH = fileURLToPath(new URL('../api/_lib/claude.js', import.meta.url));
-const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex, runClaude } = await import('../api/_lib/claude.js');
+const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex, runClaude, mergeSettings, setUpMemory, pushMemory } = await import('../api/_lib/claude.js');
 const { sandboxFiles } = await import('../api/_lib/sandbox-files.js');
 const { Sandbox } = await import('e2b/dist/index.mjs');
 
@@ -319,6 +319,242 @@ test('ELEVENLABS_API_KEY unset: absent from the claude command envs', async () =
     if (prevEnv === undefined) delete process.env.ELEVENLABS_API_KEY;
     else process.env.ELEVENLABS_API_KEY = prevEnv;
   }
+});
+
+// ---------------------------------------------------------------------------
+// memory — setUpMemory/pushMemory/mergeSettings/memoryBriefing, the run-time
+// half of Claude Code's own auto-memory (lesson 15, part 2).
+// ---------------------------------------------------------------------------
+
+const MEMORY_DIR = '/home/user/memory'; // must match MEMORY_DIR in claude.js
+const MEMORY_BUDGET_MS = 25_000; // must match MEMORY_BUDGET_MS in claude.js
+
+/** A runClaude-ready sandbox that also serves a fake memory repo and one output file. */
+function makeMemorySandbox({ cloneExitCode = 0, outputs = [] } = {}) {
+  const commandCalls = [];
+  const writeCalls = [];
+  const sandbox = {
+    files: {
+      makeDir: async () => {},
+      write: async (p, data) => { writeCalls.push({ path: p, data }); },
+      list: async () => outputs,
+    },
+    commands: {
+      run: async (cmd, opts) => {
+        commandCalls.push({ cmd, opts });
+        if (cmd.includes('git clone --depth 1') && cmd.includes(MEMORY_DIR)) {
+          return { exitCode: cloneExitCode, stdout: '', stderr: cloneExitCode ? 'clone failed' : '' };
+        }
+        if (cmd.startsWith('claude -p')) {
+          return { stdout: JSON.stringify({ result: 'ok' }), exitCode: 0 };
+        }
+        if (cmd.startsWith('curl ')) {
+          return { stdout: '200', exitCode: 0 };
+        }
+        return { stdout: '', exitCode: 0 };
+      },
+    },
+    kill: async () => {},
+  };
+  return { sandbox, commandCalls, writeCalls };
+}
+
+test('memory off when memoryRepo is unset: no clone command, no settings patch, no briefing in the prompt', async () => {
+  mockUploadFetch();
+  const { sandbox, commandCalls, writeCalls } = makeMemorySandbox();
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  try {
+    await runClaude({ prompt: 'hi', githubToken: 'gh-token', channelId: 'C123' });
+  } finally {
+    Sandbox.create = origCreate;
+  }
+
+  assert.ok(
+    !commandCalls.some((c) => c.cmd.includes('git clone') && c.cmd.includes(MEMORY_DIR)),
+    'no memory clone command should run',
+  );
+  const settingsWrites = writeCalls.filter((w) => w.path === '/home/user/.claude/settings.json');
+  for (const w of settingsWrites) {
+    assert.ok(!JSON.parse(w.data).autoMemoryEnabled, 'settings.json must not be patched for memory when off');
+  }
+  const claudeCmd = commandCalls.find((c) => c.cmd.startsWith('claude -p'));
+  assert.ok(claudeCmd, 'the claude command should have run');
+  assert.doesNotMatch(claudeCmd.cmd, /long-term memory/, 'no memory briefing should be appended to the prompt');
+});
+
+test('memory on: the clone command precedes claude, and the push follows the first upload', async () => {
+  mockUploadFetch();
+  const { sandbox, commandCalls } = makeMemorySandbox({
+    outputs: [{ name: 'out.txt', path: '/tmp/outputs/out.txt', size: 5, type: 'file' }],
+  });
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  try {
+    await runClaude({ prompt: 'hi', githubToken: 'gh-token', memoryRepo: 'nojzac/memory', channelId: 'C123' });
+  } finally {
+    Sandbox.create = origCreate;
+  }
+
+  const cloneIdx = commandCalls.findIndex((c) => c.cmd.includes('git clone') && c.cmd.includes(MEMORY_DIR));
+  const claudeIdx = commandCalls.findIndex((c) => c.cmd.startsWith('claude -p'));
+  const pushIdx = commandCalls.findIndex((c) => c.cmd.includes('git push -q origin "HEAD:$b"'));
+  const uploadIdx = commandCalls.findIndex((c) => c.cmd.startsWith('curl '));
+
+  assert.ok(cloneIdx > -1 && claudeIdx > -1 && pushIdx > -1 && uploadIdx > -1, 'all four commands should have run');
+  assert.ok(cloneIdx < claudeIdx, 'clone must precede claude');
+  assert.ok(claudeIdx < uploadIdx, 'claude must precede the first upload');
+  assert.ok(uploadIdx < pushIdx, 'push must follow the first upload');
+});
+
+test('the GH_TOKEN value appears in no command string and no URL during a memory-on run', async () => {
+  const calls = mockUploadFetch();
+  const token = 'ghs-super-secret-memory-token';
+  const { sandbox, commandCalls } = makeMemorySandbox({
+    outputs: [{ name: 'out.txt', path: '/tmp/outputs/out.txt', size: 5, type: 'file' }],
+  });
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  try {
+    await runClaude({ prompt: 'hi', githubToken: token, memoryRepo: 'nojzac/memory', channelId: 'C123' });
+  } finally {
+    Sandbox.create = origCreate;
+  }
+
+  for (const { cmd } of commandCalls) {
+    assert.doesNotMatch(cmd, new RegExp(token), 'token must not appear in any command string');
+  }
+  for (const { url } of calls) {
+    assert.doesNotMatch(url, new RegExp(token), 'token must not appear in any URL');
+  }
+});
+
+test('mergeSettings keeps existing keys the patch does not mention', () => {
+  const existing = { hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [] }] }, other: 1 };
+  const patch = { autoMemoryEnabled: true, autoMemoryDirectory: '/home/user/memory/channels/C1' };
+
+  const merged = mergeSettings(existing, patch);
+
+  assert.deepEqual(merged, { ...existing, ...patch });
+  assert.deepEqual(merged.hooks, existing.hooks, 'unrelated existing keys must survive the merge');
+});
+
+test("claude's timeout is reduced by MEMORY_BUDGET_MS only when memory is on", async () => {
+  mockUploadFetch();
+  const timeoutMs = 100_000;
+
+  const off = makeMemorySandbox();
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => off.sandbox;
+  try {
+    await runClaude({ prompt: 'hi', githubToken: 'gh-token', channelId: 'C123', timeoutMs });
+  } finally {
+    Sandbox.create = origCreate;
+  }
+  const offClaudeCmd = off.commandCalls.find((c) => c.cmd.startsWith('claude -p'));
+
+  const on = makeMemorySandbox();
+  Sandbox.create = async () => on.sandbox;
+  try {
+    await runClaude({ prompt: 'hi', githubToken: 'gh-token', memoryRepo: 'nojzac/memory', channelId: 'C123', timeoutMs });
+  } finally {
+    Sandbox.create = origCreate;
+  }
+  const onClaudeCmd = on.commandCalls.find((c) => c.cmd.startsWith('claude -p'));
+
+  assert.equal(offClaudeCmd.opts.timeoutMs - onClaudeCmd.opts.timeoutMs, MEMORY_BUDGET_MS);
+});
+
+test('a claude command rejection still pushes memory, and the original rejection propagates', async () => {
+  mockUploadFetch();
+  const commandCalls = [];
+  const sandbox = {
+    files: { makeDir: async () => {}, write: async () => {}, list: async () => [] },
+    commands: {
+      run: async (cmd, opts) => {
+        commandCalls.push({ cmd, opts });
+        if (cmd.includes('git clone --depth 1') && cmd.includes(MEMORY_DIR)) {
+          return { exitCode: 0, stdout: '', stderr: '' };
+        }
+        if (cmd.startsWith('claude -p')) {
+          throw new Error('claude command boom');
+        }
+        return { stdout: '', exitCode: 0 };
+      },
+    },
+    kill: async () => {},
+  };
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  try {
+    await assert.rejects(
+      runClaude({ prompt: 'hi', githubToken: 'gh-token', memoryRepo: 'nojzac/memory', channelId: 'C123' }),
+      /claude command boom/,
+    );
+  } finally {
+    Sandbox.create = origCreate;
+  }
+
+  assert.ok(
+    commandCalls.some((c) => c.cmd.includes('git push -q origin "HEAD:$b"')),
+    'the memory push should still run after the claude command rejects',
+  );
+});
+
+test('a failing memory setup leaves the run alive and memory off', async () => {
+  mockUploadFetch();
+  const { sandbox, commandCalls } = makeMemorySandbox({ cloneExitCode: 1 });
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  try {
+    const result = await runClaude({ prompt: 'hi', githubToken: 'gh-token', memoryRepo: 'nojzac/memory', channelId: 'C123' });
+    assert.equal(result.answer, 'ok', 'the run should still produce an answer');
+  } finally {
+    Sandbox.create = origCreate;
+  }
+
+  const claudeCmd = commandCalls.find((c) => c.cmd.startsWith('claude -p'));
+  assert.doesNotMatch(claudeCmd.cmd, /long-term memory/, 'no briefing should be appended when setup failed');
+  assert.ok(
+    !commandCalls.some((c) => c.cmd.includes('git push -q origin "HEAD:$b"')),
+    'no memory push should run when setup failed',
+  );
+});
+
+test('unborn HEAD in the memory repo: setUpMemory checks out main, pushMemory still pushes to it', async () => {
+  const commandCalls = [];
+  const sandbox = {
+    files: { write: async () => {} },
+    commands: {
+      run: async (cmd, opts) => {
+        commandCalls.push({ cmd, opts });
+        // An empty remote (nothing pushed yet) clones fine but leaves HEAD
+        // unborn — this stub always succeeds, same as a real empty clone.
+        return { exitCode: 0, stdout: '', stderr: '' };
+      },
+    },
+  };
+  const envs = { GH_TOKEN: 'gh-token' };
+
+  const active = await setUpMemory(sandbox, { memoryRepo: 'nojzac/memory', channelId: 'C123', envs });
+  assert.equal(active, true, 'memory should be active after a clean clone of an empty repo');
+
+  const setupCmd = commandCalls.find((c) => c.cmd.includes('git clone --depth 1'));
+  assert.ok(setupCmd, 'the clone command should have run');
+  assert.match(
+    setupCmd.cmd,
+    /git rev-parse -q --verify HEAD >\/dev\/null \|\| git checkout -b main/,
+    'the unborn-HEAD fallback must create and check out main',
+  );
+
+  await pushMemory(sandbox, { envs, channelId: 'C123' });
+  const pushCmd = commandCalls.find((c) => c.cmd.includes('git push -q origin'));
+  assert.ok(pushCmd, 'the push command should have run');
+  assert.match(
+    pushCmd.cmd,
+    /b=\$\(git rev-parse --abbrev-ref HEAD\) && git push -q origin "HEAD:\$b"/,
+    'the push must resolve $b from the checked-out branch and target it',
+  );
 });
 
 // ---------------------------------------------------------------------------
