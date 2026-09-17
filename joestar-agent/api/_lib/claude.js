@@ -63,6 +63,20 @@ export const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 // uploading is allotted, no more.
 const UPLOAD_BUDGET_MS = 30_000;
 
+// Carved out the same way as UPLOAD_BUDGET_MS: setUpMemory and pushMemory run
+// as their own sandbox commands, before and after the claude command, and
+// need to still be inside the sandbox's timeoutMs when they run. Only taken
+// out of the claude command's share when memory is actually requested for
+// this run — a run with no memoryRepo pays nothing for a feature it isn't
+// using.
+const MEMORY_BUDGET_MS = 20_000;
+
+// Where memory is cloned to inside the sandbox. Referenced both by
+// setUpMemory/pushMemory (as the git working directory) and by the
+// autoMemoryDirectory written into settings.json — those two must agree, or
+// Claude Code's auto-memory points somewhere the git repo isn't.
+const MEMORY_DIR = '/home/user/memory';
+
 // e2b's Template.setEnvs (e2b/template.mjs) only applies during the template
 // build — it's gone by the time a sandbox actually runs a command. Playwright
 // needs both variables again here, at runtime, or a browser launched as `user`
@@ -111,12 +125,24 @@ export async function runClaude({
   inputs = [],
   githubToken = null,
   slackToken = null,
+  memoryRepo = null,
+  channelId = null,
   timeoutMs = 285_000,
 }) {
+  // Whether this run will even attempt memory: needs both a repo to clone and
+  // the token to clone it with (memory rides the same GH_TOKEN as GitHub
+  // work, not a separate credential). Decided up front so the time budget and
+  // the eventual setUpMemory no-op agree about what "on" means.
+  const memoryRequested = Boolean(memoryRepo && githubToken);
+
   // The sandbox itself gets the full timeoutMs — it has to stay alive long
-  // enough for both the run and the uploads that follow it. The claude command
-  // gets less, so it cannot itself run the sandbox out the clock.
-  const runTimeoutMs = Math.max(timeoutMs - UPLOAD_BUDGET_MS, 0);
+  // enough for the run, the memory clone/push and the uploads that follow it.
+  // The claude command gets less, so it cannot itself run the sandbox out the
+  // clock.
+  const runTimeoutMs = Math.max(
+    timeoutMs - UPLOAD_BUDGET_MS - (memoryRequested ? MEMORY_BUDGET_MS : 0),
+    0,
+  );
 
   const sandbox = await Sandbox.create(TEMPLATE, {
     envs: {
@@ -192,6 +218,13 @@ export async function runClaude({
       ...(process.env.ELEVENLABS_API_KEY ? { ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY } : {}),
     };
 
+    // Clone-and-scaffold memory before claude runs, so its auto-memory
+    // directory exists and settings.json points at it from the first tool
+    // call. memoryActive reflects whether setup actually succeeded, not just
+    // whether it was requested — a clone failure degrades to "no memory this
+    // run", same as every other enabler in this function.
+    const memoryActive = await setUpMemory(sandbox, { memoryRepo, channelId, envs });
+
     // -p is non-interactive: no TTY, no trust dialog, no onboarding to hang on.
     // --dangerously-skip-permissions is safe only because this machine is empty
     // and about to be destroyed. NOT --bare: it makes auth "strictly
@@ -199,11 +232,18 @@ export async function runClaude({
     // which would silently break the subscription token we authenticate with.
     // --mcp-config plus --strict-mcp-config: the only MCP servers available are
     // the ones written above, not whatever a cloned repo's own .mcp.json asks for.
+    const fullPrompt = memoryActive ? `${prompt}\n\n${memoryBriefing(channelId)}` : prompt;
+
     const result = await sandbox.commands.run(
-      `claude -p ${shellQuote(prompt)} --dangerously-skip-permissions --output-format json` +
+      `claude -p ${shellQuote(fullPrompt)} --dangerously-skip-permissions --output-format json` +
         ` --mcp-config ${MCP_CONFIG_PATH} --strict-mcp-config`,
       { timeoutMs: runTimeoutMs, envs },
     );
+
+    // Commit and push whatever the model wrote into memory, before uploads —
+    // this is the only place a memory-on run persists anything, since the
+    // sandbox is destroyed the moment this function returns.
+    if (memoryActive) await pushMemory(sandbox, { envs, channelId });
 
     // Uploads happen here, inside the try, while the sandbox is still up —
     // collectOutputs streams bytes from inside the sandbox to Slack. Moving
@@ -240,6 +280,112 @@ async function configureGitHub(sandbox) {
     if (res.exitCode !== 0) console.warn('[github] git setup exited', res.exitCode);
   } catch (err) {
     console.warn('[github] could not configure the sandbox for git:', err.message);
+  }
+}
+
+/**
+ * Shallow-merge a settings patch into an existing settings object, never
+ * replacing it. Its own function so the merge logic — and the promise that
+ * setUpMemory never clobbers the hooks block configureGitHub already wrote —
+ * is testable without a sandbox.
+ */
+export function mergeSettings(existing, patch) {
+  return { ...existing, ...patch };
+}
+
+/**
+ * Clone this channel's memory repo into the sandbox and scaffold it, so
+ * Claude Code's own auto-memory (not a custom recall step — see settings.json
+ * below) has somewhere to read and write from the first tool call onward.
+ *
+ * Returns whether memory is actually usable for the rest of this run. Never
+ * throws: a missing repo/token is the ordinary "not configured" case, and a
+ * clone failure degrades to "no memory this run" rather than failing the
+ * whole request, same as configureGitHub and setUpCodex above.
+ *
+ * One shell command, run with the same per-command envs the claude command
+ * gets: GH_TOKEN never appears in the command string or in the clone URL —
+ * only in the env the credential helper configureGitHub already installed
+ * reads from when git actually needs it.
+ */
+export async function setUpMemory(sandbox, { memoryRepo, channelId, envs }) {
+  if (!memoryRepo || !envs?.GH_TOKEN) {
+    console.log('[memory] off');
+    return false;
+  }
+
+  try {
+    const cloneUrl = `https://github.com/${memoryRepo}`;
+    const cmd = [
+      `git clone --depth 1 ${shellQuote(cloneUrl)} ${MEMORY_DIR}`,
+      `cd ${MEMORY_DIR}`,
+      // An empty remote clones fine but leaves HEAD unborn — give it a
+      // branch to commit to rather than leaving that to the first commit.
+      `git rev-parse -q --verify HEAD >/dev/null || git checkout -b main`,
+      `mkdir -p ${shellQuote(`${MEMORY_DIR}/channels/${channelId}`)} ${shellQuote(`${MEMORY_DIR}/shared`)}`,
+    ].join(' && ');
+
+    const res = await sandbox.commands.run(cmd, { timeoutMs: 8_000, envs });
+    if (res.exitCode !== 0) {
+      console.warn('[memory] setup failed:', res.stderr || `exit ${res.exitCode}`);
+      return false;
+    }
+
+    const settings = mergeSettings(HOOK_SETTINGS, {
+      autoMemoryEnabled: true,
+      autoMemoryDirectory: `${MEMORY_DIR}/channels/${channelId}`,
+    });
+    await sandbox.files.write(`${SANDBOX_HOME}/.claude/settings.json`, JSON.stringify(settings, null, 2));
+
+    return true;
+  } catch (err) {
+    console.warn('[memory] setup failed:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Told to the model only on a run where setUpMemory actually succeeded — in
+ * thread.js's buildPrompt style, appended to the prompt rather than folded
+ * into it, since runClaude (not buildPrompt's caller) is what knows whether
+ * memory came up this run.
+ */
+export function memoryBriefing(channelId) {
+  return [
+    'You have long-term memory at /home/user/memory.',
+    `channels/${channelId}/ is this channel's private memory and is your auto-memory directory.`,
+    'shared/ holds facts that apply to every channel; read shared/MEMORY.md when it exists.',
+    'When someone asks you to remember something, write it there as a Markdown note; it is committed and pushed after this run.',
+  ].join('\n');
+}
+
+/**
+ * Commit and push whatever ended up in /home/user/memory, after the claude
+ * command and before collectOutputs — this is the only chance, since the
+ * sandbox is destroyed the moment runClaude returns. Never throws: a run that
+ * produced a good answer should not fail just because the memory push did.
+ */
+export async function pushMemory(sandbox, { envs, channelId }) {
+  const message = `memory: ${channelId} ${new Date().toISOString()}`;
+  const cmd =
+    `cd ${MEMORY_DIR} && git add -A && ` +
+    `git -c user.name=joestar -c user.email=joestar@users.noreply.github.com commit -qm ${shellQuote(message)} && ` +
+    `git push -q origin HEAD:main`;
+
+  try {
+    const res = await sandbox.commands.run(cmd, { timeoutMs: 12_000, envs });
+    if (res.exitCode === 0) {
+      console.log('[memory] push ok');
+      return;
+    }
+    const output = `${res.stdout ?? ''}${res.stderr ?? ''}`;
+    if (/nothing to commit/i.test(output)) {
+      console.log('[memory] push skip (nothing changed)');
+      return;
+    }
+    console.warn(`[memory] push failed: ${(res.stderr || res.stdout || '').split('\n')[0]}`);
+  } catch (err) {
+    console.warn(`[memory] push failed: ${String(err.message ?? err).split('\n')[0]}`);
   }
 }
 
