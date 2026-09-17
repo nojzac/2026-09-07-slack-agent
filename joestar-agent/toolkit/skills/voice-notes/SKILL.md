@@ -12,7 +12,7 @@ transcript.
 
 ## Command
 
-    node toolkit/skills/voice-notes/scripts/transcribe.mjs <audio-file>
+    node ~/.claude/skills/voice-notes/scripts/transcribe.mjs <audio-file>
 
 Flags:
 - `--language xx` — hint the source language with a two-letter code.

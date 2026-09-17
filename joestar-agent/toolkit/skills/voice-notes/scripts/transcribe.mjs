@@ -11,17 +11,44 @@ function parseArgs(argv) {
   let file = null;
   let language = null;
   let diarize = false;
+  let unknownFlag = null;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--language') {
       language = argv[++i] ?? null;
     } else if (arg === '--diarize') {
       diarize = true;
+    } else if (arg.startsWith('--')) {
+      unknownFlag = unknownFlag ?? arg;
     } else if (!file) {
       file = arg;
     }
   }
-  return { file, language, diarize };
+  return { file, language, diarize, unknownFlag };
+}
+
+function buildTranscript(data, diarize) {
+  if (diarize && Array.isArray(data.words) && data.words.length > 0) {
+    const lines = [];
+    let currentSpeaker = null;
+    let currentWords = [];
+    for (const word of data.words) {
+      const speaker = word.speaker_id ?? 'unknown';
+      if (speaker !== currentSpeaker) {
+        if (currentWords.length > 0) {
+          lines.push(`Speaker ${currentSpeaker}: ${currentWords.join(' ')}`);
+        }
+        currentSpeaker = speaker;
+        currentWords = [];
+      }
+      if (word.text !== undefined) currentWords.push(word.text);
+    }
+    if (currentWords.length > 0) {
+      lines.push(`Speaker ${currentSpeaker}: ${currentWords.join(' ')}`);
+    }
+    return lines.join('\n');
+  }
+  return data.text ?? '';
 }
 
 async function postOnce(apiKey, fileBuffer, fileName, language, diarize) {
@@ -53,12 +80,17 @@ async function postWithRetry(apiKey, fileBuffer, fileName, language, diarize) {
 }
 
 async function main() {
-  const { file, language, diarize } = parseArgs(process.argv.slice(2));
+  const { file, language, diarize, unknownFlag } = parseArgs(process.argv.slice(2));
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     console.error('transcription is not configured on this bot');
     process.exit(2);
+  }
+
+  if (unknownFlag) {
+    console.error(`usage: node transcribe.mjs <audio-file> [--language xx] [--diarize]`);
+    process.exit(1);
   }
 
   if (!file) {
@@ -78,8 +110,8 @@ async function main() {
   }
 
   const data = await res.json();
-  const transcript = data.text ?? '';
-  const duration = data.audio_duration ?? data.duration ?? 'unknown';
+  const transcript = buildTranscript(data, diarize);
+  const duration = data.audio_duration_secs ?? 'unknown';
   const detectedLanguage = data.language_code ?? data.language ?? 'unknown';
 
   console.error(`duration=${duration} language=${detectedLanguage}`);
