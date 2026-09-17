@@ -383,7 +383,7 @@ test('memory off when memoryRepo is unset: no clone command, no settings patch, 
   assert.doesNotMatch(claudeCmd.cmd, /long-term memory/, 'no memory briefing should be appended to the prompt');
 });
 
-test('memory on: the clone command precedes claude, and the push follows claude and precedes the first upload', async () => {
+test('memory on: the clone command precedes claude, and the push follows the first upload', async () => {
   mockUploadFetch();
   const { sandbox, commandCalls } = makeMemorySandbox({
     outputs: [{ name: 'out.txt', path: '/tmp/outputs/out.txt', size: 5, type: 'file' }],
@@ -403,8 +403,8 @@ test('memory on: the clone command precedes claude, and the push follows claude 
 
   assert.ok(cloneIdx > -1 && claudeIdx > -1 && pushIdx > -1 && uploadIdx > -1, 'all four commands should have run');
   assert.ok(cloneIdx < claudeIdx, 'clone must precede claude');
-  assert.ok(claudeIdx < pushIdx, 'push must follow claude');
-  assert.ok(pushIdx < uploadIdx, 'push must precede the first upload');
+  assert.ok(claudeIdx < uploadIdx, 'claude must precede the first upload');
+  assert.ok(uploadIdx < pushIdx, 'push must follow the first upload');
 });
 
 test('the GH_TOKEN value appears in no command string and no URL during a memory-on run', async () => {

@@ -380,10 +380,11 @@ export function memoryBriefing(channelId) {
 }
 
 /**
- * Commit and push whatever ended up in /home/user/memory, after the claude
- * command and before collectOutputs — this is the only chance, since the
- * sandbox is destroyed the moment runClaude returns. Never throws: a run that
- * produced a good answer should not fail just because the memory push did.
+ * Commit and push whatever ended up in /home/user/memory, in the `finally`
+ * block after collectOutputs has already uploaded any output files — this is
+ * the only chance, since the sandbox is destroyed the moment runClaude
+ * returns. Never throws: a run that produced a good answer should not fail
+ * just because the memory push did.
  */
 export async function pushMemory(sandbox, { envs, channelId }) {
   const message = `memory: ${channelId} ${new Date().toISOString()}`;
