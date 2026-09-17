@@ -669,3 +669,14 @@ test('AGENT_MEMORY_REPO set to a value that fails the repo shape check: memoryRe
     await settle();
     assert.equal(seen.memoryRepo, undefined);
   }));
+
+test('a valid AGENT_MEMORY_REPO but an invalid event.channel: runClaude receives memoryRepo undefined', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'nojzac/mem-repo';
+    captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention({ channel: 'bad channel!' })));
+    await settle();
+    assert.equal(seen.memoryRepo, undefined);
+  }));
