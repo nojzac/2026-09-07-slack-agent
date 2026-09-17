@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-13/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 13</p>
+<h1>Give the bot a persona file it loads by itself</h1>
+<p class="standfirst">Every lesson so far added something to the machine. This one adds something to the model: a <code>CLAUDE.md</code> file that Claude Code reads on its own, before it reads your message. It is three minutes of video and one design decision — and the decision is not the one Ray makes, because this bot's sandbox does not survive a single turn.</p>
+<div class="facts">
+  <span><b>Ray's video:</b> 2 min 58 s</span>
+  <span><b>This page:</b> 30–50 min</span>
+  <span><b>At the end:</b> a persona file written into every sandbox, before <code>claude</code> starts</span>
+</div>
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 250" width="100%" height="auto" role="img"> <title>Before claude runs, the function writes a persona file to the sandbox's user root, where Claude Code loads it automatically into every run</title> <defs><marker id="arrow13a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs> <rect x="8" y="30" width="196" height="96" rx="9" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/> <text x="24" y="54" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">VERCEL FUNCTION</text> <text x="24" y="78" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#15171c">sandboxFiles()</text> <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">builds the payload from</text> <text x="24" y="114" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a string in the code</text> <path d="M210,78 L262,78" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow13a)"/> <rect x="268" y="8" width="424" height="140" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/> <text x="286" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX (this message only, then destroyed)</text> <rect x="286" y="42" width="184" height="52" rx="7" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="1.5"/> <text x="300" y="64" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11.5" font-weight="700" fill="#7a3d9c">~/.claude/CLAUDE.md</text> <text x="300" y="84" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">written before claude starts</text> <path d="M476,68 L520,68" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow13a)"/> <rect x="526" y="42" width="150" height="52" rx="7" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/> <text x="540" y="64" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#1f4fd8">claude -p "…"</text> <text x="540" y="84" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">loads it, unasked</text> <text x="286" y="120" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Who it is, what is on this machine, what starts nothing by itself, and how long it has.</text> <text x="286" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">None of it in your Slack message; none of it surviving to the next one.</text> <rect x="8" y="168" width="684" height="74" rx="9" fill="#eefaf2" stroke="#0b6b3a" stroke-width="1.5"/> <text x="26" y="192" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">Ray writes this file once per sandbox. This bot writes it on every single run — and that is not extra work, it is the only option.</text> <text x="26" y="214" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">His sandbox is per-thread and pauses between turns, so "first turn of a box" is a real moment he can hang setup on. Ours is created</text> <text x="26" y="232" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">and destroyed inside one request, with the thread replayed into the prompt. There is no first turn. Part 1 works through what follows.</text> </svg>
+<p class="cap">One file, one write call, and a model that knows where it is standing before it reads a word from you.</p>
+</div>
+<ul> <li><strong>A persona file in the sandbox's user root</strong>, <code>~/.claude/CLAUDE.md</code>, loaded by Claude Code without anyone asking for it.</li> <li><strong>One batched <code>sandbox.files.write</code></strong> in <code>api/_lib/sandbox-files.js</code>, called before <code>claude</code> spawns.</li> <li><strong>The machine's own facts in it</strong> — Node 24, Chromium, the two database servers that are installed but not running — so lesson 12's "start it if you need it" has somewhere to live.</li> <li><strong>A function that never throws</strong>, with a test proving it, because a broken persona must cost you a persona and not a reply.</li> </ul>
+</div>
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 12, so the sandbox has Chromium plus an idle Postgres and Redis, and you have the habit of asking the bot to change its own code and reviewing the pull request it opens. Nothing new is installed here and no credential is added: this lesson is one small module, one call site, and a decision about when the file gets written.</p>
+<p>It is also the first lesson where the work you hand the bot is too big for a single run. That is worth more of your attention than the file itself.</p>
+</div>
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img"> <title>Where lesson 13 sits in the course: lessons up to 12 built the machine, lesson 13 starts shaping behaviour with a persona file, and lesson 14 onward adds skills and memory</title> <defs><marker id="arrowArc13" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs> <rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/> <text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 04–12</text> <text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">The machine</text> <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">repo, browser, databases</text> <path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc13)"/> <rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/> <text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 13 — YOU ARE HERE</text> <text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">Who it is</text> <text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a file it loads itself,</text> <text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">before it reads you</text> <path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc13)"/> <rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/> <text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 14–17</text> <text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">What it can do well</text> <text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">skills, review, voice</text> </svg>
+<p class="cap">Lesson 12 was the last one that added to the machine. From here the course stops handing the bot new powers and starts telling it what it is.</p>
+</div>
+<p><strong>The gap this closes.</strong> Everything the model knew about itself was arriving in the prompt, assembled per message by the function. That works, but it grows: every new fact about the machine becomes another line of prompt-building code, and none of it is the model's own to read. A persona file at the user root is the mechanism Claude Code already has for this, and it costs one write.</p>
+</div>
+<div class="map" style="--fc:#1f4fd8">
+<h2>How this page is laid out</h2>
+<ol> <li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span> <span class="what">Where Claude Code looks for a CLAUDE.md and which of those places a sandbox has; why "write it once" is Ray's answer and cannot be ours; and what belongs in the file. ~15 min.</span></li> <li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span> <span class="what">Six steps: the decision, a request that was too big and had to be split, a review that found three things, a merge conflict, the merge itself, and a live check. 30–50 min.</span></li> <li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span> <span class="what">The code walk, the persona file in full, the failure table, what this page verified and what it did not, and where everything lives.</span></li> </ol>
+</div>
+<div class="fm" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<div class="callout"><strong>A persona file is prompt, and prompt is a liability as well as a help.</strong> Whatever you write here is loaded into <em>every</em> run, including the ones where it is irrelevant, and a model will act on a stale fact in it more confidently than on no fact at all. The file in this lesson stays at nine short lines for that reason: who it is, what is on the machine, what is not running, and how long it has. Anything that changes more often than the image does belongs in code that derives it, not in a constant.</div>
+<ul> <li><strong>Lesson 12 finished</strong> and merged, so the image really does have the two database servers the persona file will claim it has.</li> <li><strong>A pull request you are willing to review properly.</strong> This one is small and still had three findings in it.</li> <li><strong>No new accounts or keys.</strong> If a step asks for one, something has gone wrong.</li> </ul>
+</div>
+<div class="part" id="part1" style="--pc:var(--understand)"> <span class="pn">PART 1</span> <h2>Understand what you're building</h2> <p>Three things: where Claude Code looks for this file, why the moment you write it is a different question here than in the video, and what is worth putting in it.</p> </div>
+<details class="sec" id="where-claude-looks" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"> <h2 class="sec-t">Where Claude Code looks for a CLAUDE.md<span class="sec-s">Three scopes, and a sandbox that only has one of them.</span></h2> <span class="badge b-understand">UNDERSTAND</span> </div></summary> <p>Claude Code loads context files by itself, before your prompt. Ray's video turns on discovering that not every place you can put one is a place it will be found from:</p> <table> <thead><tr><th>Scope</th><th>Where the file sits</th><th>Does this bot have it?</th></tr></thead> <tbody> <tr><td>User</td><td><code>~/.claude/CLAUDE.md</code></td><td><strong>Yes</strong> — the sandbox has a home directory, and nothing else claims it. This is where the lesson lands.</td></tr> <tr><td>Project</td><td><code>CLAUDE.md</code> or <code>AGENTS.md</code> at the root of the directory you are working in</td><td><strong>No.</strong> The sandbox starts empty. Nothing clones the agent's own repository into it, so its own <code>AGENTS.md</code> is simply not there.</td></tr> <tr><td>Nested</td><td>A <code>CLAUDE.md</code> deeper in a repository the bot clones</td><td>Only when a repository is cloned, and only for the files being worked on.</td></tr> </tbody> </table> <div class="ray"><strong>How Ray found this.</strong> He added the persona line to the top of his repository's <code>AGENTS.md</code> (with <code>CLAUDE.md</code> symlinked to it), pushed, and asked the bot in Slack, verbatim: <em>"is this loaded in your context window automatically?"</em> It said no — nothing like that appeared in its context. He then took the screenshot to the <code>claude-code-guide</code> subagent with: <em>"for some reason this claude.md file, AGENTS.md file is not being loaded in. Can you figure out why? Give me a few solutions here and I'll tell you which one to recommend."</em> Of the options it returned he picked the third: write it to the user root. That is the same conclusion this page reaches, arrived at by asking rather than by reasoning about what the sandbox contains.</div> <div class="callout"><strong>Ray also says the nested case is handled for you</strong> — that when the bot clones a repository, the <code>CLAUDE.md</code> files inside it are loaded automatically as it edits those files, so you need not think about them. That is stated in the video and <strong>untested here</strong>: this workshop has not run a task that clones a repository carrying its own <code>CLAUDE.md</code> and checked whether the model quoted it back. Treat it as a claim to verify the first time it matters.</div> </details> <details class="sec" id="once-vs-every-run" open style="--sc:var(--understand); --sc2:var(--understand)"> <summary><div class="sec-head"> <h2 class="sec-t">Why Ray writes the file once and this bot writes it every run<span class="sec-s">The same requirement, a different machine lifetime, and therefore a different answer.</span></h2> <span class="badge b-understand">UNDERSTAND</span> </div></summary> <p>Ray's sandbox belongs to a Slack thread. It is created with the thread, paused between turns, and resumed when someone replies — so there is a genuine "first turn of this box", and setup can hang on it. His code does exactly that: a <code>lib/sandbox-memory.js</code> holding the persona as a JavaScript string, written with <code>sandbox.files.write</code> only when <code>isNew</code> is true.</p> <p>This bot has no such moment. The sandbox is created inside the request and destroyed when the run ends, and the Slack thread is replayed into the prompt each time instead of being resumed. There is no first turn to detect, because every turn is the first turn.</p> <div class="metaphor"><strong>A hotel room, not a flat.</strong> Ray moves in and puts a note on the fridge; it is still there next week. This bot checks into a new room for every message and checks out before the reply is posted. The note has to go up with the luggage, every single time — and the cost of doing so is one write on a machine that is already being built from scratch anyway.</div> <table> <thead><tr><th></th><th>Ray</th><th>This bot</th></tr></thead> <tbody> <tr><td>Sandbox lifetime</td><td>Per thread, paused between turns</td><td>Per run, destroyed at the end</td></tr> <tr><td>When the file is written</td><td>Once, gated on <code>isNew</code></td><td>Every run, unconditionally</td></tr> <tr><td>Where the text lives</td><td>A string constant in <code>lib/sandbox-memory.js</code></td><td>A string constant in <code>api/_lib/sandbox-files.js</code></td></tr> <tr><td>What a bug in it costs</td><td>A whole thread, until the box is replaced</td><td>One reply</td></tr> </tbody> </table> <div class="ray"><strong>Where this page departs from Ray.</strong> The <code>isNew</code> gate is dropped, not reimplemented. Copying it here would give you a condition that is always true, which is worse than no condition: the next reader would spend time working out which branch runs. The gate is not a best practice, it is an optimisation for a machine that persists, and this one does not.</div> </details> <details class="sec" id="what-goes-in" open style="--sc:var(--understand); --sc2:var(--understand)"> <summary><div class="sec-head"> <h2 class="sec-t">What belongs in the persona file<span class="sec-s">One line of identity, and everything the model would otherwise have to find out by running commands.</span></h2> <span class="badge b-understand">UNDERSTAND</span> </div></summary> <p>Ray's version is a single sentence of identity. This one keeps that as its first line and then spends the rest on the machine, because the machine is the thing the model cannot see until it has already wasted a turn looking:</p> <table> <thead><tr><th>What the file says</th><th>What it saves</th></tr></thead> <tbody> <tr><td>Who it is, and that the answer lands in Slack</td><td>Essays. "Be brief and concrete" is doing real work in a chat window.</td></tr> <tr><td>Node 24, git, gh, Playwright with Chromium only</td><td>A probe run, and an attempt to use Firefox or WebKit that fails halfway through a task.</td></tr> <tr><td>Postgres 15 and Redis are installed but <strong>not running</strong>, with the exact start commands</td><td>The failure lesson 12 chose to accept. On-demand services only work if whoever needs them knows they exist and how to start them.</td></tr> <tr><td>The machine dies when the run ends</td><td>Work left in <code>/tmp</code> and lost, and confident promises to "continue next time".</td></tr> <tr><td>About four minutes per run; push partial work</td><td>A run that spends its whole budget perfecting something nobody ever sees.</td></tr> </tbody> </table> <div class="win"><strong>Every line in it answers a question the model would otherwise answer wrongly or expensively.</strong> That is the test for adding a line here — not "is this true", which is far too weak a bar for text injected into every single run.</div> <div class="callout"><strong>The two start commands are exact for a reason.</strong> <code>pg_ctl -o "-k /tmp -c listen_addresses=127.0.0.1" -w start</code> and <code>redis-server --daemonize yes --save "" --appendonly no --bind 127.0.0.1</code> are not decoration: they encode the socket directory and the loopback binding this image needs. A model improvising them gets a permissions error and concludes there is no database.</div> </details> <details class="sub"><summary>Why the file is a string constant in code, and not a file in the repository</summary> <p>A real <code>toolkit/CLAUDE.md</code> read from disk would be tidier to edit, and it is what lesson 14 does for skills. The persona stays a constant for one reason: it is the fallback. Every failure path in the module returns the persona entry alone, so the persona must be the one thing that cannot fail to be read — and a string in the bundle cannot go missing the way a file outside it can when a deployment's task root turns out not to be where you assumed.</p> </details> <div class="checkpoint"><b>THE DECISION THIS PAGE MAKES</b>The persona file is written to <code>~/.claude/CLAUDE.md</code> on <em>every</em> run, from a constant in the function's code, in the same batched write that lesson 14's skills will use — and it can never fail the run.</div> <div class="part" id="part2" style="--pc:var(--do)"> <span class="pn">PART 2</span> <h2>Build it</h2> <p>Six steps. The short lesson and the long pull request: the change is thirty lines, and the interesting part is everything that happened around it.</p> </div>
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"> <h2 class="sec-t">Step 1 of 6 — Decide when the file gets written<span class="sec-s">The only design question in the lesson, and it is settled by the sandbox's lifetime.</span></h2> <span class="badge b-do">DO NOW</span> </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"> <title>Progress: step 1 of 6 — Decide</title> <rect x="8" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · Decide</text><rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Unblock</text><rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text><rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text> </svg></div>
+<ol class="steps"> <li><p><strong>Ask what persists.</strong> If your sandbox survives between turns, Ray's <code>isNew</code> gate is right and you should copy it. If it does not, the gate is dead code. For this bot the answer was settled in lesson 07: created per request, destroyed at the end, thread replayed into the prompt.</p></li> <li><p><strong>Choose "every run", and say why in a comment.</strong> The reason is not obvious from the call site six months later, so it sits at the top of the module: there is no first turn to seed state on, so anything the sandbox should have must be written on every single one.</p></li> <li><p><strong>Decide where in the run it goes.</strong> Before <code>claude</code> spawns — otherwise the file appears after the model has already read its context, which is a bug that looks exactly like the file not being written at all.</p></li> </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You can state, in one sentence, why this bot does not gate the write on anything.</div>
+</section>
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"> <h2 class="sec-t">Step 2 of 6 — Ask the bot to build it, and split the work when it times out<span class="sec-s">The first request died at 255 seconds with nothing pushed. The fix is smaller requests, not a longer timeout.</span></h2> <span class="badge b-do">DO NOW</span> </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"> <title>Progress: step 2 of 6 — Ask</title> <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="123" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Ask</text><rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Unblock</text><rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text><rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text> </svg></div>
+<p class="where">Where: Slack → <code>#joestar-dev</code> → mention <code>@joestar</code></p>
+<ol class="steps"> <li><p><strong>The request, made in <code>#joestar-dev</code>:</strong> write the persona file into every sandbox run, and — because lesson 14 is the same mechanism — build the skills loader that shares the write with it. One module, one call site, tests.</p></li> <li><p><strong>It timed out at 255 seconds with nothing pushed.</strong> Not a crash and not a refusal: the run simply ended mid-work, and because nothing had been committed there was no partial result to look at. The four minutes are real, and a request that needs five gives you nothing at all.</p> <div class="danger"><strong>A timed-out run is silent.</strong> You get an answer that reads like a plan rather than a link to a pull request, and the natural reading is "it is still working". Nothing is still working — the machine is gone. Check for the pull request, not for the tone of the reply.</div></li> <li><p><strong>Split it in two and ask again.</strong> Part A: the loader module plus the persona file, which became pull request #13. Part B: the first skill and the Vercel configuration that ships it, which became #14 and is lesson 14's story. Each fits inside one run with room to spare.</p> <div class="win"><strong>This is the general fix, and it arrives here for the first time.</strong> The budget is a property of the deployment, not of the task, so the only variable you control is how much you ask for at once. "One module and its tests" is about the right size.</div></li> </ol>
+<div class="ray"><strong>Not in the video.</strong> Ray does this change in local Claude Code with no time limit, so the splitting problem does not exist for him. It is a consequence of running the agent inside a serverless function, which is this workshop's choice, and it will come up again in every later lesson.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>Pull request #13 exists and touches <code>api/_lib/sandbox-files.js</code>, its call site in <code>api/_lib/claude.js</code>, and a test file — and nothing else.</div>
+</section>
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"> <h2 class="sec-t">Step 3 of 6 — Review the pull request<span class="sec-s">Three findings in thirty lines. Two of them would have shipped silently.</span></h2> <span class="badge b-do">DO NOW</span> </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"> <title>Progress: step 3 of 6 — Review</title> <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="238" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · Review</text><rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Unblock</text><rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text><rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text> </svg></div>
+<p>A review subagent read the diff and found three things, all fixed in one round:</p>
+<table> <thead><tr><th>Finding</th><th>Why it matters</th></tr></thead> <tbody> <tr><td>The toolkit directory was looked up as <code>process.cwd()/toolkit</code> first, then <code>&lt;module&gt;/../../toolkit</code></td><td>Wrong order. On Vercel <code>process.cwd()</code> is the repository root, not the bundle, so the first candidate can resolve to a directory that is not the deployed one. The module-relative path is the correct first guess; cwd stays as the fallback.</td></tr> <tr><td>The "never throws" guarantee had no test</td><td>Removing the <code>try</code>/<code>catch</code> left the suite at 75 of 75 green. A promise nothing checks is a comment, and comments do not survive refactors.</td></tr> <tr><td>A <code>Buffer</code> was passed where e2b's <code>WriteEntry.data</code> is typed <code>string | ArrayBuffer | Blob | ReadableStream</code></td><td>It happens to work today by accident of the SDK's internals. Wrapping it in a <code>Blob</code> at the call site makes it work on purpose.</td></tr> </tbody> </table>
+<div class="callout"><strong>The second finding is the one to learn from.</strong> The module's own doc comment promised that a missing toolkit, a malformed skill or an oversized payload would all degrade to "fewer files written, never a failed run". That promise was the whole safety argument for writing files on every run — and it was unverified. The mutation that deleted the guard was invisible to the tests.</div>
+<div class="checkpoint"><b>CHECKPOINT</b>All three findings fixed in one commit, and the suite is green — 83 tests after the change.</div>
+</section>
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"> <h2 class="sec-t">Step 4 of 6 — Resolve the conflict by merging main in, not rebasing<span class="sec-s">A branch that was squash-merged underneath you cannot be rebased past a guard that blocks force-push.</span></h2> <span class="badge b-do">DO NOW</span> </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"> <title>Progress: step 4 of 6 — Unblock</title> <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="353" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Unblock</text><rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text><rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text> </svg></div>
+<ol class="steps"> <li><p><strong>What happened.</strong> Pull request #12 was squash-merged while #13 was open, so #13's base changed shape underneath it and the branch stopped merging cleanly.</p></li> <li><p><strong>Why not rebase.</strong> A rebase rewrites the branch's commits, and publishing a rewritten branch needs a force-push. The git guard installed in lesson 08 blocks force-pushes from the sandbox on purpose — so for this bot the usual tidy answer is simply not available.</p></li> <li><p><strong>Merge <code>main</code> into the branch instead.</strong> An extra merge commit, a slightly less tidy history, and a resolution that only adds commits. The pull request is squash-merged at the end anyway, so the untidiness never reaches <code>main</code>.</p> <div class="win"><strong>The guard chose the strategy, and that is the point of a guard.</strong> It is not a suggestion the agent weighs against convenience — it removes an option, and the remaining one turns out to be fine.</div></li> </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The pull request shows no conflicts and its history contains a merge of <code>main</code>, not a rewrite.</div>
+</section>
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"> <h2 class="sec-t">Step 5 of 6 — Merge it yourself<span class="sec-s">Merging is still a human action, for the same reason pushing is.</span></h2> <span class="badge b-do">DO NOW</span> </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"> <title>Progress: step 5 of 6 — Merge</title> <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Unblock</text><rect x="468" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Merge</text><rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Verify</text> </svg></div>
+<p class="where">Where: your own terminal, in the repository root</p>
+<ol class="steps"> <li><p><strong>Merge from your own machine:</strong> <code>gh pr merge 13 --squash --admin</code>. Squash, so <code>main</code> gets the change as one commit with the merge commit from step 4 folded away.</p></li> <li><p><strong>Remember that this deploys.</strong> A push to <code>main</code> runs the tests and then deploys to production, so the merge is the moment the change goes live. There is no separate release.</p></li> </ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>main</code> contains <code>api/_lib/sandbox-files.js</code>, the test suite is green at 83 tests, and the deploy has finished.</div>
+</section>
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"> <h2 class="sec-t">Step 6 of 6 — Check it live by asking the bot to quote the file<span class="sec-s">Ray's test, and the only one available: ask for something only the file contains.</span></h2> <span class="badge b-do">DO NOW</span> </div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"> <title>Progress: step 6 of 6 — Verify</title> <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text><rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text><rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Review</text><rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Unblock</text><rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Merge</text><rect x="583" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Verify</text> </svg></div>
+<p class="where">Where: Slack → <code>#joestar-test</code></p>
+<ol class="steps"> <li><p><strong>In <code>#joestar-test</code>, ask for the first line of <code>~/.claude/CLAUDE.md</code>.</strong> It came back exact: <em>"You are Joestar, Noj's Slack agent. You answer in Slack, so be brief and concrete."</em></p></li> <li><p><strong>Know what that proves and what it does not.</strong> It proves the file is on the machine with the right contents at the right path — the model can read a file it is told about. It is only indirect evidence that Claude Code <em>loaded</em> it into context automatically at user scope in headless <code>-p</code> mode, because a model asked for a file's first line can simply open the file.</p> <div class="callout"><strong>The stronger check, if you want it.</strong> Ask something the file answers but that you never mention — "what is running on this machine right now?" — in a run that has no reason to read files at all. A model that names the two idle servers and their start commands has loaded the persona; one that shells out to <code>ps</code> first has not.</div></li> </ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The bot quotes the first line of the persona file exactly, in a channel where nothing else could have told it.</div>
+</section>
+<div class="part" id="part3" style="--pc:var(--ref)"> <span class="pn">PART 3</span> <h2>Keep for later</h2> <p>The code as merged, the file it writes, what breaks, and what on this page was actually checked.</p> </div>
+<details class="sec" id="code-walk" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"> <h2 class="sec-t">What the code does, in the order it does it<span class="sec-s">One module that builds a list, one call site that writes it and swallows everything.</span></h2> <span class="badge b-ref">REFERENCE</span> </div></summary>
+<p><code>api/_lib/sandbox-files.js</code> exports <code>sandboxFiles({ toolkitDir })</code>, which returns an array of <code>{ path, data }</code> entries. The persona entry is always first and is built from a constant; everything after it is lesson 14's skills, walked off disk. Four things are worth noticing:</p>
+<ul> <li><strong>It returns, it does not write.</strong> Building the payload is pure and testable; the network call lives at the call site. That split is why the guarantee below can be tested at all.</li> <li><strong>Every failure returns the persona alone.</strong> No <code>toolkitDir</code>, an unreadable skills directory, a skill with no <code>SKILL.md</code>, a payload over the 2 MiB cap — each one degrades to fewer files, and the persona always survives.</li> <li><strong>Dotfiles are skipped</strong> when walking skill directories, so an editor's stray state never rides along into the sandbox.</li> <li><strong>The call site wraps the whole thing in <code>try</code>/<code>catch</code></strong> in <code>api/_lib/claude.js</code>, converts any <code>Buffer</code> to a <code>Blob</code>, and writes the batch in one <code>sandbox.files.write</code> before <code>claude</code> starts. A broken toolkit costs you a persona for that run, never the reply.</li> </ul>
+<div class="win"><strong>Five mutations were run against the tests by the reviewer</strong>: drop the <code>SKILL.md</code> check, drop the 2 MiB cap, move the write to after <code>claude</code> starts, let a rejection propagate instead of being caught, and include dotfiles. Four were caught. The fifth — the propagating rejection — was caught only after the missing test from step 3 was added. That is what a mutation check is for: it tells you which guarantees your suite is actually holding.</div>
+</details>
+<details class="sec" id="persona-file" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"> <h2 class="sec-t">The persona file, as written into every sandbox<span class="sec-s">Nine lines. Copy the shape, not the facts — the facts are this image's.</span></h2> <span class="badge b-ref">REFERENCE</span> </div></summary>
+<pre><code>You are Joestar, Noj's Slack agent. You answer in Slack, so be brief and concrete.
+
+This machine: Node 24, git, gh, Playwright with Chromium only.
+
+Postgres 15 and Redis are installed but NOT running; start them only when a task needs them:
+
+pg_ctl -o "-k /tmp -c listen_addresses=127.0.0.1" -w start
+redis-server --daemonize yes --save "" --appendonly no --bind 127.0.0.1
+
+psql and redis-cli then work with no flags.
+The machine is destroyed when the run ends: nothing persists except what you push or upload. Your run has about four minutes; push partial work rather than lose it.</code></pre>
+<div class="callout"><strong>This constant and the image can drift apart, and nothing will tell you.</strong> If a later lesson removes Chromium or upgrades Postgres, the file keeps asserting the old facts into every run. The persona is documentation that the model believes absolutely — so the E2B template and this string have to be changed in the same pull request, every time.</div>
+</details>
+<details class="sec" id="failure-table" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"> <h2 class="sec-t">When something doesn't work<span class="sec-s">Every failure here is quiet: you get a reply, just a worse one.</span></h2> <span class="badge b-ref">REFERENCE</span> </div></summary>
+<table> <thead><tr><th>What you see</th><th>Where to look</th></tr></thead> <tbody> <tr><td>The bot does not know who it is</td><td>Check the deploy finished. Then check the write happens <em>before</em> <code>claude</code> spawns — after it, the file exists and is never read.</td></tr> <tr><td>The bot says there is no database</td><td>The persona did not load, or lesson 12's image is not the one running. Ask it to quote the file's first line to tell the two apart.</td></tr> <tr><td>A run replies but the persona is missing</td><td>By design. Look for <code>[sandbox-files]</code> in the function logs — the catch swallows the error into a warning rather than failing the request.</td></tr> <tr><td>A request returns a plan and no pull request</td><td>It timed out around 255 seconds. Split the ask; do not wait.</td></tr> <tr><td>The branch will not merge and a rebase is refused</td><td>Expected — the git guard blocks force-push. Merge <code>main</code> into the branch instead.</td></tr> </tbody> </table>
+</details>
+<details class="sec" id="verified-vs-untested" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"> <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Read this before trusting any sentence above.</span></h2> <span class="badge b-ref">REFERENCE</span> </div></summary>
+<table> <thead><tr><th>Claim</th><th>Status</th></tr></thead> <tbody> <tr><td>The persona file is written to <code>~/.claude/CLAUDE.md</code> on every run, before <code>claude</code> starts</td><td><strong>Verified</strong> 2026-09-17 by reading <code>api/_lib/sandbox-files.js</code> and its call site in <code>api/_lib/claude.js</code> on <code>main</code></td></tr> <tr><td>The file's contents are exactly the nine lines quoted above</td><td><strong>Verified</strong> 2026-09-17 against the constant in the merged code</td></tr> <tr><td>The bot can quote the file back from a live Slack run</td><td><strong>Verified</strong> 2026-09-17 in <code>#joestar-test</code>: the first line came back exact</td></tr> <tr><td>Claude Code loads <code>~/.claude/CLAUDE.md</code> at user scope in headless <code>-p</code> mode</td><td><strong>Indirect only.</strong> Proven by the model quoting it — which a model could also do by opening the file. Not separately confirmed against the tool's documented behaviour</td></tr> <tr><td>A <code>CLAUDE.md</code> inside a repository the bot clones is loaded automatically</td><td><strong>Untested.</strong> Ray states it in the video; this workshop has not run a task that would show it either way</td></tr> <tr><td>The suite is green at 83 tests after the change</td><td><strong>Verified</strong> 2026-09-17 by running it</td></tr> <tr><td>Four of five mutations were caught, the fifth after the added test</td><td><strong>Verified</strong> 2026-09-17 — the mutations were applied and the suite run for each</td></tr> <tr><td>The first combined request timed out at 255 seconds</td><td><strong>Observed</strong> once, in <code>#joestar-dev</code>. The number is that run's, not a documented limit</td></tr> <tr><td>Whether any of the nine lines changes the model's behaviour</td><td><strong>Unknown.</strong> It is loaded; that is not the same as it being obeyed. Nothing here A/B tests a run with and without it</td></tr> </tbody> </table>
+</details>
+<details class="sec" id="where-everything-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"> <h2 class="sec-t">Where everything lives<span class="sec-s">What this lesson adds to the map.</span></h2> <span class="badge b-ref">REFERENCE</span> </div></summary>
+<table> <thead><tr><th>Thing</th><th>Where</th></tr></thead> <tbody> <tr><td>The persona text, and the payload builder</td><td><code>joestar-agent/api/_lib/sandbox-files.js</code></td></tr> <tr><td>The write, and the toolkit directory lookup</td><td><code>joestar-agent/api/_lib/claude.js</code>, just before <code>claude</code> spawns</td></tr> <tr><td>Where the file lands in the sandbox</td><td><code>/home/user/.claude/CLAUDE.md</code> — user scope, not project scope</td></tr> <tr><td>The skills that share the same write</td><td><code>toolkit/skills/&lt;name&gt;/SKILL.md</code> — lesson 14</td></tr> <tr><td>The guard that ruled out a rebase</td><td><code>joestar-agent/api/_lib/git-guard.js</code>, from lesson 08</td></tr> <tr><td>The machine the persona describes</td><td><code>joestar-agent/e2b/template.mjs</code> — change both together or neither</td></tr> <tr><td>Ray's equivalent</td><td><code>lib/sandbox-memory.js</code> in his repository, written once per sandbox on <code>isNew</code></td></tr> </tbody> </table>
+</details>
+</main>
+
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l13-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l13-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l13-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l13-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+
+</html>
