@@ -286,6 +286,12 @@ export async function POST(request) {
         console.warn('[github] could not read channel topic:', err.message);
       }
 
+      // Long-term memory is a git repo the sandbox clones at the start of a run
+      // and pushes at the end. `AGENT_MEMORY_REPO` is the kill switch: unset
+      // means memory is off, full stop, regardless of what's in the topic.
+      const memoryRepo = process.env.AGENT_MEMORY_REPO || undefined;
+      console.log(memoryRepo ? `[memory] repo: ${memoryRepo}` : '[memory] off');
+
       // Minted here, on every request, rather than lazily when the question
       // looks GitHub-shaped. Lazy minting means keyword-sniffing the prompt, and
       // the obvious counter-example is a thread reply reading "now open a PR for
@@ -298,11 +304,12 @@ export async function POST(request) {
       // literally true, and an hour-long credential is not worth reusing to save
       // 200ms.
       //
-      // No repo from the topic means no GitHub access at all, even though the
-      // App may be installed on several repos — the topic is the boundary, not
-      // just a hint, so a channel with no repo in its topic gets no write access
-      // to anything.
-      const github = repo ? await tryMintInstallationToken({ repo }) : { token: null, reason: null };
+      // No repo from the topic and no memory repo means no GitHub access at
+      // all, even though the App may be installed on several repos — this list
+      // is the boundary, not just a hint, so a channel with neither gets no
+      // write access to anything.
+      const repos = [repo, memoryRepo].filter(Boolean);
+      const github = repos.length ? await tryMintInstallationToken({ repos }) : { token: null, reason: null };
 
       const prompt = buildPrompt({
         question: promptFrom(event.text) || 'The user sent this with no text. Respond to the attached file.',
@@ -318,7 +325,7 @@ export async function POST(request) {
       // Swappable so the tests can run the whole path without booting a real
       // sandbox; in production this is always runClaude.
       const run = globalThis.__claudeRunner ?? runClaude;
-      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token });
+      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token, memoryRepo });
       // Tolerate a bare string so a stubbed runner stays trivial to write.
       const { answer, files } = typeof result === 'string' ? { answer: result, files: [] } : result;
 

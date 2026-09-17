@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createHmac } from 'node:crypto';
+import { createHmac, generateKeyPairSync } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
 process.env.SLACK_SIGNING_SECRET = 'test-secret';
@@ -509,3 +509,126 @@ test('code blocks are left exactly as the model wrote them', () => {
   assert.equal(toMrkdwn(fenced), fenced);
   assert.equal(toMrkdwn('inline `**kept**` here'), 'inline `**kept**` here');
 });
+
+// ---------------------------------------------------------------------------
+// Memory: AGENT_MEMORY_REPO joins the topic repo in the token's repo list
+// ---------------------------------------------------------------------------
+
+const { privateKey: GH_PRIVATE_KEY } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+});
+
+function withGitHubConfigured(installOwner, fn) {
+  const saved = {
+    id: process.env.GITHUB_APP_ID,
+    inst: process.env.GITHUB_INSTALLATION_ID,
+    key: process.env.GITHUB_APP_PRIVATE_KEY,
+    mem: process.env.AGENT_MEMORY_REPO,
+  };
+  process.env.GITHUB_APP_ID = '1';
+  process.env.GITHUB_INSTALLATION_ID = '2';
+  process.env.GITHUB_APP_PRIVATE_KEY = Buffer.from(GH_PRIVATE_KEY).toString('base64');
+  return fn().finally(() => {
+    if (saved.id === undefined) delete process.env.GITHUB_APP_ID; else process.env.GITHUB_APP_ID = saved.id;
+    if (saved.inst === undefined) delete process.env.GITHUB_INSTALLATION_ID; else process.env.GITHUB_INSTALLATION_ID = saved.inst;
+    if (saved.key === undefined) delete process.env.GITHUB_APP_PRIVATE_KEY; else process.env.GITHUB_APP_PRIVATE_KEY = saved.key;
+    if (saved.mem === undefined) delete process.env.AGENT_MEMORY_REPO; else process.env.AGENT_MEMORY_REPO = saved.mem;
+  });
+}
+
+function captureSlackAndGithub({ topic = '', installOwner = 'nojzac' } = {}) {
+  const calls = [];
+  __resetBotUserId();
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (href.startsWith('https://api.github.com/')) {
+      calls.push({ method: 'github', url: href, init });
+      if (href.includes('/access_tokens')) return json({ token: 'ghs_x', expires_at: 'soon' });
+      return json({ account: { login: installOwner } });
+    }
+    if (!href.includes('slack.com/api/')) {
+      calls.push({ method: 'download', url: href });
+      return new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'content-type': 'image/png' } });
+    }
+    const method = href.split('/api/')[1];
+    const body = typeof init.body === 'string'
+      ? JSON.parse(init.body)
+      : Object.fromEntries(new URLSearchParams(init.body));
+    calls.push({ method, body });
+    if (method === 'auth.test') return json({ ok: true, user_id: BOT });
+    if (method === 'conversations.info') return json({ ok: true, channel: { topic: { value: topic } } });
+    if (method === 'conversations.replies') return json({ ok: true, messages: [] });
+    return json({ ok: true, ts: '999.000', channel: 'C123' });
+  };
+  return calls;
+}
+
+const mintedRepos = calls => {
+  const mint = calls.find(c => c.method === 'github' && c.url.includes('/access_tokens'));
+  return mint ? JSON.parse(mint.init.body).repositories : null;
+};
+
+test('a single topic repo still mints for exactly that repo', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    const calls = captureSlackAndGithub({ topic: 'nojzac/topic-repo' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.deepEqual(mintedRepos(calls), ['topic-repo']);
+    assert.equal(seen.memoryRepo, undefined);
+  }));
+
+test('a memory repo alone mints for exactly it', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'nojzac/mem-repo';
+    const calls = captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.deepEqual(mintedRepos(calls), ['mem-repo']);
+    assert.equal(seen.memoryRepo, 'nojzac/mem-repo');
+  }));
+
+test('a topic repo and a memory repo both mint for both', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'nojzac/mem-repo';
+    const calls = captureSlackAndGithub({ topic: 'nojzac/topic-repo' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.deepEqual(mintedRepos(calls), ['topic-repo', 'mem-repo']);
+    assert.equal(seen.memoryRepo, 'nojzac/mem-repo');
+  }));
+
+test('a memory repo under another owner is refused even when the topic repo is fine', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    process.env.AGENT_MEMORY_REPO = 'someone-else/mem-repo';
+    const calls = captureSlackAndGithub({ topic: 'nojzac/topic-repo', installOwner: 'nojzac' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.equal(calls.some(c => c.method === 'github' && c.url.includes('/access_tokens')), false,
+      'must not mint once any entry fails the owner check');
+    assert.equal(seen.githubToken, null);
+    // memoryRepo still reaches runClaude — the kill switch is AGENT_MEMORY_REPO,
+    // not whether a token happened to mint.
+    assert.equal(seen.memoryRepo, 'someone-else/mem-repo');
+  }));
+
+test('unset AGENT_MEMORY_REPO and a topic-less channel: no memory repo, no token', async () =>
+  withGitHubConfigured('nojzac', async () => {
+    const calls = captureSlackAndGithub({ topic: '' });
+    let seen;
+    globalThis.__claudeRunner = async (opts) => { seen = opts; return 'ok'; };
+    await POST(signedRequest(mention()));
+    await settle();
+    assert.equal(calls.some(c => c.method === 'github'), false, 'no GitHub call at all');
+    assert.equal(seen.memoryRepo, undefined);
+    assert.equal(seen.githubToken, null);
+  }));
