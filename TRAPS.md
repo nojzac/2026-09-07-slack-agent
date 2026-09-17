@@ -144,6 +144,33 @@ match. The documented fallback if it ever stops firing is a single narrow
 `permissions.deny` rule, which applies in every mode including
 `bypassPermissions`.
 
+## A one-person repo cannot satisfy "1 approval" (lesson 09)
+
+GitHub will not let you approve your own pull request. A ruleset requiring one
+approval with an empty bypass list therefore blocks *everything* on a
+single-maintainer repo — nobody can merge, including the owner.
+
+The fix is a bypass actor, and **which** actor is the whole question:
+
+- **Repository admin** in the bypass list → the human merges without a second
+  reviewer; the App still cannot approve or merge its own PR. Correct.
+- **The App** in the bypass list → the bot pushes straight to `main`. Every
+  protection on the repo becomes decorative. Never do this; it is offered right
+  next to the correct option in the picker.
+- Dropping the approval count to 0 → the App can merge its own PRs, since it
+  holds `contents: write`. Also wrong.
+
+Merge with `gh pr merge N --squash --admin`; the `--admin` flag is what uses the
+bypass. The PR will still report `BLOCKED / REVIEW_REQUIRED` beforehand — that
+status does not account for bypass actors.
+
+## A second confirmation: scope changes do not rotate the bot token
+
+Lesson 09 added `channels:read` and `groups:read` and reinstalled. The token was
+unchanged again, and `bin/preflight` validated it straight from the vault. Twice
+now, consistent with `token_rotation_enabled: false`. Ray states rotation as
+certain; it is not.
+
 ## A private key inside the repository (lesson 08)
 
 The GitHub App's `.pem` downloads to wherever your browser puts it, and it is
