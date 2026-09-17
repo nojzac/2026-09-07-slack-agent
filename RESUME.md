@@ -171,6 +171,36 @@ stopped, file out, file in.
   safe, and a second unprompted reply is an emergency: turn off the
   `message.channels` subscription in Slack immediately, then fix the guard.
 
+## Lesson 08, as built
+
+Joestar can do GitHub work: clone, branch, commit, push, open pull requests.
+Verified live in `#joestar-test` on 2026-09-16 — it opened
+`nojzac/joestar-sandbox#2` as `app/joestar-slack-bot`.
+
+- **The separation is the design.** `api/_lib/github.js` runs in the Vercel
+  function and holds the App's private key, which mints tokens. The sandbox only
+  ever sees an installation token, valid one hour, passed **per command** rather
+  than at `Sandbox.create`. Leak the token and you lose an hour on one repo;
+  leak the key and you lose the App.
+- **GitHub App:** ID `4970890`, installation `162319448`, installed on
+  `nojzac/joestar-sandbox` only. `contents` and `pull_requests` read+write,
+  `metadata` read. **`workflows` and `administration` deliberately withheld** —
+  the first would let injected code rewrite CI and reach Actions secrets, the
+  second would let it remove branch protection.
+- **The test repo stays public for the rest of the course**, deliberately: a
+  ruleset only enforces on a public repo on this plan. Nothing real goes in it.
+- No JWT dependency — `node:crypto` signs the RS256 assertion in ~15 lines.
+- `gh` is installed in the E2B template from GitHub's own apt repo. **Rebuild
+  after any template change**, or a stale image of the same name shadows it.
+- The one `PreToolUse` hook blocks destructive push refspecs. It fires (see
+  TRAPS.md) but it is a nudge, not a control — `G=push; git $G -f` defeats it.
+
+Three things found by testing that the course states otherwise or not at all,
+all in TRAPS.md: a reinstall-style **ruleset silently stops enforcing when a repo
+goes private**; **PreToolUse hooks do fire** under
+`--dangerously-skip-permissions` on claude-code 2.1.274; and the **PR** author is
+the App while the **commit** author is whatever `git config user.name` says.
+
 ## Also done 2026-09-16
 
 - **Progressive disclosure verified.** Three read-only probes, one per `CLAUDE.md`
@@ -201,12 +231,16 @@ stopped, file out, file in.
   key that lives in both places too, so the cost grows.
 ## Next step
 
-Lesson 08, "Connecting to GitHub" — transcript at
-`course/transcripts/08-0-to-1--connecting-to-github.md`. Build
-`sops/lesson-08/index.html` from it following `docs/lessons.md`, show it, get a
-yes, then do the lesson.
+Lesson 09, "Dogfooding" — transcript at
+`course/transcripts/09-0-to-1--dogfooding.md`. Build `sops/lesson-09/index.html`
+from it following `docs/lessons.md`, show it, get a yes, then do the lesson.
 
-Fourteen lessons remain: 08–17 finish the "0 to 1" chapter, and 18–21 are the
+**Decide before lesson 09:** whether to buy GitHub Pro. Dogfooding means pointing
+the bot at real work, and every real repo here is private — where a ruleset does
+not enforce on the free plan, silently. Until that is settled, do not give the
+bot write access to a private repo that matters.
+
+Thirteen lessons remain: 09–17 finish the "0 to 1" chapter, and 18–21 are the
 "Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
 page rather than the full treatment.
 

@@ -958,15 +958,21 @@ yet pressed Create — permissions come first, on the same page.</div>
   <div class="callout"><strong>Use a throwaway repo for this lesson.</strong> Create one with nothing
   but a README, and decide about real repositories afterwards, when you have seen what the bot
   actually does.</div>
-  <div class="win"><b>What was done here:</b> <code>nojzac/joestar-sandbox</code>, created
-  <strong>private</strong>. For a throwaway, branch protection is not protecting anything — there is
-  nothing of value in the repo. Its only job in this lesson is letting you <em>watch</em> GitHub
-  refuse a direct push to <code>main</code>, which is the one control that is not advisory. So the
-  plan is: run the lesson private, flip to public for the few minutes it takes to add the ruleset and
-  see the refusal, then flip back.
-  <pre><code>gh repo edit nojzac/joestar-sandbox --visibility public   # before step 4
-gh repo edit nojzac/joestar-sandbox --visibility private  # after step 8</code></pre>
-  The repo is public only while it holds a README and test commits.</div>
+  <div class="danger"><strong>The flip-back has a cost we only found by testing it.</strong> Making a
+  protected repo private again <em>silently disables the ruleset</em>. The identical push to
+  <code>main</code> was refused with <code>GH013</code> while public and <strong>accepted</strong>
+  minutes later once private — same token, same branch, no warning, and the ruleset still listed in
+  the UI. A control that evaporates when an unrelated setting changes is worse than no control,
+  because the written security model still claims it is there.</div>
+  <div class="win"><b>What was decided here:</b> <code>nojzac/joestar-sandbox</code> —
+  a throwaway holding nothing but a README — <strong>stays public for the duration of the
+  course</strong>. That keeps a real, enforcing branch ruleset for free, which is the whole point of
+  having a test repository: you want to watch the lock refuse. Verified after flipping back: ruleset
+  active, push to <code>main</code> refused with <code>GH013</code>.
+  <br><br>The rule that comes with that decision: <b>nothing real goes in this repo.</b> Everything
+  in it is world-readable, and the bot writes to it unattended.
+  <br><br>For a <em>private</em> repo the bot can write to and that is genuinely protected, the
+  honest options are GitHub Pro or nothing — see <code>TRAPS.md</code>.</div>
 </li>
 <li>
   <p><strong>Grab the Installation ID from the URL you land on.</strong></p>
@@ -1363,7 +1369,11 @@ contradicted it. Read the command's own exit status.</div>
   <p>Ask the bot to force-push to a throwaway branch. Then record what happened, and on which Claude
   Code version:</p>
   <ul>
-    <li><strong>Blocked</strong> — the hook runs under <code>--dangerously-skip-permissions</code>.</li>
+    <li><strong>Blocked</strong> — the hook runs under <code>--dangerously-skip-permissions</code>.
+    <b>This is what happened here</b>, on claude-code <code>2.1.274</code>: the command was
+    intercepted before it reached git, and the remote ref was unchanged afterwards. Confirm that
+    last part yourself with <code>gh api /repos/&lt;owner&gt;/&lt;repo&gt;/git/ref/heads/&lt;branch&gt;</code>
+    rather than believing the bot's own account of it.</li>
     <li><strong>Not blocked</strong> — the flag skips the hook layer. The documented fallback is a
     single narrow <code>permissions.deny</code> rule, which applies in every mode including
     <code>bypassPermissions</code>. One guard, still not a denylist.</li>
@@ -1564,12 +1574,14 @@ so that cannot happen quietly again.</p>
 <tr><td>The inline credential helper works; <code>gh auth setup-git</code> is not needed</td><td><strong>Verified</strong> — full clone → commit → push → PR succeeded in a sandbox</td></tr>
 <tr><td>A branch ruleset actually refuses a push to the default branch</td><td><strong>Verified</strong> — <code>GH013: Repository rule violations found for refs/heads/main</code>, exit code 1</td></tr>
 <tr><td>"Only select repositories" still grants read-only access to public repositories</td><td><strong>Verified</strong> — GitHub's own small print on the Repository access screen, under both options</td></tr>
+<tr><td>A ruleset stops enforcing if the repo is later made private (free plan)</td><td><strong>Verified, and it is silent</strong> — the identical push was refused with <code>GH013</code> while public and <strong>accepted</strong> once private. No warning, and the ruleset still appears to exist</td></tr>
 <tr><td>Rulesets are unavailable on a private repo on the free plan</td><td><strong>Verified</strong> — <code>gh api /repos/&lt;owner&gt;/&lt;repo&gt;/rulesets</code> returned <code>403</code> with GitHub's upgrade message</td></tr>
 <tr><td>Unticking the webhook stops GitHub retrying deliveries</td><td>Ray's brief; <strong>untested here</strong></td></tr>
 <tr><td>The commit author appears as <code>name[bot]</code></td><td>Ray's brief; <strong>untested here</strong> — confirm at step 8</td></tr>
 <tr><td>App ID and Installation ID confusion produces a <code>404</code></td><td>Ray's brief; <strong>untested here</strong></td></tr>
 <tr><td>API version <code>2022-11-28</code> is supported through March 2028</td><td>Ray's brief; <strong>untested, and it will age</strong> — check the current table at docs.github.com before relying on it</td></tr>
-<tr><td>A <code>PreToolUse</code> hook fires under <code>--dangerously-skip-permissions</code></td><td><strong>Genuinely unknown</strong> — docs and field reports disagree; step 8 tests it</td></tr>
+<tr><td>A <code>PreToolUse</code> hook fires under <code>--dangerously-skip-permissions</code></td><td><strong>Verified — it does</strong>, on claude-code <code>2.1.274</code>. The force-push was intercepted and the remote ref confirmed unchanged server-side. <em>This ages: re-test on every template rebuild.</em></td></tr>
+<tr><td>The App name becomes the commit author, suffixed <code>[bot]</code></td><td><strong>Partly</strong> — the <em>pull request</em> author is <code>app/joestar-slack-bot</code>; the <em>commit</em> author is whatever <code>git config user.name</code> says (here <code>joestar</code>). Two different identities</td></tr>
 </tbody>
 </table>
 

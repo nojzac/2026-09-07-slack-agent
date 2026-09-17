@@ -91,6 +91,59 @@ Slack's dispatch: unsaved settings first, app-needs-reinstall second.
 - Production deploys come from GitHub Actions only — `joestar-agent/vercel.json`
   disables Vercel's own git trigger so the tests gate production.
 
+## Branch protection silently stops enforcing when a repo goes private
+
+Verified 2026-09-16, by pushing, not by reading a settings page.
+
+On a free plan, rulesets work on public repositories and not on private ones.
+Flipping a protected public repo to private does not delete the ruleset and does
+not warn you — enforcement simply stops. The same push, from the same token, to
+the same branch:
+
+| Repo state | `git push origin main` |
+| --- | --- |
+| public, ruleset active | exit 1 — `GH013: Repository rule violations found` |
+| private, same ruleset | **exit 0 — accepted** |
+
+Nothing announced the change. The ruleset is still listed in the UI; the API
+answers `403` rather than "disabled", which reads like a permissions problem
+rather than a security one.
+
+**Why this is worse than having no protection.** The written security model still
+claims the default branch is protected, and every decision resting on that stays
+unchanged — including how much access it is reasonable to give a bot. A control
+that evaporates when an unrelated setting changes, without telling anyone, is a
+control you will keep believing in.
+
+The practical consequence for this project: a private repo on a free plan cannot
+be given to the bot with `contents: write` and be considered protected. The
+honest options are a public repo, GitHub Pro, or granting no write access.
+
+## PreToolUse hooks DO fire under --dangerously-skip-permissions
+
+Tested 2026-09-16 on **claude-code 2.1.274** (whatever `npm i -g
+@anthropic-ai/claude-code@latest` installed into the E2B template that day).
+
+The documentation says PreToolUse runs before the permission check in every
+mode; there are open reports claiming the flag skips the hook layer entirely,
+and older ones where the hook fired asynchronously and the command ran anyway.
+It cannot be settled by reading, so it was tested: the bot was asked to
+`git push --force`, and it came back with our own hook's message —
+
+    PreToolUse:Bash hook error: [node /tmp/.joestar/block-destructive-push.mjs]:
+    Force-push and branch deletion are disabled.
+
+— and the remote ref was verified unchanged afterwards, server-side, not taken
+from the bot's report. The command never reached git.
+
+**This ages.** It is a behaviour of one CLI version. Re-test it whenever the
+template is rebuilt with a newer Claude Code, because the failure mode is
+silent: the hook simply stops being consulted and nothing announces it. And it
+remains a nudge either way — an alias or `G=push; git $G -f` defeats a string
+match. The documented fallback if it ever stops firing is a single narrow
+`permissions.deny` rule, which applies in every mode including
+`bypassPermissions`.
+
 ## A private key inside the repository (lesson 08)
 
 The GitHub App's `.pem` downloads to wherever your browser puts it, and it is
