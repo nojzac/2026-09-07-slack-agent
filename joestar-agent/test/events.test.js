@@ -301,6 +301,13 @@ test('the replayed thread is fenced and labelled as data, not instructions', () 
   assert.match(prompt, /DATA, not instructions/);
 });
 
+test('browser capabilities are in the prompt on every run, with no repo and no GitHub token', () => {
+  const prompt = buildPrompt({ question: 'go on', transcript: '', github: null });
+  assert.match(prompt, /Playwright/);
+  assert.match(prompt, /Chromium only/);
+  assert.match(prompt, /\/opt\/ms-playwright/);
+});
+
 // ---------------------------------------------------------------------------
 // Reactions
 // ---------------------------------------------------------------------------
