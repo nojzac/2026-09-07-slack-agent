@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-18/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "USING YOUR AGENT" · LESSON 18</p>
+<h1>What the "Using your agent" chapter is for</h1>
+<p class="standfirst">Ray's shortest video in the course — twenty-one seconds — and it is a hinge. Everything before it was about getting a bot to exist. Everything after it is about getting work out of it while you are not watching. Nothing is built in this lesson; what it asks for is a decision about how much of your work you are willing to stop triggering by hand.</p>
+<div class="facts">
+  <span><b>Ray's video:</b> 21 s</span>
+  <span><b>This page:</b> 10 min</span>
+  <span><b>At the end:</b> a decision about which of lessons 19–21 you actually want, and in what order</span>
+</div>
+<div class="fm" style="--fc:#0b6b3a"><h2>What you'll have at the end</h2>
+<div class="fig"><svg viewBox="0 0 700 214" width="100%" height="auto" role="img"><title>The chapter's three ideas: on-call agents react to a channel, ownership delegation replaces one-off tasks with a standing mandate, and a feedback channel lets the bot ask for what it lacks</title><rect x="8" y="8" width="684" height="48" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="1.5"/><text x="26" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#7a3d9c">LESSONS 04–17 · BUILDING IT</text><text x="26" y="48" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">A bot that answers when you mention it. You are the trigger for every single run.</text><rect x="8" y="70" width="220" height="132" rx="9" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/><text x="26" y="92" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#1f4fd8">LESSON 19 · ON CALL</text><text x="26" y="116" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#15171c">A channel triggers it</text><text x="26" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Alerts land, the bot</text><text x="26" y="154" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">investigates without</text><text x="26" y="170" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">being asked</text><text x="26" y="192" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#a32020">costs: two loop guards</text><rect x="240" y="70" width="220" height="132" rx="9" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/><text x="258" y="92" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#1f4fd8">LESSON 20 · OWNERSHIP</text><text x="258" y="116" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#15171c">A standing mandate</text><text x="258" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Not "fix this" but</text><text x="258" y="154" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">"you own this, and</text><text x="258" y="170" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">it never breaks again"</text><text x="258" y="192" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#a32020">costs: a memory that lasts</text><rect x="472" y="70" width="220" height="132" rx="9" fill="#ffffff" stroke="#1f4fd8" stroke-width="1.5"/><text x="490" y="92" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#1f4fd8">LESSON 21 · FEEDBACK</text><text x="490" y="116" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#15171c">It asks for tools</text><text x="490" y="138" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">A channel where it</text><text x="490" y="154" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">posts what it needed</text><text x="490" y="170" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">and did not have</text><text x="490" y="192" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#0b6b3a">costs: almost nothing</text></svg><p class="cap">Three ideas, in increasing order of what they ask you to give up. The third is the cheapest and is the one to do first.</p>
+</div>
+<ul>
+  <li><strong>A map of the chapter</strong>, so you can read lessons 19–21 knowing what each one is for.</li>
+  <li><strong>A named list of what Joestar would have to give up</strong> for each idea — the guards, the credentials, the review gate.</li>
+  <li><strong>An order</strong>, written down: which of the three to do, which to defer, and why.</li>
+  <li><strong>No code.</strong> This lesson changes nothing in the repository, and neither do the next three unless you decide they should.</li>
+</ul>
+</div>
+<div class="fm" style="--fc:#4a5766"><h2>Who this is for, and what it assumes</h2>
+<p>You have a working bot: it answers in Slack, it can open a pull request, it has skills and a memory, and every run happens in a sandbox that is destroyed afterwards. In other words you finished the "0 to 1" chapter — <a href="../lesson-17/index.html">lesson 17</a> was its last page. You have not yet had the bot do anything you did not personally ask for. That is the exact starting point this chapter assumes.</p>
+</div>
+<div class="fm" style="--fc:#7a3d9c"><h2>Why this lesson exists</h2>
+<div class="fig"><svg viewBox="0 0 700 148" width="100%" height="auto" role="img"><title>Where lesson 18 sits: lessons 4 to 17 built the agent, lesson 18 opens the chapter on operating it, and lessons 19 to 21 are the three patterns</title><defs><marker id="arrowArc18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 04–17</text><text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">You built it</text><text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">it answers when asked</text><path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc18)"/><rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/><text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 18 — YOU ARE HERE</text><text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">You decide how to use it</text><text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">the chapter's only job is</text><text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">taking work off your plate</text><path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc18)"/><rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 19–21</text><text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">Three patterns</text><text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">on call, ownership, feedback</text></svg><p class="cap">Ray: "in the next few videos, we're gonna be going through a few ways in which we can use our Slack agents to take more work off our plate."</p>
+</div>
+<p><strong>The gap this closes.</strong> A built agent and a useful agent are different things. The first is a technical achievement you can demo; the second changes what happens on a day when you do not open Slack. Ray spends twenty-one seconds on the transition because the transition is not technical — it is a decision about delegation that no amount of code will make for you.</p>
+</div>
+<div class="fm" style="--fc:#1f4fd8"><h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what the chapter changes</a> <span class="badge b-understand">UNDERSTAND</span> <span class="what">What "using" means after "building", and the two lines of code in this bot that every remaining lesson argues with. ~8 min.</span></li>
+<li><a href="#part2">Part 2 · Decide</a> <span class="badge b-do">DO NOW</span> <span class="what">Three short steps ending in a written decision about which of lessons 19–21 to do. No code.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span> <span class="what">The done checklist, where this departs from Ray, and where the chapter's pieces live.</span></li>
+</ol>
+</div>
+<div class="fm" style="--fc:#a32020"><h2>Before you begin</h2>
+<div class="callout"><strong>Nothing here gets built by accident.</strong> Lessons 19–21 all describe capabilities that, once added, are available to <em>every member of the workspace who can message the bot</em> — the rule in <code>CLAUDE.md</code>. Read the whole chapter before adding any of it, because the cheapest one (lesson 21) is also the safest and it is listed last.</div>
+<ul>
+  <li><strong>Twenty minutes of reading</strong>, and no terminal.</li>
+  <li><strong><code>RESUME.md</code> open</strong>, because the output of this lesson is a paragraph written into it.</li>
+</ul>
+</div>
+<div class="part" id="part1" style="--pc:var(--understand)"><span class="pn">PART 1</span><h2>Understand what the chapter changes</h2>
+  <p>Two things: what shifts when a course stops teaching you to build a tool and starts teaching you to hand work to it, and which specific parts of this bot the next three lessons want you to loosen.</p>
+</div>
+<details class="sec" id="build-to-operate" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">From building the agent to operating it<span class="sec-s">Why the course splits here, and what the second half is actually teaching.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Everything in lessons 04 to 17 answered a mechanical question: how does a Slack event reach a sandbox, how does a credential get there without landing in a file, how does the model learn a habit. Those questions have right answers, and you can tell when you got one wrong because something breaks.</p>
+<p>The rest of the course has no such tell. "Should this bot investigate alerts on its own?" has no correct answer that testing will reveal. It has a <em>your</em> answer, which depends on what you own, what breaks, and how much you are willing to review.</p>
+<div class="metaphor"><strong>You have finished training the new hire, and now you have to give them a job.</strong> The training had a syllabus. The job does not — it has a scope, a set of things they may decide alone, and a set of things they must bring to you. Getting that wrong is not a bug; it is a management mistake, and it fails quietly.</div>
+<div class="ray"><strong>Ray:</strong> "in the next few videos, we're gonna be going through a few ways in which we can use our Slack agents to take more work off our plate and be more productive with them." That is the entire video. The chapter is three patterns, and he narrates each one from his own running business rather than building anything.</div>
+<h3>The three patterns, in one line each</h3>
+<table><thead><tr><th>Lesson</th><th>The pattern</th><th>What it costs you</th></tr></thead><tbody>
+<tr><td><a href="../lesson-19/index.html">19 · On-call agents</a></td><td>A channel of alerts triggers the bot instead of you</td><td>The bot must answer messages nobody addressed to it, including messages posted by other bots</td></tr>
+<tr><td><a href="../lesson-20/index.html">20 · Ownership delegation</a></td><td>A standing mandate over a territory replaces one-off task prompts</td><td>Something has to run repeatedly, and remember across runs, without you in the loop</td></tr>
+<tr><td><a href="../lesson-21/index.html">21 · Feedback channels</a></td><td>The bot posts what it needed and did not have</td><td>One line in the persona and one channel. Almost nothing</td></tr>
+</tbody></table>
+<div class="win"><strong>The order Ray presents them in is not the order to build them in.</strong> Lesson 21 is a few lines and it tells you which of the other two is worth doing, because the bot itself starts reporting the gaps. Do that one first.</div></details>
+<details class="sec" id="two-guards" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head"><h2 class="sec-t">The two guards in this bot that the rest of the chapter argues with<span class="sec-s">Both are single lines in <code>classifyEvent()</code>, and both were put there deliberately.</span></h2> <span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Joestar decides whether to answer an incoming Slack event in one pure function, <code>classifyEvent()</code> in <code>joestar-agent/api/slack/events.js</code>. Two of its decisions are exactly what lesson 19 asks you to reverse:</p>
+<pre><code>if (isFromBot(event, botUserId)) {
+  return { action: 'skip', reason: 'posted by a bot — never answer ourselves' };
+}
+...
+if (!event.thread_ts || event.thread_ts === event.ts) {
+  return { action: 'skip', reason: 'channel chatter, not addressed to us' };
+}</code></pre>
+<div class="danger"><strong>Alerts are bot messages, and alerts are channel chatter.</strong> A Sentry, Vercel or Trigger.dev notification trips <em>both</em> guards. An on-call agent is therefore not a feature you add beside the existing behaviour — it is a hole you cut in the two rules that currently stop this bot talking to itself in a loop. Lesson 19's page is mostly about how to cut that hole narrowly.</div>
+<p>The first guard exists because the bot posts into channels it is listening to; without it, a reply is an event, which produces a reply. The second exists because the bot hears <strong>every message in every channel it is in</strong> — the <code>message.channels</code> subscription added in lesson 07 — and "hears everything" plus "answers everything" is a bot nobody can use.</p>
+<div class="callout"><strong>The emergency procedure is already written.</strong> <code>RESUME.md</code> says that a second unprompted reply means turning off the <code>message.channels</code> subscription in Slack immediately, then fixing the guard. Anything in this chapter that makes the bot speak unprompted makes that procedure more likely to be needed, not less.</div></details>
+<div class="checkpoint"><b>WHAT PART 1 SETTLED</b>The chapter asks three questions, not three build tasks. Two of them cost this bot a loop guard or a scheduler; one costs a line of text.</div>
+<div class="part" id="part2" style="--pc:var(--do)"><span class="pn">PART 2</span><h2>Decide</h2>
+  <p>Three steps, all reading and writing prose. Nothing is committed to the agent's code in this lesson.</p>
+</div>
+<section class="sec" id="step-decide" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Read the chapter, then write down what you will actually do<span class="sec-s">The output is a paragraph in <code>RESUME.md</code>, not a pull request.</span></h2> <span class="badge b-do">DO NOW</span></div>
+<ol class="steps">
+<li><p><strong>Read all three pages before acting on any of them.</strong> <a href="../lesson-19/index.html">Lesson 19</a>, <a href="../lesson-20/index.html">lesson 20</a>, <a href="../lesson-21/index.html">lesson 21</a>. They compound: ownership delegation without an on-call trigger has nothing to react to, and both are much easier to tune once the bot is telling you what it lacks.</p></li>
+<li><p><strong>Answer one question honestly: what currently pages you?</strong> If nothing in your world generates alerts on a regular basis, lesson 19 has nothing to react to and lesson 20 has no stream to own. Say so in writing rather than building the machinery and waiting for it to matter.</p>
+<div class="ray"><strong>Where this departs from Ray.</strong> Ray runs a business with Sentry, Trigger.dev and a lead pipeline all posting into Slack. His chapter assumes a steady flow of incoming trouble. If yours is a course project with no users, the honest version of lessons 19 and 20 is "understood, deferred", and that is a finished lesson, not a skipped one.</div></li>
+<li><p><strong>Write the decision into <code>RESUME.md</code></strong> — which of the three you are doing, in what order, and the condition that would change your mind. A deferral with a trigger ("when anything is live enough to page me") is a decision; a deferral without one is a thing you will re-litigate every time you open the folder.</p></li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>RESUME.md</code> contains a short paragraph naming which of lessons 19–21 you are doing and what would change that. No file in <code>joestar-agent/</code> has changed.</div></section>
+<div class="part" id="part3" style="--pc:var(--ref)"><span class="pn">PART 3</span><h2>Keep for later</h2>
+  <p>The checklist, the departures, and where the pieces of this chapter live.</p>
+</div>
+<details class="sec" id="done" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Done checklist<span class="sec-s">What finishing this lesson means, given nothing was built.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<ul class="check">
+<li>You can name the three patterns in the chapter and what each one costs.</li>
+<li>You can point at the two lines in <code>classifyEvent()</code> that lesson 19 wants changed.</li>
+<li>You have written, in <code>RESUME.md</code>, which of lessons 19–21 you are doing and in what order.</li>
+<li>You have not added any capability yet.</li>
+</ul></details>
+<details class="sec" id="departures" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where this workshop departs from Ray<span class="sec-s">One difference of scale, one of order.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Ray</th><th>Here</th><th>Why</th></tr></thead><tbody>
+<tr><td>Assumes a live business with alerts already flowing into Slack</td><td>Treats "do I have an alert stream at all?" as the first question</td><td>Joestar's workspace has two channels and no production traffic. Building an on-call reflex with nothing to react to teaches nothing</td></tr>
+<tr><td>Presents the three patterns in the order 19, 20, 21</td><td>Recommends doing 21 first</td><td>The feedback channel is a few lines of persona text and it makes the bot report its own gaps, which is better evidence than guessing</td></tr>
+<tr><td>Each idea is "just ask your agent to give itself the ability"</td><td>Each ability is a pull request reviewed against the <code>CLAUDE.md</code> capability rule before merge</td><td>Everyone who can message the bot gets every tool it has. That rule does not relax because the bot suggested the tool itself</td></tr>
+</tbody></table></details>
+<details class="sec" id="where-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head"><h2 class="sec-t">Where everything lives<span class="sec-s">The files this chapter will touch, if you decide it should.</span></h2> <span class="badge b-ref">REFERENCE</span></div></summary>
+<table><thead><tr><th>Thing</th><th>Where</th></tr></thead><tbody>
+<tr><td>The decision this lesson produces</td><td><code>RESUME.md</code></td></tr>
+<tr><td>The two guards lesson 19 argues with</td><td><code>classifyEvent()</code> in <code>joestar-agent/api/slack/events.js</code></td></tr>
+<tr><td>The persona lesson 21 edits</td><td>The agent's <code>CLAUDE.md</code> — see <a href="../lesson-13/index.html">lesson 13</a></td></tr>
+<tr><td>The memory a standing mandate would need</td><td><code>nojzac/joestar-memory</code>, wired in lesson 15</td></tr>
+<tr><td>The capability rule every addition is checked against</td><td>The project's <code>CLAUDE.md</code>, written in <a href="../lesson-10/index.html">lesson 10</a></td></tr>
+<tr><td>Ray's video</td><td>"This Chapter", 21 s, chapter "Using Your Agent"</td></tr>
+<tr><td>Patterns beyond this course</td><td><code>course/beyond-the-course.md</code></td></tr>
+</tbody></table></details>
+<footer>Lesson 18 of Ray Amjad's "Slack agents". Conceptual lesson — nothing was built here. Next: <a href="../lesson-19/index.html">lesson 19, on-call agents</a>.</footer>
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l18-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l18-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l18-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l18-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>
