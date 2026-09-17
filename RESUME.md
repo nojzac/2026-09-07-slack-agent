@@ -361,6 +361,14 @@ count rises when a run starts and never again.
   are UI-only, there is no folder method in the Web API**, so asking Slack for
   the inventory is the only approach that a script can take.
 
+  **Decided 2026-09-17: deletion is human-in-the-loop, always.** Do not add
+  auto-pruning, an upload-time TTL, an age-based sweep, or a cron — whatever a
+  future storage decision looks like, it is not that. The point of a recording
+  is that Noj watches it, and anything that deletes on a schedule will
+  eventually delete one before he has. `bin/bot-files` reflects this: it lists,
+  it requires ids named explicitly, it has no `--all` and no `--older-than`,
+  and without `--yes` it only shows what the ids refer to.
+
 - **The browser briefing duplicates one line the prompt already has.**
   `browserCapabilities()` says "write it into /tmp/outputs" and the `outputDir`
   block below it says the same thing. Costs ~15 words of context on every run.
