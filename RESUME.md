@@ -389,29 +389,50 @@ ships to Vercel through `vercel.json`'s
   directory is simply absent. Listing a skill from inside the sandbox is the
   cheapest proof that it shipped.
 
-## Lesson 15, as built — and not finished
+## Lesson 15, as built
 
-Joestar is growing a memory: a git repo, `nojzac/joestar-memory`, cloned into the
-sandbox before `claude` and pushed after it. **PR #18 is merged; PR #20 is open
-with fixes in progress**, so this is the one lesson in the chapter that is not
-done.
+Joestar has a memory: a private git repo, `nojzac/joestar-memory`, cloned into the
+sandbox before `claude` and pushed after it. **PRs #18 and #20 are merged, and it
+was verified live on 2026-09-17** — the one lesson in the chapter that was written
+before it worked, then finished from the run.
 
+- **Runtime.** Shallow clone to `/home/user/memory` per run; `autoMemoryEnabled`
+  and `autoMemoryDirectory` merged into `~/.claude/settings.json` pointing at
+  `channels/<channel id>/`, so writes are keyed per channel; a `shared/` tier that
+  every channel reads and only public channels are asked to write; a briefing
+  appended; and the push in a **`finally`**, so a run that threw still keeps what
+  it learned. `MEMORY_BUDGET_MS` is 25 s carved out of `claude`'s time (8 s setup,
+  12 s push), asserted at module load so bad arithmetic fails the boot, not the
+  reply. The push goes back to the branch the clone came from.
 - **The memory repo is private, and is the one deliberate exception** to "no
-  private repo gets App write access". Recorded as an exception on purpose: it
-  holds only the bot's own notes, and the bot writing its `main` is the design,
-  not a risk to be protected against. The App is installed on it and
-  `AGENT_MEMORY_REPO` is set in Vercel Production — unset means memory is off.
-- **Token minting now takes a repo *list*** — topic repo plus memory repo — and
-  every entry is owner-checked, with malformed entries refused before any network
-  call. A review found the first version **failed open**: a typo'd env var minted
-  an unscoped token. That is exactly the lesson-09 bug class, caught earlier.
-- Runtime: shallow clone to `/home/user/memory`, `autoMemoryEnabled` and
-  `autoMemoryDirectory` merged into `settings.json`, a briefing appended, push
-  after `claude`. `MEMORY_BUDGET_MS` is carved out of `claude`'s time, the same
-  split `UPLOAD_BUDGET_MS` introduced in lesson 11.
-- **Unverified until PR #20 lands and a live test runs:** that Claude Code honours
-  auto-memory at all in `-p` mode. Everything else here is code that runs; this is
-  the assumption the feature rests on.
+  private repo gets App write access", recorded as a dated exception on
+  2026-09-17. Token minting takes a repo *list* — topic repo plus memory repo —
+  and every entry is owner-checked, with malformed entries refused before any
+  network call. A review found the first version **failed open**: a typo'd env var
+  minted an unscoped token. Same bug class as lesson 09, caught earlier.
+- **`AGENT_MEMORY_REPO` is set in Vercel Production only**, never in a file here.
+  Unset means memory is off, with no time subtracted; `events.js` validates it
+  against a regex before anything else happens.
+- **Verified live 2026-09-17** (deploy: CI run `35226817557`, success, 58 s): told
+  in `#joestar-test` to remember "the release codename for this channel is
+  PELICAN-47", it acknowledged, and commit `0526c84` landed in the memory repo
+  holding `channels/C0C1QB5PCNB/MEMORY.md` and `release_codename.md` in Claude
+  Code's own auto-memory format. A **new** message in the same channel, new
+  sandbox and fresh clone, answered "PELICAN-47" from memory alone — so the
+  premise the whole feature rests on, that Claude Code honours auto-memory in
+  `-p` mode, holds.
+- **Memory is readable across channels by design.** Asked in `#joestar-dev`, the
+  bot said no codename was saved for that channel, named PELICAN-47 as belonging
+  to another one, and declined to apply it. Only `channels/C0C1QB5PCNB/` exists,
+  so *writes* are siloed — but the whole clone is on disk, so *reads* are not.
+  The refusal was model judgement, not isolation. Don't put anything in memory
+  that one channel must not see.
+- **Open items.** The `[memory]` log lines have not been read: `docs/verifying.md`
+  names no log command, there is no `vercel` CLI locally and no Vercel token in
+  `.env.op` — read them in the Vercel dashboard. And `setUpMemory` still writes
+  `settings.json` only on the success path, so a failed clone leaves a run that
+  looks identical to a working one; writing the key on both failure paths is two
+  lines and is the first change to make here.
 
 ## Lesson 16, as built
 
@@ -527,29 +548,26 @@ has been since lesson 10.
   key that lives in both places too, so the cost grows.
 ## Next step
 
-**Lessons 18–21, the "Using your agent" chapter.** The "0 to 1" chapter is
-finished as of 2026-09-17 — lessons 04–17 are built, and every page but 15’s is
-written. What remains is a different kind of work: `course/LESSON-PAGE-RULES.md`
-calls 18 and 21 short orientation lessons, and the whole chapter gets **a short
-page rather than the full treatment** — no code walk, no template rebuild, no
-deploy. Only the grounding section, Steps and Done are mandatory; omit the empty
-sections rather than render shells. Nothing in 18–21 changes the image or the
-Vercel function, so for the first time since lesson 05 there is no slow path in
-the way.
+**The course is complete through lesson 21.** Lessons 04–21 are built and every
+page in `sops/` is written, lesson 15's included as of 2026-09-17. There is no
+next lesson — what remains is optional.
 
-**Open items, roughly in the order they will bite:**
+**Post-course options, all described on the lesson 19–21 pages.** Ray calls them
+the "bells": a **GitHub webhook** so the bot reacts to repo events rather than
+only to mentions, an **alert feed** channel it posts into, and a **scheduler**
+that wakes it without anybody typing. None is built here. Each is a page to read
+first, then a decision about whether it earns its keep.
 
-- **Lesson 15 is not done.** PR #20 is open with fixes in progress, and the
-  premise — that Claude Code honours auto-memory in `-p` mode — is still
-  unverified. Land #20, run a live test, then write `sops/lesson-15/index.html`;
-  it is the one gap in the chapter.
-- **Set `ELEVENLABS_API_KEY`** if voice notes are actually wanted. Until then
-  lesson 17 ships code that has never run, and verifying it needs Noj to record a
-  real voice note — Claude cannot test this one for him.
+**Still open, none of it blocking:**
+
+- **`ELEVENLABS_API_KEY` remains optional.** Until it is set, lesson 17 ships code
+  that has never run, and verifying it needs Noj to record a real voice note —
+  Claude cannot test this one for him.
+- **Lesson 15's two open items** — the Vercel `[memory]` logs unread, and
+  `settings.json` not written when the clone fails. See that section above.
 - **Codex token expiry.** Ray says the ChatGPT credential lasts about 10 days;
   unverified here. When `codex` starts failing, this is the first thing to check,
   and the fix is a fresh paste into both Vercel and 1Password.
-- **Pages for 18–21** still to build, per the short-page rules above.
 - **The placeholder/timeout pattern, now consistent enough to plan around.** A
   Joestar request that asks it to *research* something times out at 255s; one that
   spells out the design finishes in 60–120s. Do the thinking before the request,
