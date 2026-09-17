@@ -1,0 +1,1806 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-11/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 11</p>
+<h1>Let the bot show you: put a browser in the sandbox</h1>
+<p class="standfirst">The bot can already change code and open a pull request. What it cannot do is
+show you the change working — you have to take its word for it. This lesson puts a real browser in
+the sandbox so it can drive the app, record what happens, and send the recording back. The hard part
+is not Playwright. It is how a forty-megabyte video gets out of a machine that is about to be
+destroyed, without handing that machine a credential it should not have.</p>
+
+<div class="facts">
+  <span><b>Ray's video:</b> 4 min 24 s</span>
+  <span><b>This page:</b> 90–150 min</span>
+  <span><b>At the end:</b> screenshots and recordings arriving in the thread</span>
+</div>
+
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 330" width="100%" height="auto" role="img">
+  <title>Claude drives a headless Chromium in the sandbox, which writes a video file; the function mints a single-use Slack upload URL and the sandbox posts the bytes straight to Slack</title>
+  <defs>
+    <marker id="arrow11a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+    <marker id="arrow11b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b6b3a"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="8" width="300" height="196" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX (per message)</text>
+
+  <rect x="24" y="42" width="128" height="58" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/>
+  <text x="38" y="62" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">claude -p</text>
+  <text x="38" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">writes a script</text>
+  <text x="38" y="94" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">runs the app</text>
+
+  <path d="M158,70 L180,70" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow11a)"/>
+
+  <rect x="186" y="42" width="106" height="58" rx="7" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/>
+  <text x="200" y="62" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#15171c">Chromium</text>
+  <text x="200" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">headless</text>
+  <text x="200" y="94" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">in the image</text>
+
+  <rect x="24" y="116" width="268" height="72" rx="7" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/>
+  <text x="38" y="136" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#2b3038">/tmp/outputs/</text>
+  <text x="38" y="156" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">login-works.webm · 38 MB</text>
+  <text x="38" y="174" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">after.png · 240 KB</text>
+
+  <rect x="392" y="8" width="300" height="88" rx="9" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/>
+  <text x="408" y="30" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#15171c">VERCEL FUNCTION</text>
+  <text x="408" y="52" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">holds the Slack token</text>
+  <text x="408" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">mints one upload URL per file</text>
+  <text x="408" y="88" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">never sees the bytes</text>
+
+  <path d="M388,52 L314,52" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow11a)"/>
+  <text x="351" y="44" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">one URL</text>
+
+  <rect x="392" y="116" width="300" height="88" rx="9" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <text x="408" y="138" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#4a154b">SLACK</text>
+  <text x="408" y="160" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">the recording, in the thread,</text>
+  <text x="408" y="178" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">under the message that asked</text>
+
+  <path d="M300,168 L388,168" stroke="#0b6b3a" stroke-width="2" marker-end="url(#arrow11b)"/>
+  <text x="344" y="160" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#0b6b3a">the bytes</text>
+
+  <rect x="8" y="222" width="684" height="44" rx="9" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="26" y="242" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#0b6b3a">The video never enters the function's memory, and the sandbox never holds a Slack token.</text>
+  <text x="26" y="259" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">What it holds is a pre-signed URL good for one upload of one file of one length. That asymmetry is the whole design.</text>
+
+  <rect x="8" y="276" width="684" height="46" rx="9" fill="#fdf6f6" stroke="#a32020" stroke-width="1.5"/>
+  <text x="26" y="296" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#a32020">And a browser is a new mouth.</text>
+  <text x="26" y="314" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">From this lesson on, any page the bot opens can put text into a session that can open pull requests. Part 1 is about that.</text>
+</svg>
+<p class="cap">The route the bytes take is the design decision of this lesson. Everything else —
+installing Chromium, writing a Playwright script — is ordinary work the bot does for you.</p>
+</div>
+<ul>
+  <li><strong>Playwright and Chromium in the sandbox image</strong>, so every future run has a browser with nothing to install.</li>
+  <li><strong>A file route that does not pass through the function</strong>, so the size cap stops being about memory.</li>
+  <li><strong>A screenshot and a recording in a Slack thread</strong>, sent by the bot, of the bot's own work.</li>
+  <li><strong>Instructions the bot will actually read next time</strong> — which is a different thing from instructions it wrote down.</li>
+</ul>
+</div>
+
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 10, so the bot has MCP tools, opens pull requests against its own repository,
+and you have merged several. You can rebuild the E2B template locally — that is
+<code>bin/with-secrets node e2b/build.mjs</code>, and this lesson is the first since lesson 08 that
+needs it.</p>
+<p>This is a longer lesson than 10. The browser install is the easy half; the second half is a change
+to how files leave the sandbox, and one deliberate refusal of something Ray's own agent offers to
+build.</p>
+</div>
+
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
+  <title>Where lesson 11 sits: lessons 1 to 10 let the bot act, lesson 11 lets it show you, and lesson 12 onward add more of the machine it runs on</title>
+  <defs>
+    <marker id="arrowArc11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+  <rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–10</text>
+  <text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">It can act</text>
+  <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">code, GitHub, tools</text>
+
+  <path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc11)"/>
+
+  <rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/>
+  <text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 11 — YOU ARE HERE</text>
+  <text x="270" y="72" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#2b3038">It can show you</text>
+  <text x="270" y="92" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">a browser, and a way</text>
+  <text x="270" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">to send back what it saw</text>
+
+  <path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc11)"/>
+
+  <rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 12–17</text>
+  <text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">It gets a machine</text>
+  <text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Postgres next, says Ray</text>
+</svg>
+<p class="cap">Lessons 08 to 10 all widened what the bot may touch. This one widens what it can
+prove — the first lesson whose output is evidence rather than capability.</p>
+</div>
+<p><strong>The point is not screenshots.</strong> It is that "I made the change and it works" stops
+being a claim you either trust or re-check by hand. Ray puts this at the end of his task lifecycle:
+the last thing every job does is drive the thing it just built and send back the recording. That only
+works if getting a video into Slack is boring, which is why most of this page is about the video and
+not about the browser.</p>
+</div>
+
+<div class="fm" style="--fc:#1f4fd8">
+<h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span>
+  <span class="what">What Playwright costs in a throwaway machine, the three possible routes a large
+  file can take out of it, where the "8 MB limit" really comes from, and what a browser does to the
+  blast radius. ~30 min.</span></li>
+<li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span>
+  <span class="what">Eight steps: one decision, one request to the bot, its questions, a review, a
+  template rebuild, a merge, a live test, and the instructions it will actually read. 90–150 min.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span>
+  <span class="what">The template written out, the Playwright failure table, what this page verified,
+  and where everything lives.</span></li>
+</ol>
+</div>
+
+<div class="fm" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<div class="danger"><strong>Do not put the Slack bot token in the sandbox.</strong> Ray's prompt asks
+the agent to verify it can send recordings "directly from the sandbox rather than passing through"
+the function, and the obvious way to do that is to pass <code>SLACK_BOT_TOKEN</code> in. Resist it.
+That token does not expire, is not scoped to a channel, and lets anything running in that machine
+post as the bot anywhere it is a member — while this is precisely the lesson that teaches the machine
+to open arbitrary web pages.
+<br><br>There is a direct route that needs no token at all, and Ray's own agent suggests it on
+screen: a <strong>single-use upload URL</strong>. Step 1 is deciding this before you ask, because
+once the bot has built the token version you will be reviewing a diff instead of making a choice.</div>
+<ul>
+  <li><strong>Lesson 10 finished</strong>, and <code>#joestar-dev</code> with the repository in its topic.</li>
+  <li><strong>The ability to rebuild the E2B template</strong> — <code>bin/with-secrets node e2b/build.mjs</code>, last needed in lesson 08.</li>
+  <li><strong>Ten minutes of patience for the first build.</strong> Chromium and its ninety-odd system libraries are not a small layer.</li>
+</ul>
+</div>
+
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what you're building</h2>
+  <p>Four things: what a browser costs in a machine that is thrown away every message, the three
+  routes a large file can take out of that machine, where the famous "8 MB limit" actually comes
+  from, and what having a browser does to everything lesson 10 said about the blast radius.</p>
+</div>
+
+<details class="sec" id="what-playwright-costs" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What Playwright is, and what it costs in a throwaway machine<span class="sec-s">The library is small. The browser is not, and where it goes decides whether this is usable.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Playwright is a library for driving a real browser from a script: open a page, click, type, wait
+for something, take a screenshot, record a video. Nothing about it is agent-specific. What makes it
+matter here is that the model can write a Playwright script as easily as it writes a test, and the
+output is a file a human can look at.</p>
+
+<p>It comes in two halves, and only one of them is small:</p>
+
+<table>
+<thead><tr><th>Half</th><th>Size</th><th>Where it has to be</th></tr></thead>
+<tbody>
+<tr><td>The <code>playwright</code> npm package</td><td>a few MB</td><td>Anywhere Node can <code>require</code> it</td></tr>
+<tr><td>The Chromium build it drives, plus system libraries</td><td>hundreds of MB</td><td>On disk before the run starts, or you pay for it every message</td></tr>
+</tbody>
+</table>
+
+<div class="win"><strong>This is the same argument as lesson 10's transport choice, in a different
+costume.</strong> There, stdio MCP servers lost to remote HTTP because <code>npx</code> re-downloads
+on a machine that is new every time. Here, installing Chromium at run time loses to baking it into
+the image for exactly the same reason. <em>A fresh sandbox per message turns every install into a
+per-message cost</em> — once you have that sentence, most of this course's infrastructure decisions
+answer themselves.</div>
+
+<h3>Which means the E2B template, and the template has no branch</h3>
+<p>The sandbox image is built by <code>e2b/build.mjs</code> and registered under a name —
+<code>joestar-claude</code>. <code>Sandbox.create()</code> asks for that name. There is no version in
+the request.</p>
+
+<div class="danger"><strong>Rebuilding the template deploys it immediately, to production, from
+whatever branch you are standing on.</strong> The image is not reviewed, not gated by CI, not tied to
+the pull request that changed <code>template.mjs</code>, and not rolled back when you revert the
+commit. The moment the build finishes, the next message anyone sends the bot boots the new image.
+<br><br>This is the opposite of how the code path works, where a merge to <code>main</code> runs the
+tests and then deploys. Two different deployment models for two halves of the same change — and step
+5 of this page walks you into it deliberately, so it happens while you are watching.</div>
+
+<div class="callout"><strong>The lesson-08 trap still applies.</strong> A stale image of the same
+name silently shadows your change: if you edit <code>template.mjs</code> and do not rebuild, the bot
+keeps booting yesterday's machine and every symptom points at your code. Check the build output for a
+new <code>build</code> id, not just the absence of errors.</div>
+</details>
+
+<details class="sec" id="three-routes" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Three routes a 40 MB recording can take out of the sandbox<span class="sec-s">Today's route buffers it in the function. Two alternatives do not. Only one of them is safe.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Since lesson 07 the bot has been able to send files back. The route has always been the same:
+after the run, the function reads each file out of the sandbox into memory, then posts those bytes to
+Slack. For a 60 KB Markdown file nobody notices. For a screen recording it is the whole problem.</p>
+
+<div class="fig">
+<svg viewBox="0 0 700 278" width="100%" height="auto" role="img">
+  <title>Three routes: relay through the function, a Slack token inside the sandbox, or a single-use upload URL handed to the sandbox</title>
+  <defs>
+    <marker id="arrow11c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+
+  <text x="8" y="20" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">A · RELAY — what you have today</text>
+  <rect x="8" y="28" width="150" height="40" rx="7" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="83" y="53" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">sandbox</text>
+  <path d="M164,48 L216,48" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow11c)"/>
+  <rect x="222" y="28" width="150" height="40" rx="7" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/>
+  <text x="297" y="53" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">function (holds bytes)</text>
+  <path d="M378,48 L430,48" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow11c)"/>
+  <rect x="436" y="28" width="150" height="40" rx="7" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <text x="511" y="53" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Slack</text>
+  <text x="600" y="53" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">safe, slow</text>
+
+  <text x="8" y="106" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#a32020">B · TOKEN IN THE SANDBOX — what the obvious reading of Ray's prompt builds</text>
+  <rect x="8" y="114" width="150" height="40" rx="7" fill="#fdf6f6" stroke="#a32020" stroke-width="1.5"/>
+  <text x="83" y="133" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">sandbox</text>
+  <text x="83" y="148" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#a32020">SLACK_BOT_TOKEN</text>
+  <path d="M164,134 L430,134" stroke="#a32020" stroke-width="1.5" marker-end="url(#arrow11c)"/>
+  <rect x="436" y="114" width="150" height="40" rx="7" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <text x="511" y="139" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Slack — anywhere</text>
+  <text x="600" y="139" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#a32020">refused</text>
+
+  <text x="8" y="196" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#0b6b3a">C · SINGLE-USE URL — what this page builds</text>
+  <rect x="8" y="204" width="150" height="40" rx="7" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/>
+  <text x="83" y="223" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">sandbox</text>
+  <text x="83" y="238" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#0b6b3a">one URL, one file</text>
+  <rect x="222" y="204" width="150" height="40" rx="7" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/>
+  <text x="297" y="223" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">function mints the URL</text>
+  <text x="297" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">and confirms afterwards</text>
+  <path d="M222,214 L164,214" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow11c)"/>
+  <path d="M164,236 C 300,268 380,268 430,236" stroke="#0b6b3a" stroke-width="2" fill="none" marker-end="url(#arrow11c)"/>
+  <rect x="436" y="204" width="150" height="40" rx="7" fill="#ffffff" stroke="#4a154b" stroke-width="1.5"/>
+  <text x="511" y="229" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038">Slack — one file</text>
+  <text x="600" y="229" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#0b6b3a">chosen</text>
+</svg>
+<p class="cap">B and C are both "direct from the sandbox". They differ only in what the sandbox is
+holding while it does it — and that is the entire security difference.</p>
+</div>
+
+<table>
+<thead><tr><th>Route</th><th>What the sandbox holds</th><th>Blast radius if the model is talked into misusing it</th></tr></thead>
+<tbody>
+<tr><td><strong>A · Relay</strong> (today)</td><td>nothing</td><td>None. It cannot reach Slack at all</td></tr>
+<tr><td><strong>B · Bot token</strong></td><td>A non-expiring credential for the whole workspace</td><td>Post as the bot in any channel it is in, read history, upload anything, indefinitely</td></tr>
+<tr><td><strong>C · Single-use URL</strong> (chosen)</td><td>One pre-signed URL, bound to one filename and one byte length</td><td>Upload that one file. The URL is spent afterwards and grants nothing else</td></tr>
+</tbody>
+</table>
+
+<div class="win"><strong>Why C works at all: the upload step is unauthenticated by design.</strong>
+Slack's modern upload is three calls — ask for a URL, POST the bytes to it, then tell Slack the
+upload is complete and where to share it. Only the first and third carry the token. The middle one is
+a pre-signed URL, and it does not care who POSTs to it. So the bytes can come from anywhere, and the
+sandbox is an "anywhere".
+<br><br>The code in <code>api/_lib/slack.js</code> has been doing all three steps since lesson 07.
+This change moves <em>one</em> of them.</div>
+
+<div class="metaphor"><strong>A courier and a key.</strong> Route B hands the courier the key to the
+building so they can drop off one parcel. Route C gives them a locker number that opens once. Both
+get the parcel delivered; only one of them still matters tomorrow.</div>
+
+<div class="callout"><strong>The honest cost of C.</strong> The sandbox must stay alive while the
+upload happens, which means the upload competes with the same five-minute budget as everything else —
+where route A uploads after the sandbox is dead. It also adds a round trip per file. If a run is
+already at 4 minutes 50, route C is the thing that will fail.</div>
+</details>
+
+<details class="sec" id="where-the-cap-comes-from" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where the "8 MB limit" actually comes from<span class="sec-s">Ray attributes it to Vercel. Checked against Vercel's own limits page: it is not Vercel's, and 8 is not the number.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>In the video, the agent reports back that there is "an 8 megabyte file upload limit because
+currently any output is passed into the Vercel function's memory". Ray accepts it and asks for the cap
+to be raised. It is worth knowing which parts of that sentence are true, because three different
+numbers are getting mixed together.</p>
+
+<table>
+<thead><tr><th>Limit</th><th>Real value</th><th>Does it apply here?</th></tr></thead>
+<tbody>
+<tr><td>Vercel request/response <strong>payload</strong></td><td><strong>4.5 MB</strong>, error <code>FUNCTION_PAYLOAD_TOO_LARGE</code></td><td><strong>No.</strong> It governs bodies the function receives or returns. Uploading to Slack is an <em>outbound</em> request the function makes, and is not covered</td></tr>
+<tr><td>Vercel function <strong>memory</strong></td><td><strong>2 GB</strong> on Hobby, 4 GB on Pro</td><td><strong>Yes</strong>, and this is the real ceiling on route A — the file is buffered, twice over, in that 2 GB</td></tr>
+<tr><td>Vercel <strong>max duration</strong></td><td><strong>300 s</strong>, hard on Hobby</td><td><strong>Yes</strong>, and it binds long before memory does. Lesson 09 already proved this is the constraint that actually bites</td></tr>
+<tr><td>Slack's own <strong>file size</strong></td><td><strong>1 GB</strong> per file</td><td>Yes, but it is nowhere near binding</td></tr>
+<tr><td><code>MAX_OUTPUT_BYTES</code> in <code>api/_lib/claude.js</code></td><td><strong>8 MiB</strong></td><td><strong>This is the one that is stopping you.</strong> It is our own constant, written in lesson 07, and nothing outside this repository knows it exists</td></tr>
+</tbody>
+</table>
+
+<div class="ray"><strong>Ray says the 8 MB comes from Vercel; it does not.</strong> Vercel's documented
+4.5 MB payload limit is about bodies in and out of the function, not about files the function uploads
+elsewhere, and 8 is not one of Vercel's numbers at all. In this repository the 8 MiB is a constant one
+of us wrote. Ray's agent almost certainly told him the same thing about his — an agent explaining a
+constant it chose itself, in terms of the platform, is a very ordinary way for a false fact to enter a
+codebase.
+<br><br><em>Verified 2026-09-17 against Vercel's Functions Limits page.</em> The practical consequence
+is the same as Ray's — raise the cap — but the reason matters, because "Vercel forbids it" would have
+meant the relay route was a dead end, and it is not.</div>
+
+<div class="win"><strong>What to do with that.</strong> Raise <code>MAX_OUTPUT_BYTES</code> to
+something honest for a recording, and put the <em>real</em> constraint in the comment: not "Vercel's
+limit" but "this many bytes has to move twice inside 300 seconds". A cap with a true reason beside it
+survives the next person who wonders why it is there.</div>
+
+<div class="callout"><strong>Why cap it at all, then?</strong> Because a model that decides to record
+four hundred megabytes of video should hit a wall with a clear message rather than a timeout with
+none. The cap's job is to convert an obscure failure into an obvious one — it was never a platform
+constraint, and pretending it was cost this page an afternoon of reading Vercel's documentation to
+find out.</div>
+</details>
+
+<details class="sec" id="browser-blast-radius" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What a browser does to the blast radius<span class="sec-s">Lesson 10 put untrusted text, a credential and write access in one pot. This adds an unlimited supply of untrusted text.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Lesson 10's warning was that a web search result is a page someone else wrote, arriving in a
+session that can open pull requests. A browser is that, without the search engine in between and
+without a result count.</p>
+
+<table>
+<thead><tr><th>Before this lesson</th><th>After</th></tr></thead>
+<tbody>
+<tr><td>Untrusted text arrives from a Slack thread, a cloned repository, and MCP tool output</td><td>…and from any URL the model decides to visit, including ones a page it visited told it to visit</td></tr>
+<tr><td>Text only</td><td>Text the model chose to fetch, rendered by a browser that runs the page's JavaScript</td></tr>
+<tr><td>What it can do about it: commit, push, open a PR, call MCP tools</td><td>Unchanged — and that is the point. The inputs widened; the powers did not shrink</td></tr>
+</tbody>
+</table>
+
+<div class="danger"><strong>The rule from lesson 10 has a second half now.</strong> That rule was about
+what the bot may <em>reach</em>. This is about what may reach <em>it</em>: from here on, treat any page
+the sandbox loads as hostile input with the same standing as a message from a stranger. The
+protections are the ones already in place and they are structural, not behavioural — the repository
+scoping from lesson 09, the withheld <code>workflows</code> permission from lesson 08, the branch
+ruleset that means nothing merges without you, and the fact that the machine is destroyed afterwards.
+<br><br>None of those depend on the model being careful, which is the only kind of protection worth
+counting.</div>
+
+<div class="win"><strong>And this is the argument against route B in one line.</strong> The lesson
+that gives the sandbox an unlimited supply of attacker-authored text is the worst possible lesson in
+which to also give it a permanent credential for your workspace. Those two changes arrive in the same
+pull request if you let them.</div>
+</details>
+
+<div class="checkpoint"><b>THE DECISION THIS PAGE MAKES</b>Chromium goes in the template, not in the
+run. Files leave by single-use URL, not by handing the sandbox a token. The cap stays, with a true
+reason written next to it.</div>
+
+
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Eight steps. One is a decision you make before typing anything, four are the usual
+  ask–answer–review–merge loop from lesson 09, one is a local build that deploys itself, and two are
+  about proving it works and making sure it keeps working.</p>
+</div>
+
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 1 of 8 — Decide how the bytes get to Slack<span class="sec-s">Before you ask. Afterwards you are reviewing someone's answer instead of choosing.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Read the three routes in Part 1 and pick one.</strong> This page picks <strong>C, the
+  single-use upload URL</strong>. If you pick A, the relay, you are choosing to raise the cap and stop
+  there, which is a perfectly good answer for screenshots and short clips.</p>
+  <div class="danger"><strong>Do not pick B.</strong> Nothing on this page is written for a sandbox
+  holding <code>SLACK_BOT_TOKEN</code>, and the reason is in Part 1: it is a non-expiring,
+  workspace-wide credential arriving in the same change that teaches the machine to open web pages.</div>
+</li>
+<li>
+  <p><strong>Write the choice into the request you are about to send.</strong> The prompt in step 2
+  names the route explicitly. That is the difference between this lesson and Ray's: he asks the agent
+  to "verify you can send recordings directly", and lets it come back with a proposal.</p>
+  <div class="ray"><strong>Ray's agent proposes the right thing anyway.</strong> On screen it asks
+  him: "do you want me to build a single-use upload URL approach?" — which is route C. Naming it up
+  front is not a disagreement with Ray, it is skipping a round trip, and it means the security choice
+  is made by a person rather than accepted from a suggestion.</div>
+</li>
+<li>
+  <p><strong>Decide the cap, and why.</strong> The number matters less than the reason beside it.
+  Something in the tens of megabytes is honest for a screen recording; the constraint to write in the
+  comment is the 300-second budget, not a platform rule.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You can say, out loud, what the sandbox will be holding while
+it uploads — and it is not a token.</div>
+</section>
+
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 2 of 8 — Ask the bot to install Playwright and build the upload path<span class="sec-s">One message in the channel whose topic names the repository. Same habit as lessons 09 and 10.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Post this in <code>#joestar-dev</code>, mentioning the bot.</strong></p>
+  <p class="where">Where: Slack → <code>#joestar-dev</code> → mention <code>@joestar</code></p>
+<pre><code>Set yourself up with Playwright, for every future sandbox — not installed at run
+time, because the sandbox is new every message and the install would come out of
+your five-minute budget. Put Playwright and Chromium into the E2B template in
+e2b/template.mjs, Chromium only, no Firefox or WebKit.
+
+You should end up able to: start a local dev server, drive it in a headless
+browser, take screenshots, record video, and get those files back to me in Slack.
+
+For getting files out, do NOT put a Slack token in the sandbox. Use a single-use
+upload URL: the function calls files.getUploadURLExternal with the filename and
+byte length, passes only that URL into the sandbox, the sandbox POSTs the bytes
+straight to Slack, and the function then calls files.completeUploadExternal. The
+bytes must not pass through the function's memory. api/_lib/slack.js already does
+all three of those calls for the relay path — this moves the middle one.
+
+Also raise MAX_OUTPUT_BYTES in api/_lib/claude.js. The 8 MiB there is our own
+constant, not a Vercel limit; the real constraint is that the file has to move
+inside the 300-second budget. Put that reason in the comment.
+
+Ask me any clarifying questions before you start, and open a pull request.</code></pre>
+  <div class="ray"><strong>This is a rewrite of Ray's prompt, not a copy.</strong> His is in
+  <code>course/transcripts/11-0-to-1--playwright.md</code> and is worth reading first. Three
+  differences: it names route C instead of asking for a verification, it says why the install belongs
+  in the template, and it corrects the claim about where the 8 MB comes from rather than repeating it
+  to the model as fact.</div>
+</li>
+<li>
+  <p><strong>Expect 👀 and then a wait.</strong> This is a bigger request than lesson 10's and it is
+  near the budget. A run that dies at the timeout is the normal first outcome; the fix is the same as
+  lesson 09's — ask it to push what it has and carry on in a second message.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>👀 on your message, and either questions in the thread or a
+pull request link.</div>
+</section>
+
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 3 of 8 — Answer its clarifying questions<span class="sec-s">Ray's prompt asks for them on purpose. The answers are decisions, so they belong to you.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<p>Both Ray's run and this one produce roughly the same questions. Knowing the answers in advance
+turns a conversation into a reply.</p>
+
+<table>
+<thead><tr><th>It will probably ask</th><th>Answer</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Chromium only, or Firefox and WebKit too?</td><td><strong>Chromium only</strong></td><td>Each extra engine is another few hundred megabytes in an image that boots on every message. Ray makes the same call</td></tr>
+<tr><td>Raise the file cap? To what?</td><td><strong>Yes</strong> — tens of MB, with the 300-second reason in the comment</td><td>Ray raises his too. Under-sizing it does not fail cleanly: you get a heavily compressed file that is hard to watch</td></tr>
+<tr><td>Should the video be converted to MP4?</td><td><strong>Not yet</strong> — leave it as <code>.webm</code> for now</td><td>Playwright writes WebM natively. Converting means <code>ffmpeg</code> in the image and CPU in the budget. Decide it after you have seen a real one in Slack</td></tr>
+<tr><td>Where should the reusable instructions go?</td><td><strong>A file in the repository, plus a pointer the model actually reads</strong></td><td>Step 8 is entirely about this. A file nothing loads is a diary</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>If it proposes route B anyway</strong> — a Slack token passed into the
+sandbox — say no and say why in the thread, not just "use the URL approach". The reason ends up in the
+pull request description and in the thread transcript, which is where you will look for it in three
+months.</div>
+
+<div class="win"><strong>Answer in one message, numbered.</strong> Each round trip is a sandbox boot
+and a few minutes. Four numbered answers in one reply costs one run; four replies cost four.</div>
+
+<div class="checkpoint"><b>CHECKPOINT</b>Every open question is answered in the thread, and the bot is
+building rather than asking.</div>
+</section>
+
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 4 of 8 — Review the pull request<span class="sec-s">Six specific things. Two of them are the ones that will otherwise cost you the afternoon.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Read the diff, against this list.</strong></p>
+  <p class="where">Where: <code>gh pr diff N</code>, or the PR page</p>
+<table>
+<thead><tr><th>Check</th><th>What wrong looks like</th></tr></thead>
+<tbody>
+<tr><td><strong>No Slack token reaches the sandbox</strong></td><td><code>SLACK_BOT_TOKEN</code> anywhere in <code>envs</code>, in the template, or in a script written into the sandbox</td></tr>
+<tr><td><strong>The bytes do not pass through the function</strong></td><td>A <code>files.read</code> on the video path still there, feeding the upload. Route C without this is route A with extra steps</td></tr>
+<tr><td><strong>Browsers are installed where the sandbox user can reach them</strong></td><td>An install as <code>root</code> with no <code>PLAYWRIGHT_BROWSERS_PATH</code>. Chromium lands in root's cache and the run fails with "Executable doesn't exist"</td></tr>
+<tr><td><strong>The <code>playwright</code> package is resolvable</strong></td><td>A global <code>npm install -g</code> with nothing setting <code>NODE_PATH</code> — a script in <code>/tmp</code> then cannot <code>require</code> it</td></tr>
+<tr><td><strong>The cap's comment states the real reason</strong></td><td>"Vercel's limit" repeated back at you. It is not Vercel's; see Part 1</td></tr>
+<tr><td><strong>Failure to upload does not lose the answer</strong></td><td>An upload error thrown rather than logged. The text answer is the valuable part; a video that would not send should not take it down</td></tr>
+</tbody>
+</table>
+</li>
+<li>
+  <p><strong>Ask for fixes in the thread, not in your editor.</strong> Same as lesson 09: the bot
+  takes review feedback, and letting it make the correction keeps the loop honest.</p>
+  <div class="win"><strong>Check the tests do what their names say.</strong> Lesson 10 shipped a test
+  called a leak guard that was passing while a real key leaked, because the branch it guarded was
+  never taken. The cheap check is to break the thing on purpose and confirm the test goes red — and
+  then confirm your break actually landed in the file.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>All six checks pass, tests are green, and the diff contains no
+Slack credential outside the function.</div>
+</section>
+
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 5 of 8 — Rebuild the sandbox image, and test Chromium by hand<span class="sec-s">A local command that ships to production the moment it finishes. Do it while you are watching.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Check out the branch and build the template.</strong></p>
+<pre><code>gh pr checkout N
+bin/with-secrets node e2b/build.mjs</code></pre>
+  <div class="danger"><strong>This is a production deploy dressed as a local command.</strong> The
+  image registers under <code>joestar-claude</code>, which is the name every
+  <code>Sandbox.create()</code> asks for — including the one running in production right now. There is
+  no review, no CI and no rollback on this path. It is additive here, so it is safe; it is worth
+  feeling once, deliberately, because next time it might not be.</div>
+  <p>Expect several minutes. Chromium and its system libraries are a large layer, and this is the
+  first build since lesson 08.</p>
+</li>
+<li>
+  <p><strong>Confirm you got a new image, not a cached one.</strong> The build prints a template id
+  and a build id. A new <code>build</code> id is the evidence; "no errors" is not.</p>
+  <div class="callout"><strong>The lesson-08 trap.</strong> A stale image of the same name shadows
+  your change silently, and every symptom afterwards points at your code instead.</div>
+</li>
+<li>
+  <p><strong>Drive the browser by hand, as the sandbox user, before involving Slack.</strong> The
+  point is to separate "Chromium does not run in this image" from "the model wrote a bad script" —
+  two failures that look identical from a Slack thread.</p>
+  <p>Boot a sandbox from the new template and run something that opens a page, saves a screenshot and
+  records a short video. What you are checking:</p>
+  <table>
+  <thead><tr><th>Check</th><th>The failure it separates out</th></tr></thead>
+  <tbody>
+  <tr><td>Chromium launches at all as <code>user</code></td><td>Browsers installed into root's cache; missing system libraries; a sandboxing flag needed in a container</td></tr>
+  <tr><td><code>require('playwright')</code> resolves from a script outside any project</td><td>A global install that is not on the module path</td></tr>
+  <tr><td>A <code>.webm</code> file exists afterwards and is not zero bytes</td><td>Video is only flushed when the browser context is closed — kill the process and you get nothing</td></tr>
+  </tbody>
+  </table>
+  <div class="win"><strong>Cheapest test that proves the most, again.</strong> Lesson 10 tested the
+  keyless MCP server before the one with a credential, for the same reason: rule out the half you can
+  rule out for free, so that when the expensive half fails you know which half it was.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A new build id, and a non-empty <code>.webm</code> produced by
+hand inside a sandbox booted from the new image.</div>
+</section>
+
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 6 of 8 — Merge, and let CI deploy<span class="sec-s">The code half. The image half already shipped in step 5, which is the asymmetry worth remembering.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 6 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Merge the pull request.</strong></p>
+<pre><code>gh pr merge N --squash --admin
+gh run watch</code></pre>
+  <p>The bot cannot merge and cannot approve its own pull request — that is lesson 09's ruleset, and
+  it still holds. A push to <code>main</code> runs the tests and then deploys.</p>
+</li>
+<li>
+  <p><strong>Note what just happened in what order.</strong> The image went live in step 5, from an
+  unmerged branch. The code went live now, gated by tests. Two halves of one change, two different
+  deployment models, and only one of them is reviewable.</p>
+  <div class="callout">If you ever need to undo this, reverting the commit does not revert the image.
+  Rolling the template back is a second, separate build.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>gh run watch</code> is green and the deployment is live.</div>
+</section>
+
+<section class="sec" id="step7" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 7 of 8 — Verify it live: screenshot first, then a recording<span class="sec-s">A screenshot exercises the browser, the output directory and the upload path. Only size is left after that.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 7 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">8 · Write</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask for a screenshot.</strong></p>
+  <p class="where">Where: Slack → <code>#joestar-dev</code></p>
+<pre><code>Open example.com in Playwright, screenshot it, and send me the PNG.</code></pre>
+  <p>A PNG is a few hundred kilobytes. If it arrives, then Chromium runs, the model can drive it, the
+  output directory works and the whole upload path works — and the only untested thing left is
+  whether it works at forty megabytes.</p>
+  <div class="win"><strong>This is the lesson-10 move.</strong> Test the cheap thing that shares every
+  component with the expensive thing. A failure here is a failure of the mechanism; a failure only at
+  the next step is a failure of size.</div>
+</li>
+<li>
+  <p><strong>Then ask for a recording.</strong></p>
+<pre><code>Now start a small local web app with a button that increments a counter, drive it
+in Playwright, record the video, and send me the recording.</code></pre>
+  <p>This is Ray's test, and his produced a <code>test-recording.webm</code> of a button being clicked
+  and a count going up.</p>
+  <div class="ray"><strong>There is no cursor in the recording.</strong> Ray points this out and it
+  confuses people: Playwright does not move a pointer, it dispatches events. Things change on screen
+  with nothing visibly clicking them. That is correct behaviour, not a broken recording.</div>
+</li>
+<li>
+  <p><strong>Check the file plays, not just that it arrived.</strong> A file appearing in the thread
+  is not the same as a file you can watch. Open it.</p>
+  <div class="callout"><strong>WebM in Slack is the untested part of this page.</strong> Ray plays his
+  back on screen, so it works at least on his client. Whether every Slack client previews WebM inline
+  is not something this page has checked — if yours will not, the fix is <code>ffmpeg</code> in the
+  template and MP4 out, which is the question you deferred in step 3.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A PNG and a <code>.webm</code> both in the thread, both from
+the bot, and the recording plays.</div>
+</section>
+
+<section class="sec" id="step8" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 8 of 8 — Put the instructions where the bot will read them<span class="sec-s">Ray's last ask, and the one with a trap in it: writing them down and loading them are different jobs.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 8 of 8</title>
+  <rect x="8" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="47.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">1 · Decide</text>
+  <rect x="94.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="134" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">2 · Ask</text>
+  <rect x="181" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="220.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">3 · Answer</text>
+  <rect x="267.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="307" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">4 · Review</text>
+  <rect x="354" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="393.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">5 · Build</text>
+  <rect x="440.5" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="480" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">6 · Merge</text>
+  <rect x="527" y="10" width="79" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="566.5" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8f98a3">7 · Verify</text>
+  <rect x="613.5" y="10" width="79" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="653" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">8 · Write</text>
+</svg></div>
+
+<p>Ray's prompt ends: "save a set of instructions for yourself so you can do this faster next time".
+The obvious reading is "write a document". The useful version has a second half.</p>
+
+<div class="danger"><strong>A file the model never opens is a diary, not instructions.</strong> The
+sandbox is empty every message. Nothing in the repository is in the model's context unless it clones
+the repository <em>and</em> something points it at that file. A beautifully written
+<code>docs/playwright.md</code> that nothing loads will be silently ignored for months, while you
+believe the bot has been briefed.</div>
+
+<ol class="steps">
+<li>
+  <p><strong>Write the instructions.</strong> Short and specific: where Chromium is, what environment
+  variables it needs, where to write output so it gets uploaded, how to record video and the fact that
+  the file only exists after the context is closed, and the cap.</p>
+</li>
+<li>
+  <p><strong>Then make something load them.</strong> There are two places that actually reach the
+  model, and they are not the same:</p>
+  <table>
+  <thead><tr><th>Where</th><th>When it is read</th><th>Good for</th></tr></thead>
+  <tbody>
+  <tr><td><code>CLAUDE.md</code> in the cloned repository</td><td>Automatically, but only once the model is working inside that clone</td><td>Repository-specific practice — how <em>this</em> project uses Playwright</td></tr>
+  <tr><td>The prompt the function builds, in <code>api/slack/events.js</code></td><td>Every run, before anything is cloned</td><td>Facts about the machine itself, which are true whether or not a repository is involved</td></tr>
+  </tbody>
+  </table>
+  <p>Capabilities of the sandbox belong in the second. The function already does exactly this for
+  GitHub — a short block telling the model where the walls are, so it does not spend minutes finding
+  them by walking into them. Playwright deserves the same treatment: it is a capability of the
+  machine, not of the repository.</p>
+</li>
+<li>
+  <p><strong>Prove it landed.</strong> Ask the bot, in a channel with <em>no</em> repository in its
+  topic, what it can do with a browser. No repository means no clone, so a correct answer can only
+  have come from the prompt.</p>
+  <div class="win"><strong>That test separates the two mechanisms.</strong> If it answers correctly
+  with nothing cloned, the briefing is in the prompt. If it only knows once it has cloned the repo,
+  what you wrote is repository documentation — useful, but it will not help on the runs that do not
+  clone anything.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The bot describes its own browser capability in a channel
+where it cloned nothing.</div>
+</section>
+
+
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>The template written out with its traps marked, the failure table, an honest account of what this
+  page checked, and where the new things live.</p>
+</div>
+
+<details class="sec" id="template-written-out" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">The template additions, and the three lines that are not obvious<span class="sec-s">The shape to expect in the diff, and why each awkward part is there.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<p>The E2B template is an SDK definition in <code>e2b/template.mjs</code>, not a Dockerfile. Adding a
+browser is three ideas:</p>
+
+<table>
+<thead><tr><th>Idea</th><th>Why it is not just "install playwright"</th></tr></thead>
+<tbody>
+<tr><td><strong>Install the browser to a shared path</strong>, with <code>PLAYWRIGHT_BROWSERS_PATH</code> set on the image</td><td>By default Playwright puts browsers in the installing user's cache directory. The install needs root (system libraries); the run happens as <code>user</code>. Without a shared path those are two different directories, and the run fails with "Executable doesn't exist" while the files are plainly there</td></tr>
+<tr><td><strong>Install system dependencies as root</strong>, via Playwright's own <code>--with-deps</code></td><td>Chromium needs around ninety shared libraries that are not in a Node base image. Playwright knows the list for your distribution; you do not want to maintain it</td></tr>
+<tr><td><strong>Make the package resolvable from anywhere</strong></td><td>A globally installed npm package is not on the module search path for a script sitting in <code>/tmp</code>. The model will write scripts in <code>/tmp</code>. Either set <code>NODE_PATH</code> on the image or install into a fixed directory the instructions name</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Pin the Playwright version, and keep the two halves in step.</strong> The
+npm package and the browser build are versioned together; a floating <code>latest</code> in the image
+means a rebuild months from now can pick up a browser your scripts have not seen. The rest of this
+template pins deliberately — <code>fromNodeImage('24')</code>, a dated GitHub CLI repository — and this
+is no different.</div>
+
+<div class="win"><strong>Everything that is a capability of the machine belongs in the template;
+everything that is a secret does not.</strong> That line was drawn in lesson 10 for the Exa key and it
+holds here unchanged: browsers in the image, credentials never.</div>
+</details>
+
+<details class="sec" id="failure-table" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When something doesn't work<span class="sec-s">Every entry is a case where the error names the wrong thing, or there is no error at all.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>What you see</th><th>What it usually is</th></tr></thead>
+<tbody>
+<tr><td>"Executable doesn't exist at …/ms-playwright/chromium-…"</td><td>Installed as one user, run as another. The path in the message is the one it <em>looked</em> in, not the one the files are in. Fix with a shared <code>PLAYWRIGHT_BROWSERS_PATH</code> set for both</td></tr>
+<tr><td>"Cannot find module 'playwright'"</td><td>Global install, script outside any project. Module resolution, not installation — the package is there</td></tr>
+<tr><td>Chromium exits immediately on launch, no useful message</td><td>Missing system libraries, or browser sandboxing unavailable in the container. Run Playwright's dependency install as root; if it persists, launching without the browser's own sandbox is the usual container workaround</td></tr>
+<tr><td>The <code>.webm</code> is missing, or zero bytes</td><td>The browser context was never closed. Playwright flushes video on close — a script that ends by killing the process gets nothing, and reports success</td></tr>
+<tr><td>The recording arrives but nothing appears to click</td><td>Correct. Playwright dispatches events rather than moving a pointer, so there is no visible cursor</td></tr>
+<tr><td>The file silently never arrives, run otherwise fine</td><td>Over the output cap. It is logged and skipped, not thrown — check the function logs for the skip line</td></tr>
+<tr><td>The upload fails with a size or length complaint</td><td>The pre-signed URL is minted for one exact byte length. If the file changed after the length was read, the URL no longer matches it</td></tr>
+<tr><td>The run dies at the timeout, having produced a video</td><td>Route C uploads while the sandbox is alive, so the upload is inside the five-minute budget. A long recording plus a long upload is the new way to run out of time</td></tr>
+<tr><td>Everything works locally in the sandbox, nothing works from Slack</td><td>The template was rebuilt but the code was not deployed, or the reverse. They ship by different routes — see step 6</td></tr>
+</tbody>
+</table>
+</details>
+
+<details class="sec" id="what-happened" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What actually happened, 2026-09-17<span class="sec-s">Written after the run. Where this differs from the steps above, this is what is true.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<p>The lesson shipped as <strong>three</strong> pull requests rather than one, because the first
+attempt died at the sandbox timeout — the failure step 2 predicts, caused by asking for two
+substantial changes and clarifying questions inside one five-minute budget.</p>
+
+<table>
+<thead><tr><th>PR</th><th>What it did</th><th>What review found</th></tr></thead>
+<tbody>
+<tr><td><strong>#6</strong></td><td>Playwright 1.63.0 + Chromium into the template</td><td>The <code>setEnvs</code> bug — a fix whose own comment claimed it prevented the failure it caused</td></tr>
+<tr><td><strong>#7</strong></td><td>Single-use upload URL, cap 8 MiB → 64 MiB</td><td>No tests at all; an upload-versus-run budget regression; a guessed <code>Content-Type</code></td></tr>
+<tr><td><strong>#8</strong></td><td><code>browserCapabilities()</code> in every prompt</td><td>Step 8</td></tr>
+</tbody>
+</table>
+
+<div class="win"><strong>Splitting the request was the fix, and pre-answering the questions was the
+bonus.</strong> The retry named the three silent-failure traps up front, and the bot asked no
+clarifying questions at all — step 3 disappeared into step 2. Each round trip here is a sandbox boot
+and several minutes, so the questions you can answer before they are asked are free.</div>
+
+<h3>The bug worth the whole lesson</h3>
+<p><code>Template.setEnvs</code> applies <em>only during the build</em>. The browsers installed to
+<code>/opt/ms-playwright</code> correctly and the variable was gone by the time a sandbox ran
+anything, so the image looked perfect and failed at first launch — with an error whose own suggested
+fix (<code>npx playwright install</code>) would have hidden the cause and cost 114 MB per message
+forever after.</p>
+
+<div class="win"><strong>It was proved, not argued.</strong> Booting the finished image and
+withholding those variables reproduces the exact failure; supplying them makes it work. That
+counter-test needed an E2B key and a sandbox created from outside — which is to say the sandbox
+cannot test the sandbox, and this is one of the things that could not be delegated to the bot.</div>
+
+<h3>The green number that measured nothing</h3>
+<p>PR #7 reported "57/57 pass" while touching no test file: the same suite as before the change, none
+of it reaching the new path. Six tests later, breaking each one on purpose, a leaked Slack token in
+the sandbox command turned 63/63 into 62 pass and 1 fail. <strong>Ask what would have gone red.</strong></p>
+
+<h3>Numbers from the real runs</h3>
+<table>
+<thead><tr><th>Measurement</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Template build</td><td>52 s; steps 4–7 fresh, not <code>CACHED</code></td></tr>
+<tr><td>Screenshot round trip</td><td>30 s — <code>example.png</code>, 17,117 bytes</td></tr>
+<tr><td>Small recording</td><td>45 s — 22,176 bytes, counter reached 7</td></tr>
+<tr><td>Large recording</td><td>224 s of a 285 s budget — <strong>20,025,522 bytes</strong></td></tr>
+<tr><td>Old cap it cleared</td><td>8 MiB. Over it, the old path skipped the file with only a log line</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Playwright brings its own FFmpeg.</strong> The build pulled
+<code>/opt/ms-playwright/ffmpeg-1011</code> alongside Chromium, which is what writes the video — so
+recording needs no separate <code>ffmpeg</code> in the image. It is also already there if the MP4
+question ever comes back.</div>
+
+<div class="win"><strong>One question resolved by watching.</strong> The <code>.webm</code> played
+inline in Slack, numbers running 1 to 7, with nothing visibly clicking them. So MP4 conversion stayed
+deferred rather than becoming work — and Ray's note about the missing cursor is correct.</div>
+</details>
+
+<details class="sec" id="verified-vs-untested" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Written before the lesson was run. Read this before trusting any sentence above.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Claim</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Vercel's payload limit is 4.5 MB and governs the function's own request and response bodies, not its outbound uploads</td><td><strong>Verified</strong> against Vercel's Functions Limits page, 2026-09-17</td></tr>
+<tr><td>Vercel function memory is 2 GB on Hobby; max duration 300 s and hard on Hobby</td><td><strong>Verified</strong>, same source</td></tr>
+<tr><td>The 8 MiB cap is our own constant in <code>api/_lib/claude.js</code>, not a platform limit</td><td><strong>Verified</strong> by reading the file</td></tr>
+<tr><td>Slack's per-file limit is 1 GB</td><td><strong>Verified</strong> from Slack's upload documentation</td></tr>
+<tr><td>Slack's upload URL step carries no credential, so any machine can POST the bytes</td><td><strong>Verified</strong> — this repository's own <code>uploadFile</code> has POSTed to it with no authorization header since lesson 07</td></tr>
+<tr><td>Playwright installs browsers per user unless <code>PLAYWRIGHT_BROWSERS_PATH</code> is set</td><td><strong>Verified</strong> from Playwright's documentation</td></tr>
+<tr><td>Chromium runs headless as the sandbox's non-root user in this image</td><td><strong>Verified</strong> 2026-09-17. It launches, clicks, screenshots and records as <code>user</code> — <em>and only because of the run-time env fix</em>. The same image with those variables withheld exits 1 on both <code>require('playwright')</code> and <code>chromium.launch()</code></td></tr>
+<tr><td>A recording of a realistic size completes its upload inside the 300-second budget</td><td><strong>Verified</strong> at <strong>20,025,522 bytes</strong> (19.10 MiB, 1280×720, 25 s) — 2.4× the old cap, delivered in 224 s of the 285 s budget. The margin is real but not generous</td></tr>
+<tr><td>Slack previews <code>.webm</code> inline on every client</td><td><strong>Verified on this workspace's client</strong> — the counter recording played inline, numbers running 1 to 7. So no <code>ffmpeg</code> and no MP4 conversion was needed. Still unverified for clients other than the one checked</td></tr>
+<tr><td>Whether <code>curl</code> POSTing raw bytes satisfies the pre-signed URL the same way the function's <code>fetch</code> does</td><td><strong>Verified</strong>, and it was the surprise it looked like. <code>fetch</code> sends <em>no</em> <code>Content-Type</code> for a raw byte body, so the first attempt's <code>application/octet-stream</code> was a third behaviour rather than a match. <code>curl -H 'Content-Type:'</code> strips it and matches exactly</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Why this table exists.</strong> A cold reader cannot tell a checked claim
+from a repeated one — they read identically. Lesson 07 asserted that reinstalling a Slack app mints a
+new bot token because the video said so; it does not, and one command would have caught it. This table
+is the cheap version of that lesson.</div>
+</details>
+
+<details class="sec" id="where-everything-lives" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where everything lives<span class="sec-s">What this lesson adds to the map.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+<thead><tr><th>Thing</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>The sandbox image definition</td><td><code>joestar-agent/e2b/template.mjs</code> — Chromium lives here</td></tr>
+<tr><td>Building and registering that image</td><td><code>bin/with-secrets node e2b/build.mjs</code>, registered as <code>joestar-claude</code></td></tr>
+<tr><td>The output cap</td><td><code>MAX_OUTPUT_BYTES</code> in <code>api/_lib/claude.js</code></td></tr>
+<tr><td>The three-step Slack upload</td><td><code>uploadFile</code> in <code>api/_lib/slack.js</code></td></tr>
+<tr><td>Where the bot leaves files to be sent</td><td><code>/tmp/outputs</code> in the sandbox — <code>OUTPUT_DIR</code></td></tr>
+<tr><td>What the model is told about its machine</td><td>The prompt built in <code>api/slack/events.js</code></td></tr>
+<tr><td>Development channel</td><td><code>#joestar-dev</code> — topic names the repo</td></tr>
+<tr><td>Ray's prompt, verbatim</td><td><code>course/transcripts/11-0-to-1--playwright.md</code></td></tr>
+<tr><td>Playwright docs</td><td><code>playwright.dev/docs/browsers</code> — install paths and Docker</td></tr>
+<tr><td>Vercel's real limits</td><td><code>vercel.com/docs/functions/limitations</code></td></tr>
+<tr><td>Traps already paid for</td><td><code>TRAPS.md</code></td></tr>
+</tbody>
+</table>
+</details>
+
+
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l11-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l11-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l11-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l11-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
