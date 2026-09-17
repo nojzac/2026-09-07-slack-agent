@@ -1,0 +1,1428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-09/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span>
+      <button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>
+  </div>
+  <div id="tree"></div>
+</nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 09</p>
+<h1>Dogfood the bot: change it by asking it</h1>
+<p class="standfirst">From here, improvements to the bot are made through the bot. You describe a change
+in Slack, it opens a pull request against its own repository, and you review it. The point is not
+convenience — it is that you feel every rough edge yourself, immediately.</p>
+
+<div class="facts">
+  <span><b>Ray's video:</b> 3 min 00 s</span>
+  <span><b>This page:</b> 45–90 min</span>
+  <span><b>At the end:</b> a bot that improves itself, one PR at a time</span>
+</div>
+
+<div class="fm" style="--fc:#0b6b3a">
+<h2>What you'll have at the end</h2>
+<div class="fig">
+<svg viewBox="0 0 700 262" width="100%" height="auto" role="img">
+  <title>A development channel whose topic names a repository; two parallel requests to the bot each produce their own pull request from their own sandbox</title>
+  <rect x="8" y="8" width="684" height="246" rx="10" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="26" y="32" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#4a154b"># joestar-dev</text>
+  <text x="130" y="32" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">topic: nojzac/2026-09-07-slack-agent</text>
+  <line x1="26" y1="44" x2="674" y2="44" stroke="#e2e6ec" stroke-width="1"/>
+
+  <rect x="26" y="58" width="310" height="180" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="42" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#15171c">Thread A</text>
+  <text x="42" y="100" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">"read the channel topic to find</text>
+  <text x="42" y="117" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">the repo. Open a PR."</text>
+  <rect x="42" y="130" width="120" height="22" rx="6" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/>
+  <text x="102" y="145" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">sandbox A</text>
+  <text x="42" y="176" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#0b6b3a">→ PR #3</text>
+  <text x="42" y="200" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">👀 then ✅</text>
+
+  <rect x="364" y="58" width="310" height="180" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="380" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#15171c">Thread B — at the same time</text>
+  <text x="380" y="100" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">"show elapsed time and the last</text>
+  <text x="380" y="117" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#2b3038">tool call instead of 'thinking'."</text>
+  <rect x="380" y="130" width="120" height="22" rx="6" fill="#ffffff" stroke="#d7dde5" stroke-width="1"/>
+  <text x="440" y="145" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">sandbox B</text>
+  <text x="380" y="176" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#0b6b3a">→ PR #4</text>
+  <text x="380" y="200" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#616a77">👀 then ✅</text>
+
+  <text x="350" y="228" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">Each top-level message gets its own sandbox, so the two cannot collide.</text>
+</svg>
+<p class="cap">Two requests, two machines, two pull requests, no coordination. The parallelism is free
+because nothing is shared — a consequence of the throwaway-sandbox design from lesson 05.</p>
+</div>
+<ul>
+  <li><strong>A development channel</strong> whose topic names the repository, so you stop repeating it.</li>
+  <li><strong>Changes to the bot arriving as pull requests</strong> you review and merge.</li>
+  <li><strong>Parallel work</strong> — several requests at once, each isolated.</li>
+  <li><strong>A felt list of what is annoying about your own bot</strong>, which is the actual product of this lesson.</li>
+</ul>
+</div>
+
+<div class="fm" style="--fc:#4a5766">
+<h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 08, so the bot can open pull requests, and you have seen GitHub refuse a push
+to a protected branch.</p>
+<p>This lesson has less new machinery than any so far. Most of the work is judgement: what to ask for,
+how much to ask for at once, and when to stop asking through Slack and open your laptop.</p>
+</div>
+
+<div class="fm" style="--fc:#7a3d9c">
+<h2>Why this lesson exists</h2>
+<div class="fig">
+<svg viewBox="0 0 700 148" width="100%" height="auto" role="img">
+  <title>Where lesson 09 sits: lessons 1 to 8 build the bot with Claude Code on your laptop, lesson 9 moves that work into Slack, and lessons 10 onward add tools</title>
+  <defs>
+    <marker id="arrowArc9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#616a77"/>
+    </marker>
+  </defs>
+  <rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–08</text>
+  <text x="24" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">You built the bot</text>
+  <text x="24" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">at your laptop</text>
+  <path d="M194,71 L236,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc9)"/>
+  <rect x="242" y="20" width="216" height="102" rx="9" fill="#f3f0f7" stroke="#7a3d9c" stroke-width="2.5"/>
+  <text x="260" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 09 — YOU ARE HERE</text>
+  <text x="260" y="70" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#15171c">The bot builds the bot</text>
+  <text x="260" y="90" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#2b3038">You describe, review, merge</text>
+  <text x="260" y="108" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11.5" fill="#616a77">no new capability — a new habit</text>
+  <path d="M464,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc9)"/>
+  <rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 10–21</text>
+  <text x="528" y="80" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">MCP, Playwright,</text>
+  <text x="528" y="98" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#2b3038">memory, skills</text>
+  <text x="350" y="141" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#616a77">Every later feature gets easier to add, and every rough edge gets harder to ignore.</text>
+</svg>
+</div>
+<p>Ray's argument is short and worth taking seriously: <em>"it's really important to start dogfooding
+our own agent so we can identify bottlenecks and problems."</em> Nothing reveals that the placeholder
+is uninformative, or that the bot cannot find your repository, quite like needing it to work while you
+are away from your desk.</p>
+<div class="metaphor"><b>It is the difference between a chef who eats in their own dining room and one
+who never leaves the kitchen.</b> You can inspect a dish for a long time without noticing it arrives
+cold.</div>
+</div>
+<div class="map">
+<h2>How this page is laid out</h2>
+<ol>
+<li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span>
+  <span class="what">Why each request gets its own machine, what the bot can and cannot do to its own
+  code, and when to stop asking through Slack. ~15 min.</span></li>
+<li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span>
+  <span class="what">Six steps: a channel, a topic, a first request, a parallel second one, a review,
+  and a manifest follow-up. 45–90 min.</span></li>
+<li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span>
+  <span class="what">How to phrase a request, what to refuse to merge, the failure table, and what
+  this page could not verify.</span></li>
+</ol>
+</div>
+
+<div class="fm" style="--fc:#a32020">
+<h2>Before you begin</h2>
+<div class="danger"><strong>This lesson points the bot at the repository that holds the bot.</strong>
+On this project that repository is <code>nojzac/2026-09-07-slack-agent</code>, and it is
+<strong>private on a free GitHub plan</strong> — where, as lesson 08 proved by testing, a branch
+ruleset does not enforce and does not say so. Installing the App there as-is would give an unattended
+bot unprotected write access to its own source, on a repo where a push to <code>main</code> is a
+production deploy.
+<br><br>There are only three honest ways through, and the choice has to be made before step 1:</div>
+<table>
+<thead><tr><th>Option</th><th>What it costs</th></tr></thead>
+<tbody>
+<tr><td><strong>Make the repo public</strong> for the course</td><td>The ruleset enforces, so the bot is properly constrained. But everything becomes world-readable — including <code>docs/secrets.md</code>, and <code>TRAPS.md</code>'s frank list of where this system is weak. Public repos are forked and cached, so it is not cleanly reversible.</td></tr>
+<tr><td><strong>GitHub Pro</strong></td><td>About $4/month. Private repo, real protection, no exposure. The straightforward answer, declined here for the duration of the course.</td></tr>
+<tr><td><strong>Dogfood without write access</strong></td><td>The bot reads the repo and proposes changes as text; you apply them. Keeps everything private and still surfaces the bottlenecks, which is the actual point of the lesson — but you lose the pull requests.</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong>Whatever you choose, decide it deliberately.</strong> The failure mode is
+installing the App on a private repo because the lesson said to, and believing the branch protection
+listed in the UI. That belief is the dangerous part, not the access.</div>
+<ul>
+  <li><strong>Lesson 08 finished</strong>, with the App installed and a PR opened successfully.</li>
+  <li><strong>A channel the bot is in.</strong> Ray hits "you mentioned joestar, but they're not in
+  this channel" on his very first try in a new channel.</li>
+</ul>
+</div>
+
+<div class="part" id="part1" style="--pc:var(--understand)">
+  <span class="pn">PART 1</span>
+  <h2>Understand what you're building</h2>
+  <p>No new machinery. Three things worth understanding before you start asking a bot to edit
+  itself.</p>
+</div>
+
+<details class="sec" id="parallel-09" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Why you can run several requests at once<span class="sec-s">One sandbox per top-level message, and nothing shared between them.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Ask for two changes in two separate messages and both run at the same time, in different machines,
+neither aware of the other. That falls out of decisions already made rather than anything added here:</p>
+
+<table>
+<thead><tr><th>Decision, and where it came from</th><th>What it buys you now</th></tr></thead>
+<tbody>
+<tr><td>A throwaway sandbox per run <em>(lesson 05)</em></td><td>Two runs cannot corrupt each other's working directory</td></tr>
+<tr><td>Transcript replay rather than a live session <em>(lesson 07)</em></td><td>No shared state to lock, so no queue and no conflict</td></tr>
+<tr><td>A token minted per request <em>(lesson 08)</em></td><td>Each machine carries its own credential, expiring separately</td></tr>
+</tbody>
+</table>
+
+<div class="win"><b>This is the payoff for the stateless design.</b> Every earlier lesson chose "no
+store, no session, no queue" and paid a price for it — transcript replay costs a Slack API call every
+turn. Parallelism is what that bought: it needs no work here because there is nothing to coordinate.</div>
+
+<div class="danger"><strong>Two parallel requests touching the same files will produce two conflicting
+pull requests.</strong> Nothing prevents it — the isolation is between <em>sandboxes</em>, not between
+<em>branches</em>. Git will tell you at merge time rather than at request time, which is late. Split
+work by area, not by convenience.</div>
+</details>
+
+<details class="sec" id="selfedit-09" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What happens when a bot edits its own code<span class="sec-s">A broken change cannot deploy itself — provided you keep the gates you already have.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Asking a program to modify itself sounds alarming and mostly is not, because of gates built in
+earlier lessons that have nothing to do with this one:</p>
+
+<table>
+<thead><tr><th>Gate</th><th>Stops</th></tr></thead>
+<tbody>
+<tr><td>Branch ruleset — PR + 1 approval <em>(08)</em></td><td>The bot merging its own work</td></tr>
+<tr><td><code>workflows</code> permission withheld <em>(08)</em></td><td>It rewriting CI to get around the tests</td></tr>
+<tr><td>Tests gate the deploy <em>(04)</em></td><td>A broken change reaching production even after you merge</td></tr>
+<tr><td>You read the diff</td><td>Everything the above misses</td></tr>
+</tbody>
+</table>
+
+<div class="metaphor"><b>It can draft an amendment to its own rules; it cannot ratify one.</b> The
+approval is yours and the deploy is gated by tests — those two facts are what make self-modification
+ordinary rather than exciting.</div>
+
+<div class="danger"><strong>The failure this design does not cover is a plausible, passing, wrong
+change.</strong> Tests that pass and a diff that reads well can still be a change you did not want —
+and the bot is unusually persuasive about its own work, because it writes the PR description too.
+Read the diff, not the summary of the diff.</div>
+</details>
+
+<details class="sec" id="when-09" open style="--sc:var(--understand); --sc2:var(--understand)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When to stop asking through Slack<span class="sec-s">Dogfooding is a habit, not a rule. Knowing where it stops is part of the lesson.</span></h2>
+  <span class="badge b-understand">UNDERSTAND</span>
+</div></summary>
+
+<p>Ray: use Slack by default, and <em>"only if you really need to, should you be switching back into
+Claude Code running locally."</em> The honest boundary, based on what this project has already hit:</p>
+
+<table>
+<thead><tr><th>Ask through Slack</th><th>Open your laptop</th></tr></thead>
+<tbody>
+<tr><td>A contained change in one or two files</td><td>Anything touching the event handler's guards</td></tr>
+<tr><td>A change you can describe in two sentences</td><td>Anything needing a template rebuild — the bot cannot rebuild the machine it is running on</td></tr>
+<tr><td>Work you are happy to review as a diff</td><td>Anything involving a credential; the bot must never be asked to handle one</td></tr>
+<tr><td>Several independent things at once</td><td>Debugging that needs a probe, a log, or a reply from the live bot</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>The bot cannot verify itself end to end.</strong> It can change the code
+and open a PR, but the deployed thing it would have to test is <em>itself</em>, and the sandbox dies
+before the deploy happens. Anything whose correctness depends on a real Slack round trip still needs
+<code>docs/verifying.md</code> and a human.</div>
+</details>
+<div class="part" id="part2" style="--pc:var(--do)">
+  <span class="pn">PART 2</span>
+  <h2>Build it</h2>
+  <p>Six steps. Two are Slack setup, three are asking the bot for things, and one is the review that
+  makes the rest safe.</p>
+</div>
+
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 1 of 6 — Create the development channel and invite the bot<span class="sec-s">A room for work on the bot itself, separate from testing it.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 1 of 6</title>
+  <rect x="8" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">1 · Channel</text>
+  <rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Topic</text>
+  <rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · First ask</text>
+  <rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Parallel</text>
+  <rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Review</text>
+  <rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Manifest</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Create <code>#joestar-dev</code>.</strong></p>
+  <p class="where">Where: Slack → channel list → <b>+</b> → <b>Create a channel</b></p>
+</li>
+<li>
+  <p><strong>Invite the bot: <code>/invite @joestar</code>.</strong></p>
+  <div class="callout"><strong>Ray forgets this and the lesson stops immediately</strong> — Slack
+  answers "you mentioned joestar, but they're not in this channel". A bot only receives mentions in
+  channels it is a member of. Same trap as lesson 06, in a new room.</div>
+</li>
+<li>
+  <p><strong>Know what this channel is for.</strong></p>
+  <p>You now have three, and keeping them apart is what stops each becoming noise:</p>
+  <table>
+  <thead><tr><th>Channel</th><th>For</th></tr></thead>
+  <tbody>
+  <tr><td><code>#bot-smoke</code></td><td><code>bin/smoke</code>'s scripted probes</td></tr>
+  <tr><td><code>#joestar-test</code></td><td>Testing that the bot works</td></tr>
+  <tr><td><code>#joestar-dev</code></td><td>Changing what the bot does</td></tr>
+  </tbody>
+  </table>
+  <div class="danger"><strong>Adding the bot to a channel widens what it hears.</strong> Since
+  lesson 07 it receives <em>every</em> message in every channel it is in, not just mentions. That is
+  fine and expected — the three loop guards handle it — but the channel list is the access list, and
+  it just got longer.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>#joestar-dev</code> exists and <b>joestar</b> is in its
+member list.</div>
+</section>
+
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 2 of 6 — Put the repository in the channel topic<span class="sec-s">So you stop naming it in every message — and so the bot can find it without asking.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 2 of 6</title>
+  <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · Channel</text>
+  <rect x="123" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">2 · Topic</text>
+  <rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · First ask</text>
+  <rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Parallel</text>
+  <rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Review</text>
+  <rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Manifest</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Set the topic to the repository.</strong></p>
+  <p class="where">Where: the channel name at the top → <b>Edit</b> next to Topic</p>
+  <p>Ray's convention, and it is a good one: the topic of a development channel is the repo it is
+  about — <code>nojzac/2026-09-07-slack-agent</code>.</p>
+</li>
+<li>
+  <p><strong>Understand that the bot cannot read it yet.</strong></p>
+  <p>The topic is just text to a human until the code fetches it. Making the bot use it is the first
+  dogfooding request, in step 3 — which is the point: the lesson's first change is one that makes the
+  lesson itself easier.</p>
+  <div class="callout"><strong>It needs a scope it may not have.</strong> Reading a channel topic
+  means <code>conversations.info</code>, which needs <code>channels:read</code> (and
+  <code>groups:read</code> for private channels). Neither is in the current manifest — so expect the
+  bot to tell you it needs a manifest change, which is exactly what step 6 is for.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The channel header shows the repository, and you have noticed
+that nothing in the bot reads it yet.</div>
+</section>
+
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 3 of 6 — Make the first request<span class="sec-s">Ask for a contained change, and ask for a pull request by name.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 3 of 6</title>
+  <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · Channel</text>
+  <rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Topic</text>
+  <rect x="238" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">3 · First ask</text>
+  <rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Parallel</text>
+  <rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Review</text>
+  <rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Manifest</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask, in <code>#joestar-dev</code>:</strong></p>
+  <pre><code>@joestar Update the agent so that for every channel it is in, it
+loads the channel topic and treats it as the GitHub repo for that
+channel — so you don't have to work out which repo I mean. The topic
+is set on this channel already. When you're done, open a PR and tell
+me where it is.</code></pre>
+  <p>Three things make that a good request, and they generalise: it describes an <em>outcome</em>
+  rather than an implementation, it says where to find an example, and it names the deliverable (a PR)
+  so the work ends somewhere you can see.</p>
+</li>
+<li>
+  <p><strong>Watch for 👀, then leave it alone.</strong></p>
+  <p>The reaction means the guards passed and a sandbox is booting. A GitHub change takes minutes, not
+  seconds — cloning, reading, editing, pushing.</p>
+</li>
+<li>
+  <p><strong>Expect it to hit the missing scope.</strong></p>
+  <p>Reading a channel topic needs <code>channels:read</code>, which the manifest does not grant. A
+  good answer says so rather than silently writing code that cannot work. That is a real result, not a
+  failure — note what it tells you and carry on to step 4.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A pull request exists, opened by the App, and you can see
+what it changed.</div>
+</section>
+
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 4 of 6 — Kick off a second request in parallel<span class="sec-s">The point of the isolation. Two machines, two branches, no coordination.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 4 of 6</title>
+  <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · Channel</text>
+  <rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Topic</text>
+  <rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · First ask</text>
+  <rect x="353" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">4 · Parallel</text>
+  <rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Review</text>
+  <rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Manifest</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Without waiting for the first, post a second top-level message:</strong></p>
+  <pre><code>@joestar Instead of just showing "thinking…", show how long it has
+been working for and the most recent tool call it made, updating as
+it goes. Search the Claude Code docs online for how to get tool-call
+information out of a headless run. Open a PR when you're done.</code></pre>
+  <div class="danger"><strong>It must be a new top-level message, not a thread reply.</strong> A reply
+  continues the same conversation and queues behind it; a new message starts a new sandbox. This is
+  the one place where the difference between the two — invisible in lesson 07 — becomes the whole
+  feature.</div>
+</li>
+<li>
+  <p><strong>Pick a second task that touches different files.</strong></p>
+  <p>These two are a good pair: one changes how the repo is discovered, the other changes the
+  placeholder. If both edited <code>events.js</code> heavily you would get two conflicting PRs and
+  find out at merge time.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Two threads, both reacted to, eventually two separate pull
+requests. Neither mentions the other.</div>
+<div class="ray"><b>Where this differs from Ray.</b> Ray's second request produces a PR whose link he
+cannot click, because the bot appended a stray asterisk to the URL. Worth knowing as a symptom: that
+is a mrkdwn conversion bug of exactly the kind lesson 07's converter exists to prevent. If you see it
+here, it is a real bug in your own code and a good third dogfooding request.</div>
+</section>
+
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 5 of 6 — Review the pull requests properly<span class="sec-s">The step that makes every other step safe. Read the diff, not the description.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 5 of 6</title>
+  <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · Channel</text>
+  <rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Topic</text>
+  <rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · First ask</text>
+  <rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Parallel</text>
+  <rect x="468" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">5 · Review</text>
+  <rect x="583" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">6 · Manifest</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Open <b>Files changed</b>, not the summary.</strong></p>
+  <p>The bot wrote the PR description as well as the code, so the description is evidence of what it
+  <em>intended</em>, not of what it did. They usually agree. The cases that matter are the ones where
+  they do not.</p>
+</li>
+<li>
+  <p><strong>Check the things this project has been bitten by.</strong></p>
+  <ul>
+    <li><strong>Are the three loop guards intact?</strong> <code>bot_id</code>,
+    <code>subtype === 'bot_message'</code>, <code>user === BOT_USER_ID</code>. Losing one is an
+    unbounded spend, and it fails silently.</li>
+    <li><strong>Is the dedup still splitting on files</strong> rather than event type?</li>
+    <li><strong>Did it add a dependency?</strong> This function has died once already from one
+    (<code>TRAPS.md</code>, lesson 05).</li>
+    <li><strong>Are there new tests?</strong> A behaviour change with no test is how the next
+    regression gets in.</li>
+    <li><strong>Does anything touch a credential?</strong> Nothing should.</li>
+  </ul>
+</li>
+<li>
+  <p><strong>Merge, and let CI deploy.</strong></p>
+  <p>Merging to <code>main</code> runs <code>test.yml</code>, which tests and then deploys. So a merge
+  is a deploy here, with the tests as the gate.</p>
+  <div class="callout"><strong>Then verify in Slack.</strong> The tests do not prove Slack still
+  delivers, and the bot cannot check that for you — it would have to test itself after its own
+  sandbox has died. Follow <code>docs/verifying.md</code>: mention it, and confirm 👀, an answer,
+  and ✅.</div>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A merged PR, a green Actions run, and a real mention answered
+in Slack afterwards.</div>
+</section>
+
+<section class="sec" id="step6" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head">
+  <h2 class="sec-t">Step 6 of 6 — Ask for the updated manifest, then apply it<span class="sec-s">New features usually need new permissions, and the bot cannot grant itself any.</span></h2>
+  <span class="badge b-do">DO NOW</span>
+</div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img">
+  <title>Progress: step 6 of 6</title>
+  <rect x="8" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="62" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">1 · Channel</text>
+  <rect x="123" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="177" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">2 · Topic</text>
+  <rect x="238" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="292" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">3 · First ask</text>
+  <rect x="353" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="407" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">4 · Parallel</text>
+  <rect x="468" y="10" width="108" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/>
+  <text x="522" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8f98a3">5 · Review</text>
+  <rect x="583" y="10" width="108" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/>
+  <text x="637" y="29" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#fff">6 · Manifest</text>
+</svg></div>
+
+<ol class="steps">
+<li>
+  <p><strong>Ask, as a thread reply on the relevant PR's conversation:</strong></p>
+  <pre><code>Give me the updated manifest I need going forwards. Write it to a
+file and send it here, and list what changed and why each addition
+is needed.</code></pre>
+  <p>Asking for a file rather than a message is deliberate — it arrives as an attachment you can open
+  and paste from, which is what lesson 07's upload path was built for.</p>
+</li>
+<li>
+  <p><strong>Read what it is asking for, and why.</strong></p>
+  <div class="danger"><strong>Do not paste a manifest you have not read.</strong> A manifest is a
+  permissions request, and this one was written by the thing being granted the permissions. For the
+  channel-topic feature the honest answer is <code>channels:read</code> — if anything broader appears,
+  ask why before saving.</div>
+</li>
+<li>
+  <p><strong>Apply it: paste, save, reinstall.</strong></p>
+  <p>Same sequence as lesson 07's step 3 — paste into the App Manifest editor, <b>Save Changes</b>,
+  then <b>reinstall</b>, because new scopes do not exist until a fresh install.</p>
+  <div class="callout"><strong>Check whether the token rotated.</strong> Run
+  <code>bin/preflight</code>. It reads the required scopes out of
+  <code>slack-app-manifest.yml</code>, so it will tick the new one — and it tells you whether the bot
+  token still works without anyone reading it. Lesson 07's step 4 has the branch to follow if it
+  did rotate.</div>
+</li>
+<li>
+  <p><strong>Update <code>slack-app-manifest.yml</code> in the repo too.</strong></p>
+  <p>The file is the source of truth and <code>bin/preflight</code> now reads it. A manifest in Slack
+  that disagrees with the one in git means the next preflight checks the wrong list.</p>
+</li>
+</ol>
+<div class="checkpoint"><b>CHECKPOINT</b><code>bin/preflight</code> ticks every scope in the manifest,
+and the new feature works when you try it in <code>#joestar-dev</code>.</div>
+<div class="win"><b>The loop is closed.</b> You can now describe a change from your phone, review it,
+merge it, and watch it deploy — and the bot is the thing that made the change.</div>
+</section>
+<div class="part" id="part3" style="--pc:var(--ref)">
+  <span class="pn">PART 3</span>
+  <h2>Keep for later</h2>
+  <p>How to phrase a request, what not to merge, the failure table, and what this page could not
+  check.</p>
+</div>
+
+<details class="sec" id="asking-09" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">How to phrase a request<span class="sec-s">The difference between a useful PR and a plausible one is mostly in the asking.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Do</th><th>Instead of</th></tr></thead>
+<tbody>
+<tr><td>"Show how long it has been working and the last tool call"</td><td>"Make the placeholder better"</td></tr>
+<tr><td>"Open a PR and tell me where it is"</td><td>Leaving the deliverable unsaid</td></tr>
+<tr><td>"The topic is set on this channel already"</td><td>Making it hunt for an example</td></tr>
+<tr><td>"Search the docs online for how to do X"</td><td>Assuming it knows a current API</td></tr>
+<tr><td>"Tell me if you need a permission I don't have"</td><td>Letting it write code that cannot work</td></tr>
+<tr><td>One area per request</td><td>Three unrelated changes in one message</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>Say what you want to be true, not which lines to edit.</strong> It reads
+the code before changing it; describing the outcome leaves room for it to find the right place, and
+you review the diff anyway.</div>
+</details>
+
+<details class="sec" id="refuse-09" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What to refuse to merge<span class="sec-s">Six things worth a "no" regardless of how good the rest of the diff looks.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<ul class="check">
+<li>Any change that removes or loosens one of the three loop guards.</li>
+<li>Dedup rewritten to split on event type rather than on files.</li>
+<li>A new dependency on the Vercel function, without a stated reason.</li>
+<li>Anything that reads, logs, or moves a credential.</li>
+<li>Anything touching <code>.github/workflows/</code> — the App cannot, so a diff containing it means something odd happened.</li>
+<li>A behaviour change with no test, where the behaviour could regress silently.</li>
+</ul>
+<div class="danger"><strong>The persuasive-and-wrong case is the one to watch.</strong> Tests pass,
+the diff reads well, the description is confident, and the change is not what you wanted. Nothing in
+this design catches that except reading it.</div>
+</details>
+
+<details class="sec" id="broken-09" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">When something doesn't work<span class="sec-s">Most of these are the earlier lessons' traps arriving in a new room.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Symptom</th><th>Cause</th><th>Check</th></tr></thead>
+<tbody>
+<tr><td>"You mentioned joestar, but they're not in this channel"</td><td>The bot is not a member</td><td><code>/invite @joestar</code></td></tr>
+<tr><td>No 👀 at all</td><td>The event never arrived</td><td>Vercel logs; absence of <code>[claude] failed:</code> means Slack-side</td></tr>
+<tr><td>It says it cannot find the repo</td><td>The topic feature is not merged yet, or <code>channels:read</code> is missing</td><td>Name the repo explicitly meanwhile</td></tr>
+<tr><td>A PR link that will not open</td><td>Stray character appended — a mrkdwn conversion bug</td><td>Your own <code>api/_lib/mrkdwn.js</code>. Ray hits this</td></tr>
+<tr><td>Two PRs that conflict</td><td>Parallel requests touched the same files</td><td>Isolation is per sandbox, not per branch. Merge one, ask the other to rebase</td></tr>
+<tr><td>A PR that cannot be merged</td><td>The ruleset needs an approval</td><td>Working as intended — approve it yourself</td></tr>
+<tr><td>Merged, green, but Slack is broken</td><td>Tests do not prove Slack delivers</td><td><code>docs/verifying.md</code>, then <code>bin/smoke</code></td></tr>
+<tr><td>A change that needs a template rebuild</td><td>The bot cannot rebuild the image it runs on</td><td><code>bin/with-secrets node e2b/build.mjs</code>, locally</td></tr>
+</tbody>
+</table>
+</details>
+
+<details class="sec" id="unverified-09" open style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Written before the lesson was run. Most of this page is prediction.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+
+<table>
+<thead><tr><th>Claim</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>A branch ruleset does not enforce on a private repo on the free plan</td><td><strong>Verified in lesson 08</strong> — the identical push was refused while public and accepted while private</td></tr>
+<tr><td>Each top-level message gets its own sandbox</td><td><strong>Verified by construction</strong> — <code>runClaude</code> calls <code>Sandbox.create</code> per invocation and kills it in a <code>finally</code></td></tr>
+<tr><td>Merging to <code>main</code> deploys</td><td><strong>Verified</strong> — <code>.github/workflows/test.yml</code></td></tr>
+<tr><td>Reading a channel topic needs <code>channels:read</code></td><td><strong>Untested here</strong> — from Slack's docs for <code>conversations.info</code>. The current manifest does not grant it</td></tr>
+<tr><td>Two parallel requests on the same files produce conflicting PRs</td><td><strong>Untested here</strong> — reasoned from git, not observed</td></tr>
+<tr><td>The bot will report a missing scope rather than writing dead code</td><td><strong>Untested, and a genuine unknown</strong> — it is a judgement call by a model, not a guarantee</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>This page was written before the lesson was run.</strong> Unlike lessons
+07 and 08, which were corrected against what actually happened, most of Part 2 here is a prediction of
+how it will go. Correct it as you work through it — that is what the page is for, and a page that
+still says "expect X" after you have seen Y is worse than no page.</div>
+</details>
+
+<details class="sec" id="where-09" style="--sc:var(--ref); --sc2:var(--ref)">
+<summary><div class="sec-head">
+  <h2 class="sec-t">Where everything lives<span class="sec-s">Three channels, and which is which.</span></h2>
+  <span class="badge b-ref">REFERENCE</span>
+</div></summary>
+<table>
+<thead><tr><th>Thing</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Development channel</td><td><code>#joestar-dev</code> — topic names the repo</td></tr>
+<tr><td>Test channel</td><td><code>#joestar-test</code> — <code>C0C1QB5PCNB</code></td></tr>
+<tr><td>Smoke channel</td><td><code>#bot-smoke</code> — <code>C0C1TMRDH9B</code></td></tr>
+<tr><td>The bot's repo</td><td><code>nojzac/2026-09-07-slack-agent</code></td></tr>
+<tr><td>The sandbox repo</td><td><code>nojzac/joestar-sandbox</code> — public, ruleset enforcing, nothing real in it</td></tr>
+<tr><td>GitHub App</td><td>ID <code>4970890</code>, installation <code>162319448</code></td></tr>
+<tr><td>Scopes, source of truth</td><td><code>joestar-agent/slack-app-manifest.yml</code></td></tr>
+<tr><td>Verification</td><td><code>docs/verifying.md</code></td></tr>
+<tr><td>Traps already paid for</td><td><code>TRAPS.md</code></td></tr>
+</tbody>
+</table>
+</details>
+
+
+</main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l9-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l9-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l9-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l9-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>

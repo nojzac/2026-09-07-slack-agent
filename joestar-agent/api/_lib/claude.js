@@ -37,8 +37,19 @@ const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
  *
  * `inputs` are files the user attached, written in before the run.
  * Returns the answer plus whatever the model left in OUTPUT_DIR.
+ *
+ * THE TIMEOUT IS NEAR A HARD CEILING. Four minutes was not enough for real
+ * GitHub work: the first two dogfooding requests (2026-09-16) both died with
+ * "connection to sandbox ended before the stream completed" while Claude was
+ * still working. 285s is as close to the function's own 300s maxDuration as is
+ * safe — the remaining 15s covers editing the placeholder, uploading files and
+ * adding the terminal reaction, all of which happen after the run returns.
+ *
+ * That raises the ceiling; it does not remove it. Work needing more than five
+ * minutes cannot be done inside a Vercel function at all, and moving it out is
+ * an architectural decision rather than a constant to bump. See RESUME.md.
  */
-export async function runClaude({ prompt, inputs = [], githubToken = null, timeoutMs = 240_000 }) {
+export async function runClaude({ prompt, inputs = [], githubToken = null, timeoutMs = 285_000 }) {
   const sandbox = await Sandbox.create(TEMPLATE, {
     envs: {
       // Billed through the Claude subscription that created this token, not

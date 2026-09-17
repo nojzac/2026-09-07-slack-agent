@@ -43,6 +43,17 @@ const GITHUB_CAPABILITIES = [
   'Force-push and branch deletion are disabled. Do not attempt them.',
   'You cannot modify .github/workflows/ — that permission was deliberately withheld.',
   'The credential expires one hour after this message. It cannot be renewed from in here.',
+  '',
+  // The binding constraint is five minutes, not cleverness. Both of the first
+  // two dogfooding requests died at the sandbox timeout while still working, so
+  // the model is told how to spend the budget rather than left to discover it.
+  'YOU HAVE UNDER FIVE MINUTES in total, including the clone. Work accordingly:',
+  '- Clone shallow: `git clone --depth 1`. History is almost never what you need.',
+  '- Do not read `sops/` — those are large HTML lesson pages, irrelevant to code changes.',
+  '- Do not read `course/` unless asked; it is transcripts, not code.',
+  '- Read `README.md`, `RESUME.md` and `TRAPS.md` first if you need orientation. They are short and they are current.',
+  '- Go straight to the files you need. Do not survey the repository.',
+  '- If you will not finish in time, push what you have to a branch and say what is left, rather than running out mid-edit and losing everything.',
 ].join('\n');
 
 /** Strip the leading <@U123> mention so Claude gets the question, not the ping. */
