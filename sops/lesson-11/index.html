@@ -1323,6 +1323,12 @@ believe the bot has been briefed.</div>
   clone anything.</div>
 </li>
 </ol>
+<div class="win"><strong>It passed, and the second answer is the one that proves it.</strong> Asked in
+<code>#joestar-test</code> — empty topic, so no GitHub token and nothing cloned — it named Playwright
+1.63.0, Chromium only, <code>/tmp/outputs</code>, <strong>64 MiB per file and 5 files per run</strong>,
+and the missing cursor. Those two caps exist only as constants in the Vercel function; they are
+nowhere inside the sandbox, so it could not have found them by looking around. The briefing reached
+it through the prompt.</div>
 <div class="checkpoint"><b>CHECKPOINT</b>The bot describes its own browser capability in a channel
 where it cloned nothing.</div>
 </section>

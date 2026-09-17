@@ -20,6 +20,7 @@ Files here:
 - `api/_lib/slack.js` — signature verification, `chat.postMessage`, `chat.update`.
 - `api/_lib/claude.js` — boots the E2B sandbox and runs Claude Code headless.
 - `api/_lib/mcp.js` — the MCP servers every sandbox gets (exa, deepwiki).
+- `api/_lib/versions.js` — the Playwright version, shared by the image and the briefing.
 - `e2b/template.mjs` — the sandbox image; built with `../bin/with-secrets node e2b/build.mjs`.
 - `test/events.test.js` — `npm test` (no network, `fetch` is stubbed).
 - `test/mcp.test.js` — the MCP config shape, independent of any real sandbox.
@@ -35,6 +36,39 @@ Files here:
 | `GITHUB_INSTALLATION_ID` | the number ending `github.com/settings/installations/…` — **not** the App ID |
 | `GITHUB_APP_PRIVATE_KEY` | the App's `.pem`, **base64-encoded, single line** — see below |
 | `EXA_API_KEY` | exa.ai dashboard → API keys. Optional — see below |
+
+## The browser, and how files get out
+
+Every sandbox has **Playwright with Chromium** baked into the image — no
+Firefox, no WebKit, and nothing installed at run time, because the sandbox is
+new every message and an install would come out of the five-minute budget.
+
+- Version lives in `api/_lib/versions.js`, imported by both `e2b/template.mjs`
+  and `api/_lib/thread.js`, so the image and the model's briefing cannot drift.
+- Browsers are at `/opt/ms-playwright`; Playwright's own ffmpeg is beside them
+  and is what writes video.
+- **`Template.setEnvs` is build-time only**, so `PLAYWRIGHT_BROWSERS_PATH` and
+  `NODE_PATH` are set *again* at run time in `SANDBOX_RUNTIME_ENVS`
+  (`api/_lib/claude.js`). Remove either copy and Chromium will not start, with
+  an error that sends you to reinstall browsers that are already there.
+- The model is told all of this on every run by `browserCapabilities()`, which
+  is unconditional — the browser is a fact about the machine, not a credential.
+
+**Output files never pass through this function's memory.** `collectOutputs`
+asks Slack for a single-use upload URL bound to one filename and one byte
+length, then runs `curl` *inside the sandbox* to POST the bytes straight to
+Slack; `files.completeUploadExternal` happens back here afterwards.
+
+**No Slack token ever enters the sandbox.** Only the URL crosses, it is spent
+after one use, and a test asserts the token appears in no command string and no
+`envs` object. That matters more from this lesson on: a browser means the
+sandbox can load arbitrary web pages, so it is the worst possible place to keep
+a non-expiring, workspace-wide credential.
+
+Uploading from inside the sandbox puts the upload on the sandbox's clock, so
+`UPLOAD_BUDGET_MS` (30s) is carved out of its lifetime: `claude` gets 255s, the
+sandbox lives 285s. `MAX_OUTPUT_BYTES` is 64 MiB — ours, bounded by that budget,
+not by any platform limit.
 
 ## MCP servers
 

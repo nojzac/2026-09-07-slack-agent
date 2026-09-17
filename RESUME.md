@@ -271,6 +271,59 @@ its credential; and a test named as a guard that was not guarding.
 limit mid-lesson, so `web_search_exa` returns 401. Nothing to fix — the code path
 is identical and it starts working when the limit resets.
 
+## Lesson 11, as built
+
+Joestar has a browser. It drives a headless Chromium in its sandbox, records
+what happens, and sends the recording back. Verified live in `#joestar-dev` on
+2026-09-17: a 20,025,522-byte (19.10 MiB) recording arrived in the thread, 2.4x
+the old cap, in 224s of a 285s budget.
+
+- **Shipped by the bot as three PRs** (#6 template, #7 upload path, #8 briefing),
+  each reviewed in-thread with fixes taken. 66 tests pass.
+- **Chromium lives in the E2B template**, pinned via `api/_lib/versions.js`,
+  which `e2b/template.mjs` and `api/_lib/thread.js` both import so the version in
+  the image and the version in the model's briefing cannot drift.
+- **`Template.setEnvs` is build-time only.** The browsers install to
+  `/opt/ms-playwright` at build time and the variable is gone at run time, so the
+  image looks perfect and fails at first launch. `SANDBOX_RUNTIME_ENVS` in
+  `api/_lib/claude.js` sets both variables again at `Sandbox.create`. Proved both
+  ways: withhold them from the finished image and Chromium will not start.
+- **Output files no longer pass through the function.** `collectOutputs` mints a
+  single-use Slack upload URL per file and runs `curl` inside the sandbox; the
+  bytes go straight to Slack. **No Slack token ever enters the sandbox** — a test
+  asserts it appears in no command string and no `envs` object.
+- **`UPLOAD_BUDGET_MS` (30s) is carved out of the sandbox lifetime.** Uploading
+  from inside the sandbox puts the upload on the sandbox's clock, so `claude` now
+  gets 255s and the sandbox lives 285s. Without that split a long run drops every
+  output file.
+- **`MAX_OUTPUT_BYTES` is 64 MiB**, and the comment says honestly that it is ours
+  and bounded by time, not by any platform limit.
+- **The model is told it has a browser on every run**, via `browserCapabilities()`
+  in the prompt — unconditional, unlike the GitHub block, because the browser is
+  a fact about the machine rather than a credential. Verified in `#joestar-test`,
+  which has no repo in its topic: it correctly stated the 64 MiB and 5-file caps,
+  which exist only in the Vercel function and cannot be discovered from inside
+  the sandbox.
+
+**Ray's "8 MB Vercel limit" is wrong on both counts.** Vercel's documented 4.5 MB
+limit governs the function's own request and response bodies, not files it
+uploads elsewhere; memory is 2 GB on Hobby. The 8 MiB was our own constant from
+lesson 07. Verified against Vercel's Functions Limits page.
+
+**WebM plays inline in Slack**, so no `ffmpeg` and no MP4 conversion was needed —
+though Playwright brings its own ffmpeg at `/opt/ms-playwright/ffmpeg-1011` if
+that question returns.
+
+Four findings in TRAPS.md, all from testing rather than the video.
+
+### New local tooling
+
+`bin/wait-for-reply` blocks until a Slack thread gets a real answer, so an agent
+session stops sleeping guesses and polling. Run it through `bin/with-secrets`.
+**It must wait for the placeholder to be edited, not for the message count to
+grow** — the bot posts `_thinking…_` immediately and edits it in place, so the
+count rises when a run starts and never again.
+
 ## Known and unfixed
 
 - **Bolded URLs come out broken.** `toMrkdwn` turns `**https://…**` into
@@ -295,6 +348,12 @@ is identical and it starts working when the limit resets.
   `main` runs `test.yml`, which tests and then deploys.
 
 ## Open, not blocking
+- **The browser briefing duplicates one line the prompt already has.**
+  `browserCapabilities()` says "write it into /tmp/outputs" and the `outputDir`
+  block below it says the same thing. Costs ~15 words of context on every run.
+  Noticed during the PR #8 review and deliberately not sent back for another
+  round trip; trim it next time something touches `buildPrompt`.
+
 
 - **`bin/smoke` needs extending to the lesson-07 bot** — see TRAPS.md. Probe 5
   should assert an outcome rather than a status: read the thread afterwards and
@@ -311,11 +370,18 @@ is identical and it starts working when the limit resets.
   key that lives in both places too, so the cost grows.
 ## Next step
 
-Lesson 11, "Playwright" — transcript at
-`course/transcripts/11-0-to-1--playwright.md`. Build `sops/lesson-11/index.html`
+Lesson 12, "Adding Database" — transcript at
+`course/transcripts/12-0-to-1--adding-database.md`. Build `sops/lesson-12/index.html`
 from it following `docs/lessons.md`, show it, get a yes, then do the lesson.
-Ray's framing: once the bot makes a change in the cloud it records the change and
-sends the recording back through Slack.
+Ray's framing follows directly from lesson 11: the bot can now drive your app and
+record it, but it cannot verify a change that touches the database, because there
+is no Postgres on the container. Same shape as lesson 11 — a template change, so
+expect the same build-deploys-immediately asymmetry.
+
+**Ray dogfoods 12, 16 and 17, and does 13, 14 and 15 by hand.** The split is
+deliberate: he delegates anything that changes the *machine* (template, tooling,
+integrations) and hand-writes anything that is the agent's own *instructions*
+(CLAUDE.md, skills, memory).
 
 **Settled 2026-09-16: stay on the GitHub free plan until the end of the course.**
 Not an open question — don't re-raise it each lesson. What follows from it, and
@@ -333,7 +399,7 @@ must be respected for the rest of the course:
   likely one and did not need it — it wrote to this repo, which is public for
   the duration of the course.)
 
-Eleven lessons remain: 11–17 finish the "0 to 1" chapter, and 18–21 are the
+Ten lessons remain: 12–17 finish the "0 to 1" chapter, and 18–21 are the
 "Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
 page rather than the full treatment.
 
