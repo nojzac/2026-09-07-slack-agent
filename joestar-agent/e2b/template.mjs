@@ -76,6 +76,19 @@ export const template = Template()
   // 5432 and the build fails. Drop it now — also removes a second, unused data
   // directory from the image.
   .runCmd(`pg_dropcluster --stop ${POSTGRES_MAJOR} main || true`, { user: 'root' })
+  // The sandbox boots via /sbin/init, which honours the init/systemd links the
+  // postgresql and redis-server packages install (/etc/rc2.d/S01redis-server,
+  // the redis-server.service wants-link, and postgresql's equivalents). Left in
+  // place, both servers start on boot — the design is start-on-demand, not
+  // start-on-boot. Postgres only fails to autostart today because its cluster
+  // was dropped above; strip its links too so that stays true regardless.
+  .runCmd(
+    'update-rc.d redis-server remove || true' +
+      ' && update-rc.d postgresql remove || true' +
+      ' && rm -f /etc/systemd/system/multi-user.target.wants/redis-server.service' +
+      ' /etc/systemd/system/multi-user.target.wants/postgresql.service',
+    { user: 'root' },
+  )
   // Debian hides the server binaries in /usr/lib/postgresql/<v>/bin and wraps only
   // the client tools. Symlink the three the run needs so `pg_ctl` works as `user`.
   .runCmd(
