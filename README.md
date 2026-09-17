@@ -21,7 +21,11 @@ change, rather than by using someone else's.
 
 ## Current status
 
-- Skeleton only. No code yet. Next step is lesson 04 (see RESUME.md).
+- Lessons 04–17 are built and deployed; lesson 15 (memory) is in PR #20,
+  pending merge and a live test.
+- Lessons 18–21 ("Using your agent") are short, concept-only pages — no code,
+  image or deploy changes.
+- See RESUME.md for where things stand and what's next.
 
 ## Course credit and lesson map
 
