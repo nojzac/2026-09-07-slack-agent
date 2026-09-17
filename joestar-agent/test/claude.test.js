@@ -9,7 +9,7 @@ process.env.E2B_API_KEY = 'e2b-test';
 process.env.CLAUDE_CODE_OAUTH_TOKEN = 'oauth-test';
 
 const CLAUDE_JS_PATH = fileURLToPath(new URL('../api/_lib/claude.js', import.meta.url));
-const { SANDBOX_RUNTIME_ENVS, collectOutputs } = await import('../api/_lib/claude.js');
+const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex } = await import('../api/_lib/claude.js');
 
 /** Stub Slack's files.getUploadURLExternal, the only network call collectOutputs makes directly. */
 function mockUploadFetch() {
@@ -105,6 +105,98 @@ test('each upload gets a bounded share of the upload budget, not an unlimited de
 
   assert.ok(Number.isFinite(runCalls[0]?.timeoutMs), 'the curl call must carry an explicit timeoutMs');
   assert.ok(runCalls[0].timeoutMs < 30_000, 'one file must not be allotted the whole budget');
+});
+
+// ---------------------------------------------------------------------------
+// setUpCodex — the Codex CLI credential, written as a file, never an env var
+// ---------------------------------------------------------------------------
+
+test('CODEX_AUTH_JSON never enters the sandbox as an env var or command-string substring', async () => {
+  const secret = JSON.stringify({ token: 'sk-codex-super-secret-value' });
+  const prevEnv = process.env.CODEX_AUTH_JSON;
+  process.env.CODEX_AUTH_JSON = secret;
+  try {
+    const runCalls = [];
+    const sandbox = {
+      files: { write: async () => {} },
+      commands: { run: async (cmd, opts) => { runCalls.push({ cmd, opts }); return { exitCode: 0 }; } },
+    };
+
+    await setUpCodex(sandbox);
+
+    assert.ok(runCalls.length, 'the test should actually exercise a command');
+    for (const { cmd, opts } of runCalls) {
+      assert.doesNotMatch(cmd, /sk-codex-super-secret-value/, 'auth JSON must not appear in the shell command string');
+      assert.doesNotMatch(
+        JSON.stringify(opts?.envs ?? {}),
+        /sk-codex-super-secret-value/,
+        'auth JSON must not appear in the envs object',
+      );
+    }
+    assert.doesNotMatch(
+      JSON.stringify(SANDBOX_RUNTIME_ENVS),
+      /sk-codex-super-secret-value/,
+      'auth JSON must not leak into SANDBOX_RUNTIME_ENVS, which is spread into every Sandbox.create env',
+    );
+  } finally {
+    if (prevEnv === undefined) delete process.env.CODEX_AUTH_JSON;
+    else process.env.CODEX_AUTH_JSON = prevEnv;
+  }
+});
+
+test('setUpCodex writes auth.json and config.toml when set, and writes nothing when unset', async () => {
+  const prevEnv = process.env.CODEX_AUTH_JSON;
+  try {
+    const secret = JSON.stringify({ token: 'sk-codex-test' });
+    process.env.CODEX_AUTH_JSON = secret;
+    const writes = [];
+    const sandboxSet = {
+      files: { write: async (path, data) => { writes.push({ path, data }); } },
+      commands: { run: async () => ({ exitCode: 0 }) },
+    };
+
+    await setUpCodex(sandboxSet);
+
+    assert.deepEqual(
+      writes.map(w => w.path).sort(),
+      ['/home/user/.codex/auth.json', '/home/user/.codex/config.toml'].sort(),
+    );
+    assert.equal(writes.find(w => w.path === '/home/user/.codex/auth.json').data, secret);
+    assert.equal(
+      writes.find(w => w.path === '/home/user/.codex/config.toml').data,
+      'model_reasoning_effort = "high"\napproval_policy = "never"\nsandbox_mode = "danger-full-access"\n',
+    );
+
+    delete process.env.CODEX_AUTH_JSON;
+    const writesUnset = [];
+    const sandboxUnset = {
+      files: { write: async (path, data) => { writesUnset.push({ path, data }); } },
+      commands: { run: async () => { throw new Error('setUpCodex must not run a command when unset'); } },
+    };
+
+    await setUpCodex(sandboxUnset);
+
+    assert.equal(writesUnset.length, 0, 'nothing should be written when CODEX_AUTH_JSON is unset');
+  } finally {
+    if (prevEnv === undefined) delete process.env.CODEX_AUTH_JSON;
+    else process.env.CODEX_AUTH_JSON = prevEnv;
+  }
+});
+
+test('setUpCodex never throws, even on bad JSON with a failing sandbox', async () => {
+  const prevEnv = process.env.CODEX_AUTH_JSON;
+  process.env.CODEX_AUTH_JSON = 'not json';
+  try {
+    const sandbox = {
+      files: { write: async () => { throw new Error('sandbox is unreachable'); } },
+      commands: { run: async () => { throw new Error('sandbox is unreachable'); } },
+    };
+
+    await assert.doesNotReject(setUpCodex(sandbox));
+  } finally {
+    if (prevEnv === undefined) delete process.env.CODEX_AUTH_JSON;
+    else process.env.CODEX_AUTH_JSON = prevEnv;
+  }
 });
 
 // e2b's Template.setEnvs (e2b/template.mjs) only applies during the template
