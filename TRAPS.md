@@ -463,3 +463,64 @@ placeholder.
 
 Only the last row is work you chose. The first three are one-time setup and are
 now done — lesson 05 should feel much closer to the video.
+
+## Squash-merging a base PR breaks anything stacked on it
+
+**Symptom.** GitHub marks a stacked PR CONFLICTING right after its base PR is
+squash-merged, even though nothing about the stacked branch changed.
+
+**Cause.** A squash merge rewrites the base branch's history into one new
+commit, so the stacked branch's parent commit no longer exists on `main` —
+every commit on the stacked branch now looks like a conflict.
+
+**Fix.** `git merge origin/main` into the stacked branch, never rebase — the
+git-guard hook blocks the force-push a rebase would need.
+
+**Prevention.** Base every PR on `main`, not on another open PR.
+
+## `pg_ctl -w start` without a logfile hangs an e2b `commands.run` forever
+
+**Symptom.** `commands.run` starting Postgres never returns; it eventually
+times out.
+
+**Cause.** `pg_ctl -w start` without `-l <logfile>` leaves the server holding
+the command's stdout open, so the sandbox command that launched it never sees
+EOF.
+
+**Fix.** Always pass `-l /home/user/pgdata/server.log`.
+
+## Debian's postgresql and redis-server packages autostart in the E2B image
+
+**Symptom.** Postgres and Redis are already running, unexpectedly, in a fresh
+sandbox.
+
+**Cause.** The Debian packages install rc/systemd links, and the E2B sandbox
+boots `/sbin/init`, which honours them.
+
+**Fix in the template.** `update-rc.d <svc> remove` and delete the
+`multi-user.target.wants` links (see `joestar-agent/e2b/template.mjs`).
+
+## `bin/wait-for-reply` never sees the bot's answer if it starts after the placeholder posts
+
+**Symptom.** The wait times out reporting "still N" even though the bot has
+long since answered.
+
+**Cause.** `bin/wait-for-reply` counts thread messages, but the bot's answer
+arrives as an in-place edit of its "thinking…" placeholder — if the placeholder
+was already posted when the wait started, the message count never changes.
+
+**Workaround.** Read the thread directly, or watch the git branch for the
+expected commit.
+
+## A shallow clone can make a bot-driven "merge and keep both sides" silently delete work
+
+**Symptom.** After asking the bot to merge `origin/main` and keep both sides,
+a file the branch owns has lost its own changes with no conflict markers left
+behind.
+
+**Cause.** A shallow clone can make git report unrelated histories, and the
+bot resolves whole-file conflicts by taking one side — happened on PR #20:
+`claude.js` lost the memory runtime; restored from the earlier commit.
+
+**Prevention.** After any bot-made merge, diff the branch against its
+pre-merge commit for the files it owns; or do merges locally.
