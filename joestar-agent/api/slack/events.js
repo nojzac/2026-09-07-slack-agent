@@ -38,12 +38,12 @@ const MAX_INPUT_BYTES = 8 * 1024 * 1024;
  * and limits, not as a plea: these are enforced by GitHub, not by good
  * behaviour.
  */
-function githubCapabilities(repo) {
+function githubCapabilities(repos) {
   return [
   'You have GitHub access via the `gh` CLI and `git`, already authenticated.',
-  repo
-    ? `It is scoped to a single repository for this channel: ${repo}. Other repositories are not reachable, even other ones the App is installed on.`
-    : 'It is scoped to the repositories the App was installed on. Other repositories are not reachable for writing.',
+  repos.length === 1
+    ? `It is scoped to a single repository for this channel: ${repos[0]}. Other repositories are not reachable, even other ones the App is installed on.`
+    : `It is scoped to exactly these repositories: ${repos.join(', ')}. Other repositories are not reachable, even other ones the App is installed on.`,
   'Work by branching and opening a pull request. The default branch refuses direct pushes.',
   'Force-push and branch deletion are disabled. Do not attempt them.',
   'You cannot modify .github/workflows/ — that permission was deliberately withheld.',
@@ -286,6 +286,26 @@ export async function POST(request) {
         console.warn('[github] could not read channel topic:', err.message);
       }
 
+      // Long-term memory is a git repo the sandbox clones at the start of a run
+      // and pushes at the end. `AGENT_MEMORY_REPO` is the kill switch: unset
+      // means memory is off, full stop, regardless of what's in the topic.
+      // Both the repo and the channel id are validated before use, and never
+      // printed on failure — only their shape, not their value, is worth logging.
+      const rawMemoryRepo = process.env.AGENT_MEMORY_REPO;
+      let memoryRepo;
+      if (!rawMemoryRepo) {
+        memoryRepo = undefined;
+      } else if (!/^[\w.-]+\/[\w.-]+$/.test(rawMemoryRepo)) {
+        console.log('[memory] off (invalid repo)');
+        memoryRepo = undefined;
+      } else if (!/^[A-Z0-9]+$/.test(channel ?? '')) {
+        console.log('[memory] off (invalid channel)');
+        memoryRepo = undefined;
+      } else {
+        memoryRepo = rawMemoryRepo;
+      }
+
+
       // Minted here, on every request, rather than lazily when the question
       // looks GitHub-shaped. Lazy minting means keyword-sniffing the prompt, and
       // the obvious counter-example is a thread reply reading "now open a PR for
@@ -298,11 +318,12 @@ export async function POST(request) {
       // literally true, and an hour-long credential is not worth reusing to save
       // 200ms.
       //
-      // No repo from the topic means no GitHub access at all, even though the
-      // App may be installed on several repos — the topic is the boundary, not
-      // just a hint, so a channel with no repo in its topic gets no write access
-      // to anything.
-      const github = repo ? await tryMintInstallationToken({ repo }) : { token: null, reason: null };
+      // No repo from the topic and no memory repo means no GitHub access at
+      // all, even though the App may be installed on several repos — this list
+      // is the boundary, not just a hint, so a channel with neither gets no
+      // write access to anything.
+      const repos = [repo, memoryRepo].filter(Boolean);
+      const github = repos.length ? await tryMintInstallationToken({ repos }) : { token: null, reason: null };
 
       const prompt = buildPrompt({
         question: promptFrom(event.text) || 'The user sent this with no text. Respond to the attached file.',
@@ -312,13 +333,13 @@ export async function POST(request) {
         // Tell the model where the walls are. Without this it spends minutes
         // rediscovering them by hitting them — trying to push to main, trying to
         // force-push — and reports the refusals as failures.
-        github: github.token ? githubCapabilities(repo) : null,
+        github: github.token ? githubCapabilities(repos) : null,
       });
 
       // Swappable so the tests can run the whole path without booting a real
       // sandbox; in production this is always runClaude.
       const run = globalThis.__claudeRunner ?? runClaude;
-      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token });
+      const result = await run({ prompt, inputs, githubToken: github.token, slackToken: token, memoryRepo, channelId: channel });
       // Tolerate a bare string so a stubbed runner stays trivial to write.
       const { answer, files } = typeof result === 'string' ? { answer: result, files: [] } : result;
 

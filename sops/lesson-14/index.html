@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-09-07-slack-agent</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    --ink:#15171c; --body:#2b3038; --muted:#616a77; --line:#e2e6ec; --bg:#fbfbfc; --card:#fff;
+    --slack:#4a154b; --vercel:#15171c; --github:#24292f; --op:#1a6ce7; --ci:#0b6b3a;
+    --accent:#1f4fd8; --warn:#8a5a00; --bad:#a32020; --ok:#0b6b3a;
+    --understand:#7a3d9c; --do:#1f4fd8; --ref:#616a77;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--body);
+         font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .pwd { background:#15171c; color:#c9d1d9; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:12.5px; padding:8px 16px; }
+  main { max-width:880px; margin:0 auto; padding:30px 20px 110px; }
+
+  /* ---------- front matter ---------- */
+  .kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+            letter-spacing:.12em; color:var(--understand); margin:12px 0 6px; }
+  h1 { font-size:36px; line-height:1.14; margin:0 0 14px; color:var(--ink); letter-spacing:-0.022em; }
+  .standfirst { font-size:18.5px; color:var(--muted); margin:0 0 26px; line-height:1.6; }
+
+  .fm { background:var(--card); border:1px solid var(--line); border-radius:11px;
+        padding:20px 22px; margin:20px 0; }
+  .fm h2 { font-size:17px; margin:0 0 10px; color:var(--ink); }
+  .fm h2 + p, .fm h2 + ul { margin-top:6px; }
+  .fm ul { margin:8px 0; padding-left:20px; }
+  .fm li { margin:5px 0; }
+
+  .facts { display:flex; flex-wrap:wrap; gap:0 28px; font-size:14.5px; color:var(--muted);
+           border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+           padding:12px 0; margin:0 0 22px; }
+  .facts b { color:var(--ink); font-weight:600; }
+
+  /* ---------- the map ---------- */
+  .map { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:6px 20px 16px; margin:22px 0 34px; }
+  .map h2 { font-size:17px; margin:16px 0 4px; color:var(--ink); }
+  .map ol { list-style:none; padding:0; margin:12px 0 0; }
+  .map li { padding:11px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:baseline; }
+  .map li:last-child { border-bottom:0; }
+  .map a { font-weight:650; color:var(--ink); text-decoration:none; font-size:15.5px; }
+  .map a:hover { color:var(--accent); text-decoration:underline; }
+  .map .what { color:var(--muted); font-size:14.5px; display:block; font-weight:400; margin-top:2px; }
+
+  .badge { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+           letter-spacing:.09em; padding:3px 8px; border-radius:20px; white-space:nowrap;
+           border:1px solid currentColor; flex:none; }
+  .b-understand { color:var(--understand); }
+  .b-do { color:var(--do); }
+  .b-ref { color:var(--ref); }
+
+  /* ---------- parts ---------- */
+  .part { margin:52px 0 18px; padding-bottom:10px; border-bottom:2px solid var(--pc,var(--accent)); }
+  .part .pn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+              letter-spacing:.12em; color:var(--pc,var(--accent)); }
+  .part h2 { font-size:25px; margin:4px 0 6px; color:var(--ink); letter-spacing:-0.015em; }
+  .part p { margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- sections ---------- */
+  section.sec, details.sec { border:1px solid var(--line); border-left:4px solid var(--sc,var(--accent));
+                             border-radius:10px; background:var(--card); margin:14px 0; padding:0 20px 18px; }
+  details.sec { padding-bottom:0; }
+  details.sec[open] { padding-bottom:18px; }
+  .sec-head { display:flex; gap:12px; align-items:baseline; padding:16px 0 2px; }
+  details.sec > summary { cursor:pointer; list-style:none; padding:0; }
+  details.sec > summary::-webkit-details-marker { display:none; }
+  details.sec > summary .sec-head::before { content:"▾"; color:var(--sc,var(--accent)); font-size:13px; }
+  details.sec:not([open]) > summary .sec-head::before { content:"▸"; }
+  h2.sec-t { font-size:20.5px; font-weight:650; color:var(--ink); letter-spacing:-0.012em;
+             line-height:1.32; margin:0; flex:1; }
+  .sec-s { display:block; font-size:14.5px; color:var(--muted); font-weight:400; margin-top:3px; }
+
+  /* ---------- nested explanation ---------- */
+  details.sub { border:1px solid var(--line); border-radius:8px; margin:11px 0; padding:0 14px;
+                background:#fcfdfe; }
+  details.sub[open] { padding-bottom:9px; }
+  details.sub > summary { cursor:pointer; padding:10px 0; font-weight:600; font-size:14.8px;
+                          color:var(--sc2,var(--accent)); list-style:none; }
+  details.sub > summary::-webkit-details-marker { display:none; }
+  details.sub > summary::before { content:"+"; display:inline-block; width:17px; color:var(--sc2,var(--accent));
+                                  font-weight:700; }
+  details.sub[open] > summary::before { content:"–"; }
+  details.sub p:first-of-type { margin-top:4px; }
+
+  h3 { font-size:17.5px; margin:26px 0 6px; color:var(--ink); }
+  h4 { font-size:15px; margin:16px 0 4px; color:var(--sc2,var(--ink)); }
+  p { margin:11px 0; }
+  ul,ol { margin:11px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.4px;
+         background:#eef1f5; padding:1px 5px; border-radius:4px; color:#1c2430; }
+  pre { background:#15171c; color:#e6edf3; padding:14px 16px; border-radius:9px; overflow-x:auto;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.8px; line-height:1.62;
+        margin:12px 0; user-select:all; }
+  pre .c { color:#8b949e; }
+
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.8px; }
+  th,td { text-align:left; padding:10px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12.3px; text-transform:uppercase; letter-spacing:.055em; color:var(--muted); font-weight:600; }
+  td.who { white-space:nowrap; font-weight:650; }
+
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:16px;
+         margin:18px 0; overflow-x:auto; }
+  .fig svg { display:block; min-width:640px; }
+  .fig.strip { padding:6px 10px; margin:0 0 16px; }
+  .fig.strip svg { min-width:600px; }
+  .cap { font-size:13.6px; color:var(--muted); margin:10px 2px 0; }
+
+  .metaphor { border-left:3px solid var(--sc,var(--accent)); background:#f6f8fc; padding:12px 15px;
+              margin:15px 0; border-radius:0 8px 8px 0; font-size:15.6px; }
+  .metaphor b { color:var(--ink); }
+  .callout { border-left:3px solid var(--warn); background:#fff8e8; padding:12px 15px; margin:15px 0;
+             border-radius:0 8px 8px 0; font-size:15.2px; }
+  .danger { border-left:3px solid var(--bad); background:#fdeeee; padding:12px 15px; margin:15px 0;
+            border-radius:0 8px 8px 0; font-size:15.2px; }
+  .win { border-left:3px solid var(--ok); background:#eefaf2; padding:12px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:15.2px; }
+  .ray { border-left:3px solid var(--muted); background:#f4f6f8; padding:11px 15px; margin:15px 0;
+         border-radius:0 8px 8px 0; font-size:14.6px; }
+  .ray b { color:var(--ink); }
+
+  .checkpoint { border:1px solid var(--ok); background:#eefaf2; border-radius:9px; padding:12px 15px;
+                margin:20px 0 4px; font-size:15.2px; }
+  .checkpoint b { color:var(--ok); display:block; font-size:12.5px; letter-spacing:.07em;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; margin-bottom:3px; }
+
+  .phase { margin:26px 0 12px; padding:3px 0 3px 15px; border-left:3px solid var(--sc,var(--accent)); }
+  .phase h3 { margin:0; font-size:18.5px; }
+  .phase p { margin:3px 0 0; color:var(--muted); font-size:14.8px; }
+
+  ol.steps { padding-left:0; list-style:none; counter-reset:s; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 2px 40px; margin:22px 0; }
+  ol.steps > li::before { content:counter(s); position:absolute; left:0; top:2px; width:25px; height:25px;
+        border-radius:50%; background:var(--sc,var(--accent)); color:#fff; font-size:12.5px; font-weight:650;
+        display:flex; align-items:center; justify-content:center; }
+  .where { font-size:13.4px; color:var(--muted); margin:2px 0 8px; }
+
+  .check { list-style:none; padding:0; }
+  .check li { padding:9px 0 9px 30px; position:relative; border-bottom:1px solid var(--line); margin:0; }
+  .check li::before { content:"☐"; position:absolute; left:2px; color:var(--muted); font-size:17px; }
+
+  dl.gloss dt { font-weight:650; color:var(--ink); margin-top:14px; }
+  dl.gloss dd { margin:2px 0 0; }
+  .plain { color:var(--muted); font-style:italic; }
+
+  a { color:var(--accent); }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted);
+           font-size:14px; }
+
+  @media print {
+    details { display:block; }
+    details > summary { list-style:none; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+    .fig svg, .fig.strip svg { min-width:0; }
+  }
+
+  /* ================= DESIGN-SPEC §2–4 · hue says where, shade says how deep ============ */
+  :root { --line:#ccd4e0; --understand:#7a3d9c; --do:#1f4fd8; --ref:#0e6b73; }
+
+  .part { margin:56px 0 20px; padding-bottom:11px; border-bottom:3px solid var(--pc); }
+  .part .pn { color:var(--pc); font-weight:700; }
+  .part h2 { color:var(--pc); }
+
+  section.sec, details.sec {
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sc);
+    border-radius:11px; box-shadow:0 1px 3px rgba(20,25,35,.06); margin:28px 0; padding:0 20px 20px;
+  }
+  details.sec[open] { padding-bottom:20px; }
+  h2.sec-t { color:#2a2f38; }
+  details.sec > summary .sec-head::before { color:var(--sc); }
+
+  /* L3 · sub-heading band, hue at 6% */
+  .sec h3 {
+    background:#f4f0f8; background:color-mix(in srgb, var(--sc) 16%, #fff);
+    color:var(--sc); margin:26px -20px 10px; padding:11px 20px;
+    border-top:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 24%, #fff);
+  }
+  .phase { border-left:3px solid var(--sc); }
+  .phase h3 { background:none; border:0; margin:0; padding:0; }
+
+  /* L4 · explainer box, hue at 13% */
+  details.sub {
+    background:#e7ddf0; background:color-mix(in srgb, var(--sc) 23%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 32%, #fff);
+    border-left:3px solid var(--sc); border-radius:8px; margin:12px 0 12px 14px;
+  }
+  details.sub > summary, details.sub > summary::before, details.sub h4 { color:var(--sc); }
+  details.sub pre { background:#15171c; }
+
+  .metaphor { border-left:3px solid var(--sc); background:#faf7fc;
+              background:color-mix(in srgb, var(--sc) 15%, #fff); }
+  .danger  { border-left:3px solid #a32020; background:#fdeeee; }
+  .callout { border-left:3px solid #8a5a00; background:#fff8e8; }
+  .checkpoint, .win { border-color:#0b6b3a; background:#eefaf2; }
+  .ray     { border-left:3px solid #8f98a3; background:#f4f6f8; }
+  .fig { border:1px solid var(--line); }
+  th,td { border-bottom:1px solid var(--line); }
+
+  /* ================= §7 · per-heading accordions (built at load) ================= */
+  details.hacc { margin:0; }
+  details.hacc > summary { list-style:none; cursor:pointer; }
+  details.hacc > summary::-webkit-details-marker { display:none; }
+  details.hacc > summary > h3 { position:relative; padding-left:38px; }
+  details.hacc > summary > h3::before { content:"▾"; position:absolute; left:18px; font-size:12px; }
+  details.hacc:not([open]) > summary > h3::before { content:"▸"; }
+  details.hacc > summary > h4 { position:relative; padding-left:16px; }
+  details.hacc > summary > h4::before { content:"▾"; position:absolute; left:0; font-size:10px; }
+  details.hacc:not([open]) > summary > h4::before { content:"▸"; }
+  details.hacc[open] > summary > h3 { margin-bottom:10px; }
+
+  /* ================= §6 · navigation widget ================= */
+  :root { --navw:290px; }
+  #nav { position:fixed; top:0; left:0; bottom:0; width:var(--navw); background:#fff;
+         border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:40;
+         transition:transform .22s ease; font-size:14px; }
+  body.nav-hidden #nav { transform:translateX(calc(-1 * var(--navw))); }
+  #nav-head { padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+  #nav-title { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+               letter-spacing:.13em; color:var(--muted); display:flex; justify-content:space-between; }
+  #nav-hide { border:0; background:none; cursor:pointer; color:var(--muted); font-size:17px;
+              line-height:1; padding:2px 6px; border-radius:5px; }
+  #nav-hide:hover { background:#eef1f5; color:var(--ink); }
+  #tree { overflow-y:auto; flex:1; padding:8px 8px 40px; }
+  .row { display:flex; align-items:flex-start; gap:6px; border-radius:6px; padding:5px 7px;
+         cursor:pointer; line-height:1.36; }
+  .row:hover { background:#f2f5f9; }
+  .row.active { background:color-mix(in srgb, var(--rc,#1f4fd8) 11%, #fff); }
+  .row.active > .rt { color:var(--rc,#1f4fd8); font-weight:650; }
+  .tw { width:13px; flex:none; color:var(--muted); font-size:10px; padding-top:3px; }
+  .tw.leaf { visibility:hidden; }
+  .rt { flex:1; color:var(--body); }
+  .l1 { margin-top:12px; }
+  .l1 > .rt { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px;
+              letter-spacing:.1em; color:var(--rc); text-transform:uppercase; font-weight:700; }
+  .l2 { padding-left:14px; font-weight:600; color:var(--ink); }
+  .l3 { padding-left:31px; font-size:13.4px; }
+  .l4 { padding-left:31px; font-size:13.2px; }
+  .l4 > .rt::before { content:"+ "; color:var(--muted); }
+  .kids.closed { display:none; }
+  #reveal { position:fixed; left:0; top:0; bottom:0; width:16px; z-index:39; cursor:pointer;
+            background:linear-gradient(90deg,#dfe5ee,rgba(255,255,255,0)); display:none; }
+  body.nav-hidden #reveal { display:block; }
+  body.has-nav main { margin-left:var(--navw); transition:margin-left .22s ease; }
+  body.has-nav.nav-hidden main { margin-left:0; }
+  body.has-nav .pwd { padding-left:calc(var(--navw) + 16px); transition:padding-left .22s ease; }
+  body.has-nav.nav-hidden .pwd { padding-left:16px; }
+  @media (max-width:900px) {
+    body.has-nav main, body.has-nav .pwd { margin-left:0; padding-left:16px; }
+    #nav { box-shadow:0 0 30px rgba(20,25,35,.18); }
+  }
+  @media print {
+    #nav, #reveal { display:none !important; }
+    body.has-nav main { margin-left:0; }
+    .sec h3, details.sub, .metaphor { background:#fff !important; }
+    details { display:block; }
+    details:not([open]) > *:not(summary) { display:revert !important; }
+  }
+
+  /* ================= progress tracking ================= */
+  ol.steps > li { padding-left:48px; }
+  ol.steps > li::before { display:none; }
+  .stepbox { position:absolute; left:0; top:0; width:30px; height:30px; border-radius:8px;
+             border:1.5px solid var(--sc); background:#fff; cursor:pointer; display:flex;
+             align-items:center; justify-content:center; font-size:12.5px; font-weight:650;
+             color:var(--sc); flex:none; padding:0; font-family:inherit; }
+  .stepbox:hover { background:color-mix(in srgb, var(--sc) 20%, #fff); }
+  .stepbox[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .stepbox[aria-pressed="true"]::after { content:"✓"; font-size:15px; }
+  .stepbox[aria-pressed="true"] > span { display:none; }
+  li.done > p, li.done > .where { opacity:.5; }
+  li.done > p > strong { text-decoration:line-through; }
+
+  .secprog { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+             letter-spacing:.06em; color:var(--muted); border:1px solid var(--line);
+             border-radius:20px; padding:3px 9px; white-space:nowrap; }
+  .secprog.all { color:#0b6b3a; border-color:#0b6b3a; }
+
+  #nav-prog { margin-top:10px; font-size:11.5px; color:var(--muted); }
+  #nav-bar { height:5px; border-radius:3px; background:#e8ecf2; margin-top:5px; overflow:hidden; }
+  #nav-bar i { display:block; height:100%; background:#0b6b3a; width:0; transition:width .25s ease; }
+  #nav-reset { border:0; background:none; color:var(--muted); font-size:11px; cursor:pointer;
+               text-decoration:underline; padding:4px 0 0; font-family:inherit; }
+  #nav-reset:hover { color:var(--bad); }
+  .row .rowtick { color:#0b6b3a; font-size:11px; flex:none; padding-top:3px; }
+  @media print { .stepbox, #nav-prog, #nav-bar, #nav-reset { display:none !important; } }
+
+  /* ===== stronger structure: every level gets a coloured surface, not a hint ===== */
+
+  /* L2 · the section header becomes a coloured bar, not white space */
+  section.sec, details.sec { border-left-width:5px; overflow:hidden; padding-top:0; }
+  .sec-head {
+    background:#f1ecf6;
+    background:color-mix(in srgb, var(--sc) 19%, #fff);
+    margin:0 -20px 4px; padding:15px 20px 13px;
+    border-bottom:1px solid color-mix(in srgb, var(--sc) 30%, #fff);
+  }
+  h2.sec-t { color:var(--sc); }
+  .sec-s { color:#5a6472; }
+  details.sec > summary { padding:0; }
+  details.sec:not([open]) .sec-head { margin-bottom:0; border-bottom:0; }
+
+  /* L3 · sub-heading band, stronger and with its own edge */
+  .sec h3 {
+    background:color-mix(in srgb, var(--sc) 21%, #fff);
+    border-left:4px solid var(--sc);
+    border-top:0; border-bottom:0;
+    border-radius:0 7px 7px 0;
+    margin:28px -20px 12px 0; padding:11px 16px;
+  }
+
+  /* L4 · explainer box, deeper again */
+  details.sub {
+    background:color-mix(in srgb, var(--sc) 26%, #fff);
+    border:1px solid color-mix(in srgb, var(--sc) 40%, #fff);
+    border-left:4px solid var(--sc);
+  }
+  details.sub > summary { font-weight:650; }
+
+  /* part headers get a tinted plate so the hue change is unmissable */
+  .part {
+    background:color-mix(in srgb, var(--pc) 20%, #fff);
+    border:1px solid color-mix(in srgb, var(--pc) 36%, #fff);
+    border-left:5px solid var(--pc);
+    border-radius:11px; padding:16px 20px; margin:56px 0 22px;
+  }
+  .part h2 { margin:4px 0 6px; }
+  .part p { color:#4a5464; }
+
+  /* front matter: each card carries its own accent, so the intro is not one slab */
+  .fm { border-left:4px solid var(--fc,#8f98a3); }
+  .fm h2 { color:var(--fc,var(--ink)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 20%, #fff);
+           border-left:4px solid var(--fc,#8f98a3); border-radius:0 7px 7px 0;
+           margin:20px -22px 10px 0; padding:9px 16px; color:var(--fc,var(--ink)); font-size:16px; }
+  .map { border-left:4px solid var(--accent); }
+  .map h2 { color:var(--accent); }
+
+  /* tables: banded rows so a long one is not a grey wall */
+  table { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  thead tr, tr:first-child th { background:#f4f6f9; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#fafbfd; }
+  td.who { color:var(--sc,var(--ink)); }
+
+  /* step numbers and checkboxes read louder */
+  .stepbox { border-width:2px; }
+
+  @media print {
+    .sec-head, .part, .fm h3 { background:#fff !important; }
+  }
+
+  /* ===== surface scale: nothing is pure white; each level is its own shade ===== */
+  :root {
+    --bg:#e7eaf0;        /* the page itself — darkest, so cards lift off it */
+    --card:#f7f8fb;      /* section and front-matter cards */
+    --card-2:#fdfdff;    /* figures and diagrams, the lightest surface */
+    --line:#c3ccd9;
+  }
+  body { background:var(--bg); }
+  main { background:transparent; }
+
+  section.sec, details.sec, .fm, .map { background:var(--card); }
+  .fig { background:var(--card-2); border:1px solid var(--line); }
+  .stub-part { background:var(--card); }
+
+  /* nav sits on its own shade so the panel edge is obvious */
+  #nav { background:#eff1f6; border-right:1px solid var(--line); }
+  #nav-head { border-bottom:1px solid var(--line); }
+  .row:hover { background:#e2e7f0; }
+  #reveal { background:linear-gradient(90deg,#cfd6e2,rgba(231,234,240,0)); }
+
+  /* tables: header and banding against the card, not against white */
+  thead tr, tr:first-child th { background:#e9edf4; }
+  tbody tr:nth-child(even), tr:nth-child(even) { background:#f1f4f9; }
+  table { border:1px solid var(--line); }
+
+  /* inline code lifts off the card */
+  code { background:#e6eaf1; }
+
+  /* semantic callouts keep their own colour but deepen slightly so they still
+     outrank the new, darker surfaces */
+  .danger  { background:#fbe4e4; }
+  .callout { background:#fdf2dc; }
+  .checkpoint, .win { background:#e3f5e9; }
+  .ray     { background:#eceff3; }
+  .metaphor { background:color-mix(in srgb, var(--sc) 17%, var(--card)); }
+
+  /* structural tints re-mixed against the card, not white, so they stay visible */
+  .sec-head { background:color-mix(in srgb, var(--sc) 21%, var(--card)); }
+  .sec h3   { background:color-mix(in srgb, var(--sc) 23%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 28%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 42%, var(--card)); }
+  .part { background:color-mix(in srgb, var(--pc) 22%, var(--card)); }
+  .fm h3 { background:color-mix(in srgb, var(--fc,#8f98a3) 22%, var(--card)); }
+
+  @media print {
+    body, section.sec, details.sec, .fm, .map, .fig { background:#fff !important; }
+  }
+
+  /* ===== each part is a family of one hue: the card itself is tinted, not grey ===== */
+  section.sec, details.sec {
+    background:color-mix(in srgb, var(--sc) 16%, var(--card));
+    border-color:color-mix(in srgb, var(--sc) 36%, var(--card));
+  }
+  .sec-head   { background:color-mix(in srgb, var(--sc) 27%, var(--card));
+                border-bottom-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec h3     { background:color-mix(in srgb, var(--sc) 31%, var(--card)); }
+  details.sub { background:color-mix(in srgb, var(--sc) 37%, var(--card));
+                border-color:color-mix(in srgb, var(--sc) 50%, var(--card)); }
+  .metaphor   { background:color-mix(in srgb, var(--sc) 23%, var(--card));
+                border-left-color:var(--sc); }
+
+  /* figures stay the lightest surface so diagrams read, but pick up a trace of the hue */
+  .fig { background:color-mix(in srgb, var(--sc) 13%, var(--card-2)); }
+
+  /* tables inside a part follow it too */
+  .sec table { border-color:color-mix(in srgb, var(--sc) 40%, var(--card)); }
+  .sec thead tr, .sec tr:first-child th { background:color-mix(in srgb, var(--sc) 28%, var(--card)); }
+  .sec tbody tr:nth-child(even), .sec tr:nth-child(even) { background:color-mix(in srgb, var(--sc) 19%, var(--card)); }
+  .sec th, .sec td { border-bottom-color:color-mix(in srgb, var(--sc) 32%, var(--card)); }
+  .sec code { background:color-mix(in srgb, var(--sc) 26%, var(--card)); }
+
+  /* the part plate is the deepest statement of the hue */
+  .part { background:color-mix(in srgb, var(--pc) 32%, var(--card));
+          border-color:color-mix(in srgb, var(--pc) 50%, var(--card)); }
+
+  /* semantic callouts stay their own colour — they must not join the family */
+  .danger, .callout, .checkpoint, .win, .ray { background-blend-mode:normal; }
+
+  @media print {
+    section.sec, details.sec, .sec-head, .sec h3, details.sub, .part { background:#fff !important; }
+  }
+
+
+  /* ===== section-header checkbox ===== */
+  .sectick { flex:none; width:26px; height:26px; border-radius:7px; cursor:pointer; padding:0;
+             border:2px solid var(--sc,#616a77); background:rgba(255,255,255,.7);
+             display:flex; align-items:center; justify-content:center;
+             font-size:15px; line-height:1; color:transparent; font-family:inherit; align-self:center; }
+  .sectick:hover { background:#fff; color:color-mix(in srgb, var(--sc) 40%, #fff); }
+  .sectick::after { content:"✓"; font-weight:700; }
+  .sectick[aria-pressed="true"] { background:#0b6b3a; border-color:#0b6b3a; color:#fff; }
+  .sec-done > .sec-head, .sec-done > summary > .sec-head { opacity:.62; }
+  .sec-done > .sec-head h2.sec-t { text-decoration:line-through; }
+  @media print { .sectick { display:none !important; } .sec-done > .sec-head { opacity:1 !important; } }
+</style>
+</head>
+<body class="has-nav">
+<div class="pwd">~/projects/2026-09-07-slack-agent · sops/lesson-14/index.html</div>
+<nav id="nav">
+  <div id="nav-head">
+    <div id="nav-title"><span>CONTENTS</span><button id="nav-hide" title="Hide — Esc, or swipe left">‹</button></div>
+    <div id="nav-prog">0 of 0 steps done<div id="nav-bar"><i></i></div></div>
+    <button id="nav-reset">reset progress</button>  </div>
+  <div id="tree"></div></nav>
+<div id="reveal" title="Show contents"></div>
+<main>
+<p class="kicker">SLACK AGENTS · CHAPTER "0 TO 1" · LESSON 14</p>
+<h1>Give the bot reusable procedures: a skills folder that ships with the deploy</h1>
+<p class="standfirst">Lesson 13 gave the sandbox a persona — a few paragraphs about the machine it wakes up on. This lesson gives it procedures: folders of Markdown, each one a way of doing a recurring job properly, copied into <code>~/.claude/skills/</code> before the model reads a word of your message. The interesting part is not the copying. It is that these live in the bot's own repository, so a new skill is a pull request and a deploy — not a rebuild of the machine image.</p>
+<div class="facts"><span><b>Ray's video:</b> 3 min 20 s</span> <span><b>This page:</b> 45–90 min</span> <span><b>At the end:</b> <code>~/.claude/skills/</code> populated on every run</span></div>
+<div class="fm" style="--fc:#0b6b3a"><h2>What you'll have at the end</h2>
+<div class="fig"><svg viewBox="0 0 700 300" width="100%" height="auto" role="img"><title>toolkit/skills in the bot's repository is bundled into the Vercel function by includeFiles, and the function writes every skill file into ~/.claude/skills in the sandbox on every run</title><defs><marker id="arrow14a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#2b3038"><rect x="8" y="24" width="200" height="120" rx="9" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/><text x="24" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#24292f">GITHUB · THE BOT'S OWN REPO</text><text x="24" y="70" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11">toolkit/skills/</text><text x="36" y="90" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">task-lifecycle/SKILL.md</text><text x="36" y="108" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">codex/SKILL.md</text><text x="24" y="132" fill="#616a77">a skill is a folder + SKILL.md</text><path d="M214,84 L262,84" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow14a)"/><rect x="268" y="24" width="190" height="120" rx="9" fill="#ffffff" stroke="#15171c" stroke-width="1.5"/><text x="284" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#15171c">VERCEL FUNCTION</text><text x="284" y="70">bundle carries toolkit/**</text><text x="284" y="90">walks it, reads every file</text><text x="284" y="110">one batched write per run</text><text x="284" y="132" fill="#616a77">deployed by merging a PR</text><path d="M464,84 L512,84" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrow14a)"/><rect x="518" y="24" width="174" height="120" rx="9" fill="#f7f8fb" stroke="#d7dde5" stroke-width="1.5"/><text x="534" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">E2B SANDBOX (per message)</text><text x="534" y="70" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11">~/.claude/CLAUDE.md</text><text x="534" y="90" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11">~/.claude/skills/</text><text x="534" y="112" fill="#616a77">written fresh, every run,</text><text x="534" y="128" fill="#616a77">before claude starts</text><rect x="8" y="160" width="684" height="68" rx="9" fill="#f2f7f3" stroke="#0b6b3a" stroke-width="1.5"/><text x="26" y="180" font-size="12.5" font-weight="700" fill="#0b6b3a">Skills ride the code deploy, not the machine image.</text><text><tspan x="26" y="197">Adding one is a pull request and a merge. Nothing is rebuilt, nothing is registered, and the</tspan><tspan x="26" y="213">next message already has it.</tspan></text><rect x="8" y="236" width="684" height="52" rx="9" fill="#fff8e8" stroke="#8a5a00" stroke-width="1.5"/><text><tspan x="26" y="256"><tspan font-weight="700">The catch:</tspan> Vercel ships only files something imports. A folder nobody imports is absent in</tspan><tspan x="26" y="272">production and present locally.</tspan></text></g></svg><p class="cap">The one line that makes this work in production is <code>includeFiles</code>, and it is the one line you cannot test before deploying.</p></div>
+<ul><li><strong>A <code>toolkit/skills/</code> folder in the bot's repository</strong>, one directory per skill, each with a <code>SKILL.md</code>.</li><li><strong>A loader that writes them all into <code>~/.claude/skills/</code></strong> on every run, in the same batched call that writes the persona from lesson 13.</li><li><strong>One line of <code>vercel.json</code></strong> that keeps the folder in the deployed bundle.</li><li><strong>A first real skill</strong> — <code>task-lifecycle</code> — telling the bot how to run a job end to end inside a four-minute budget.</li></ul></div>
+<div class="fm" style="--fc:#4a5766"><h2>Who this is for, and what it assumes</h2>
+<p>You finished lesson 13, so the sandbox already gets a <code>~/.claude/CLAUDE.md</code> written into it on every run, and you know where that write happens. This lesson adds files to that same call. If lesson 13 is not done, do it first — the loader here is an extension of it, not a separate mechanism.</p>
+<p>You also need to be able to open, review and merge a pull request against the bot's own repository, which you have had since lesson 09. Nothing here touches the E2B template, so no image rebuild is involved at any point.</p></div>
+<div class="fm" style="--fc:#7a3d9c"><h2>Why this lesson exists</h2>
+<div class="fig"><svg viewBox="0 0 700 148" width="100%" height="auto" role="img"><title>Where lesson 14 sits: lesson 13 gave the sandbox a persona, lesson 14 gives it reusable procedures, and lessons 15 to 17 add more capability on top</title><defs><marker id="arrowArc14" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#616a77"/></marker></defs><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" fill="#2b3038"><rect x="8" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="24" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 01–13</text><text x="24" y="80" font-size="13">It can act, and it knows</text><text x="24" y="98" font-size="12" fill="#616a77">what machine it is on</text><path d="M194,71 L246,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc14)"/><rect x="252" y="20" width="196" height="102" rx="9" fill="#f6f2fb" stroke="#7a3d9c" stroke-width="2"/><text x="270" y="46" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="700" fill="#7a3d9c">LESSON 14 — YOU ARE HERE</text><text x="270" y="72" font-size="13" font-weight="700">It knows how to work</text><text x="270" y="92" font-size="12" fill="#616a77">procedures it can load</text><text x="270" y="108" font-size="12" fill="#616a77">on demand, from your repo</text><path d="M454,71 L506,71" stroke="#616a77" stroke-width="1.5" marker-end="url(#arrowArc14)"/><rect x="512" y="34" width="180" height="74" rx="9" fill="#ffffff" stroke="#d7dde5" stroke-width="1.5"/><text x="528" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#616a77">LESSONS 15–17</text><text x="528" y="80" font-size="13">More tools to hold</text><text x="528" y="98" font-size="12" fill="#616a77">each one arrives with a skill</text></g></svg><p class="cap">Every later lesson that adds a capability also adds a skill telling the bot how to use it. Lesson 16's Codex CLI and lesson 17's voice notes both arrive this way.</p></div>
+<p><strong>A persona is what the bot is; a skill is what it knows how to do.</strong> The persona is loaded always and therefore has to stay short. A skill is a folder the model opens only when the job calls for it, so it can be long and specific — eight numbered steps, a budget, a list of things never to do. That difference in loading is the whole reason both exist.</p></div>
+<div class="fm" style="--fc:#1f4fd8"><h2>How this page is laid out</h2>
+<ol><li><a href="#part1">Part 1 · Understand what you're building</a> <span class="badge b-understand">UNDERSTAND</span> <span class="what">What a skill is, why these live in the bot's repository rather than its machine image, and the one Vercel behaviour that decides whether any of it reaches production. ~15 min.</span></li><li><a href="#part2">Part 2 · Build it</a> <span class="badge b-do">DO NOW</span> <span class="what">Five steps: one decision, the loader, the first skill and the deploy line, a review, and a live check in Slack. 45–90 min.</span></li><li><a href="#part3">Part 3 · Keep for later</a> <span class="badge b-ref">REFERENCE</span> <span class="what">The loader read decision by decision, what breaks and how it looks, what this page verified, and where everything lives.</span></li></ol></div>
+<div class="fm" style="--fc:#a32020"><h2>Before you begin</h2>
+<div class="danger"><strong>Do not ask for lessons 13 and 14 in one message.</strong> That is what was tried here, and the run hit the 255-second sandbox deadline with nothing pushed — the work was real and it was lost. The loader and the first skill are two pull requests, and the second is based on <code>main</code> rather than stacked on the first, so a stall in either does not take the other down with it.</div>
+<ul><li><strong>Lesson 13 merged and deployed</strong>, so a persona file is already written into every sandbox.</li><li><strong>A skill in mind.</strong> Write the procedure you keep repeating in the channel, not a generic one.</li><li><strong>Nothing to rebuild.</strong> If you find yourself running <code>e2b/build.mjs</code> in this lesson, you have taken a wrong turn.</li></ul></div>
+<div class="part" id="part1" style="--pc:var(--understand)"><span class="pn">PART 1</span><h2>Understand what you're building</h2>
+<p>Three things: what Claude Code means by a skill, why a skill belongs in the bot's repository instead of its machine image, and why one line of <code>vercel.json</code> is the difference between working locally and working at all.</p></div>
+<details class="sec" id="what-a-skill-is" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">What a skill is, and where Claude Code looks for one<span class="sec-s">A folder, a Markdown file and a front-matter description. That is the entire format.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>A skill is a directory whose name is the skill's name, containing a <code>SKILL.md</code> with YAML front matter — a <code>name</code> and a <code>description</code> — followed by prose. Anything else in the directory (scripts, reference files, examples) comes along with it. User-level skills live in <code>~/.claude/skills/&lt;name&gt;/</code>, which is exactly where this lesson puts them inside the sandbox.</p>
+<div class="metaphor"><strong>The persona is the induction; a skill is the manual on the shelf.</strong> You do not read the manual to every new hire on their first morning — you tell them it exists and where it is. The model reads the <code>description</code> lines, and opens the body only when a job matches one.</div>
+<p>That last sentence is the part to hold lightly. It is how skills are documented to work, and it is why the <code>description</code> is the most load-bearing line in the file. Whether it reliably fires unprompted in a headless <code>claude -p</code> run is listed as untested in Part 3 — what was confirmed here is that the files arrive and the model can read them.</p>
+<div class="ray"><strong>Ray reaches for an official skill; this page writes its own.</strong> He starts with Anthropic's <code>code-review</code> skill plus a <code>task-lifecycle</code> one adapted from another class. The first thing worth writing yourself is the procedure you have already had to repeat in Slack — here that was the clone-branch-test-push-PR loop and its four-minute budget.</div></details>
+<details class="sec" id="why-the-repo" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">Why skills live in the bot's repository, not in its machine image<span class="sec-s">The one design rule of this lesson, and the reason it is not a template change.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Everything the sandbox has arrives by one of two routes, and they behave completely differently.</p><table><thead><tr><th>Route</th><th>How you change it</th><th>What that costs</th></tr></thead><tbody>
+<tr><td><strong>The E2B template</strong> — Node, git, gh, Chromium, Postgres, the Codex CLI</td><td>Edit <code>e2b/template.mjs</code>, then rebuild and register the image by hand</td><td>Minutes of build, no review, no CI, deployed the instant it finishes</td></tr>
+<tr><td><strong>The function's own files</strong> — the persona, and now the skills</td><td>Edit a file, open a pull request, merge it</td><td>A review, a test run and a deploy — the ordinary path</td></tr></tbody></table>
+<div class="win"><strong>Skills are words, not software.</strong> They change often, they are worth reviewing as prose, and they need no binaries. Putting them in the repository means a wrong instruction is caught in a diff and fixed by a revert, instead of being baked into an image that nothing rolls back. Capability goes in the image; procedure goes in the repo.</div>
+<p>The same rule explains a split later in the course: lesson 16 installs the Codex CLI <em>in the image</em> and ships a <code>codex</code> skill <em>in the repo</em> saying how to call it. Two halves of one feature, deliberately shipped by different routes.</p></details>
+<details class="sec" id="includefiles" open style="--sc:var(--understand); --sc2:var(--understand)"><summary><div class="sec-head"><h2 class="sec-t">Why Vercel will not ship a folder nobody imports<span class="sec-s">The failure that cannot happen locally, only in production, and only silently.</span></h2><span class="badge b-understand">UNDERSTAND</span></div></summary>
+<p>Vercel does not upload your repository to the function. It traces the imports from each entry point and bundles only the files it can prove are reachable. A folder of Markdown read at run time through a path built with <code>path.join</code> is reachable by nothing, so it is left out — and the function still deploys, still runs, and still answers. It just has no skills.</p>
+<div class="danger"><strong>This failure is invisible until it is live.</strong> Locally the folder is simply on disk beside the code, so every test passes. In production the loader finds no <code>toolkit/</code>, degrades to writing the persona alone exactly as designed, and logs nothing alarming. The only proof is asking the deployed bot what it has.</div><pre><code>"functions": {
+  "api/slack/events.js": {
+    "includeFiles": "toolkit/**"
+  }
+}</code></pre>
+<p>That block sits beside the existing <code>git</code> block in <code>joestar-agent/vercel.json</code>. The glob is relative to the Vercel project root, which is <code>joestar-agent/</code> and not the repository root — easy to get wrong, and it produces exactly the same silent nothing.</p>
+<div class="ray"><strong>Same line, same reason.</strong> Ray hits this too and adds <code>includeFiles: "toolkit/**"</code> for the same bundler behaviour. It is one of the few places in the course where the fix is a configuration line rather than a prompt.</div></details>
+<div class="part" id="part2" style="--pc:var(--do)"><span class="pn">PART 2</span><h2>Build it</h2>
+<p>Five steps. One decision made before typing, two requests to the bot that were deliberately kept apart, a review of the diffs, and a live check that doubles as the only possible proof the deploy line works.</p></div>
+<section class="sec" id="step1" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 1 of 5 — Decide whether the skills are written once or on every run<span class="sec-s">Ray's loader and this one differ here, and the reason is a property of your sandbox, not a preference.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 1 of 5</title><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" text-anchor="middle"><rect x="8" y="10" width="132" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="74" y="29" font-weight="700" fill="#fff">1 · Decide</text><rect x="147.75" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="213.75" y="29" fill="#8f98a3">2 · Loader</text><rect x="287.5" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="353.5" y="29" fill="#8f98a3">3 · First skill</text><rect x="427.25" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="493.25" y="29" fill="#8f98a3">4 · Review</text><rect x="567" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="633" y="29" fill="#8f98a3">5 · Verify</text></g></svg></div>
+<ol class="steps"><li><p><strong>Answer one question: does your sandbox survive between messages?</strong> Here it does not — it is created and destroyed around every single message, and the thread is replayed into the prompt instead. So there is no "first run" to seed and no state to check. The skills are written on <em>every</em> run.</p></li><li><p><strong>Price it before worrying about it.</strong> The whole payload is a handful of Markdown files sent as one batched <code>sandbox.files.write</code> call, alongside the persona that is already being written. It is not a second round trip and it is not measurable against a four-minute budget.</p><div class="ray"><strong>Ray gates his on the box being new.</strong> His loader writes the skills only when the sandbox was just created, which is the right answer for a design that reuses sandboxes across messages. Copy his gate only if you copied his lifecycle; with a per-message sandbox the gate is a branch that is always true.</div></li><li><p><strong>Write the decision into the code as a comment, not just into your head.</strong> "Written on every run because the sandbox is destroyed after each one" is the sentence that stops a future reader adding a cache that can never hit.</p></li></ol>
+<div class="checkpoint"><b>CHECKPOINT</b>You can say why there is no "first time" in this design, and that the cost of writing the files every run is one batched call.</div></section>
+<section class="sec" id="step2" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 2 of 5 — Ask for the loader on its own<span class="sec-s">Part A: walk the folder, write the files, never fail the run. No skills yet, deliberately.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 2 of 5</title><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" text-anchor="middle"><rect x="8" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="74" y="29" fill="#8f98a3">1 · Decide</text><rect x="147.75" y="10" width="132" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="213.75" y="29" font-weight="700" fill="#fff">2 · Loader</text><rect x="287.5" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="353.5" y="29" fill="#8f98a3">3 · First skill</text><rect x="427.25" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="493.25" y="29" fill="#8f98a3">4 · Review</text><rect x="567" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="633" y="29" fill="#8f98a3">5 · Verify</text></g></svg></div>
+<ol class="steps"><li><p><strong>Post the request in the development channel, mentioning the bot.</strong> Ask for the mechanism only — the loader, its guard rails, and the write into the existing call. Naming the failure modes up front is what stops the loader being a five-line <code>readFileSync</code> that throws on a missing folder.</p>
+<p class="where">Where: Slack → <code>#joestar-dev</code> → mention <code>@joestar</code></p><pre><code>Add a loader that copies a toolkit/skills/ folder from this repo into
+~/.claude/skills/ in the sandbox, in the same batched files.write call that
+already writes the persona. Every run — the sandbox is destroyed each time.
+
+Rules: recurse into each skill directory so sub-files come too; skip dotfiles;
+skip any skill directory with no SKILL.md and warn; cap the total payload at
+2 MiB and fall back to persona-only if it is exceeded; if there is no toolkit
+directory at all, write the persona and carry on. This must never fail a run.
+
+Loader only in this PR. No skills, no vercel.json — those are the next one.</code></pre></li><li><p><strong>Expect a question about where <code>toolkit/</code> is at run time,</strong> and answer it honestly: you do not know. On Vercel the task root is not the module's own directory and is not necessarily <code>process.cwd()</code>, so the loader resolves two candidates and takes the first that exists.</p></li><li><p><strong>Let it open the pull request and stop there.</strong> This is PR #13 in this workshop, and it changes nothing observable — the folder it looks for does not exist yet, so every run still writes the persona alone. That is the correct state at the end of step 2.</p><div class="callout"><strong>Splitting is the load-bearing part of this step.</strong> Asked for as one job together with lesson 13, this work ran to the 255-second sandbox deadline and pushed nothing. Two requests, the second based on <code>main</code> so it does not stack on an unmerged branch, and each one fits.</div></li></ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A pull request exists containing <code>api/_lib/sandbox-files.js</code> and its call site, and the bot still answers in Slack exactly as it did before.</div></section>
+<section class="sec" id="step3" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 3 of 5 — Add the first skill and the deploy line<span class="sec-s">Part B: the folder that was missing, plus the one line of vercel.json that gets it into production.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 3 of 5</title><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" text-anchor="middle"><rect x="8" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="74" y="29" fill="#8f98a3">1 · Decide</text><rect x="147.75" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="213.75" y="29" fill="#8f98a3">2 · Loader</text><rect x="287.5" y="10" width="132" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="353.5" y="29" font-weight="700" fill="#fff">3 · First skill</text><rect x="427.25" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="493.25" y="29" fill="#8f98a3">4 · Review</text><rect x="567" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="633" y="29" fill="#8f98a3">5 · Verify</text></g></svg></div>
+<ol class="steps"><li><p><strong>Choose the procedure you have already had to repeat.</strong> Here that was <code>task-lifecycle</code>: shallow-clone, branch, read only what you were told to read, change, test, push the moment it passes, open the PR, report what you did not get to. Eight numbered steps, a four-minute budget written into the file, and three flat rules — never force-push, never delete branches, and say out loud when a change needs a human to rebuild the image.</p><div class="metaphor"><strong>Write it as a checklist, not an essay.</strong> The reason the budget sentence works is that it says what to do when time runs out — push partial work and name what is left — rather than telling the model to be quick.</div></li><li><p><strong>Ask for the skill, the <code>vercel.json</code> block, and nothing else,</strong> based on <code>main</code> rather than on the branch from step 2.</p>
+<p class="where">Where: Slack → <code>#joestar-dev</code>, branched from <code>main</code></p><pre><code>Branch from main. Add toolkit/skills/task-lifecycle/SKILL.md — I'll paste the
+content. Then add a "functions" block to joestar-agent/vercel.json giving
+api/slack/events.js includeFiles "toolkit/**", beside the existing git block,
+with the path relative to the joestar-agent project root.
+
+That, plus any prompt line this makes redundant. Nothing else.</code></pre></li><li><p><strong>Take the chance to delete anything the skill now says better.</strong> One line of the system prompt was duplicating what the skill says about the run budget, so it went in the same pull request — that is PR #14, three files, exactly as asked.</p><div class="ray"><strong>Ray hits a name conflict here; this page did not.</strong> His <code>code-review</code> skill was reported by Claude Code as clashing with a built-in of the same name, so he moved it into a <code>toolkit-disabled/</code> folder and shipped only <code>task-lifecycle</code> — then said at the end of the video that the warning had looked wrong. Treat skill-name conflict detection as unverified either way, and pick a name nothing else uses.</div></li></ol>
+<div class="checkpoint"><b>CHECKPOINT</b>A second pull request exists with exactly three files changed: the new <code>SKILL.md</code>, <code>vercel.json</code>, and the prompt trim.</div></section>
+<section class="sec" id="step4" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 4 of 5 — Read the diffs and merge<span class="sec-s">Short diffs, but one of them had its two path candidates in the wrong order.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 4 of 5</title><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" text-anchor="middle"><rect x="8" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="74" y="29" fill="#8f98a3">1 · Decide</text><rect x="147.75" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="213.75" y="29" fill="#8f98a3">2 · Loader</text><rect x="287.5" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="353.5" y="29" fill="#8f98a3">3 · First skill</text><rect x="427.25" y="10" width="132" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="493.25" y="29" font-weight="700" fill="#fff">4 · Review</text><rect x="567" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="633" y="29" fill="#8f98a3">5 · Verify</text></g></svg></div>
+<ol class="steps"><li><p><strong>Read both diffs in full.</strong> They are small enough that there is no excuse not to.</p><p class="where">Where: <code>gh pr diff 13</code> and <code>gh pr diff 14</code>, or the pull request pages</p></li><li><p><strong>Check the two things a reviewer can actually catch here.</strong> First, that every degradation path returns the persona rather than throwing — a missing folder, a skill without a <code>SKILL.md</code>, an over-cap payload. Second, the order of the two candidate <code>toolkit/</code> roots: the module-relative path must be tried before <code>process.cwd()</code>, because <code>cwd</code> is the one that is not guaranteed on Vercel. It came back the other way round and was corrected in review.</p><div class="callout"><strong>One type detail worth not losing.</strong> The files are read as <code>Buffer</code>s, and e2b's <code>WriteEntry</code> type wants a <code>Blob</code> — so the call site wraps each buffer before writing. If that wrapper disappears in a later refactor, the symptom is a write failure, not a compile error.</div></li><li><p><strong>Merge them, in order, and let CI deploy.</strong> Here that was a squash merge by hand.</p><p class="where">Where: your terminal</p><pre><code>gh pr merge 13 --squash --admin
+gh pr merge 14 --squash --admin</code></pre></li></ol>
+<div class="checkpoint"><b>CHECKPOINT</b>Both pull requests are merged, CI is green, and the deploy has finished. Nothing has been rebuilt or re-registered.</div></section>
+<section class="sec" id="step5" style="--sc:var(--do); --sc2:var(--do)">
+<div class="sec-head"><h2 class="sec-t">Step 5 of 5 — Ask the deployed bot what it has<span class="sec-s">The only possible proof that includeFiles worked, because nothing local can tell you.</span></h2><span class="badge b-do">DO NOW</span></div>
+<div class="fig strip"><svg viewBox="0 0 700 46" width="100%" height="auto" role="img"><title>Progress: step 5 of 5</title><g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" text-anchor="middle"><rect x="8" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="74" y="29" fill="#8f98a3">1 · Decide</text><rect x="147.75" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="213.75" y="29" fill="#8f98a3">2 · Loader</text><rect x="287.5" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="353.5" y="29" fill="#8f98a3">3 · First skill</text><rect x="427.25" y="10" width="132" height="28" rx="7" fill="#fff" stroke="#d7dde5" stroke-width="1.5"/><text x="493.25" y="29" fill="#8f98a3">4 · Review</text><rect x="567" y="10" width="132" height="28" rx="7" fill="#1f4fd8" stroke="#1f4fd8" stroke-width="1.5"/><text x="633" y="29" font-weight="700" fill="#fff">5 · Verify</text></g></svg></div>
+<ol class="steps"><li><p><strong>Ask a question only a bot holding the files can answer.</strong> "What skills do you have?" is half a test — a model can guess plausibly. Ask for something checkable as well.</p><p class="where">Where: Slack → <code>#joestar-test</code> → mention <code>@joestar</code></p><pre><code>List the skills in ~/.claude/skills/, and tell me how many numbered steps the
+task-lifecycle skill has.</code></pre></li><li><p><strong>Read the answer as two facts at once.</strong> Here it came back with <code>task-lifecycle</code> and <strong>8 steps</strong>. The name proves the loader ran; the step count proves it read the real file; and both together are the only evidence that <code>includeFiles</code> put <code>toolkit/</code> into the deployed bundle — a claim that could not be checked before the deploy.</p><div class="win"><strong>Every skill from here on is one pull request.</strong> Drop a folder into <code>toolkit/skills/</code>, merge, done. In this workshop <code>codex</code> followed in PR #15 at 55 lines, and voice notes in PR #16.</div></li><li><p><strong>Note what you have not proved.</strong> You have shown the files are present and readable. You have not shown that a skill fires on its own from its <code>description</code> in a headless run — that needs a task which matches a skill without naming it.</p></li></ol>
+<div class="checkpoint"><b>CHECKPOINT</b>The deployed bot names your skill and answers a detail question about its contents that it could not have guessed.</div></section>
+<div class="part" id="part3" style="--pc:var(--ref)"><span class="pn">PART 3</span><h2>Keep for later</h2>
+<p>The loader read decision by decision, the failures worth recognising, an honest account of what this page checked, and where the new pieces live.</p></div>
+<details class="sec" id="loader-walk" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">What the loader does, decision by decision<span class="sec-s">Every branch in api/_lib/sandbox-files.js exists to make a bad toolkit harmless.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary>
+<p>The function's whole job is to return an array of <code>{ path, data }</code> entries for one batched write. It is built so that nothing it can find on disk is able to fail a run.</p><table><thead><tr><th>Decision</th><th>Why</th></tr></thead><tbody>
+<tr><td>No <code>toolkitDir</code> resolved → return the persona entry alone</td><td>The production case if <code>includeFiles</code> is missing. Degrading to lesson 13's behaviour is right; throwing would take the bot down over a documentation folder</td></tr>
+<tr><td>Recursive walk of each skill directory</td><td>A skill is a folder, not a file. Scripts and reference files under it are part of it</td></tr>
+<tr><td>Dotfiles and dot-directories skipped</td><td><code>.DS_Store</code> and editor droppings are not skills, and a sandbox is not the place to find out</td></tr>
+<tr><td>A directory with no <code>SKILL.md</code> is skipped, with a <code>console.warn</code></td><td>Skipping silently hides a mistyped filename for weeks. The warning is the whole difference</td></tr>
+<tr><td>Total payload over 2 MiB → persona only, with a warning</td><td>A runaway folder should cost you your skills, not your run. The cap counts the persona too</td></tr>
+<tr><td>Two candidate roots, module-relative first</td><td>Vercel's task root is neither this module's directory nor reliably <code>process.cwd()</code>. Order matters: the guessable one goes second</td></tr>
+<tr><td>The call site wraps the whole thing in <code>try/catch</code></td><td>Belt and braces. A loader that cannot read its own files still leaves a working bot</td></tr></tbody></table>
+<div class="win"><strong>Read the shape of this and you have the pattern for lesson 17 too.</strong> Anything you want in every sandbox — persona, skills, later a config file — is another entry in the same array, written by the same call, degrading the same way.</div></details>
+<details class="sec" id="failure-table" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">When something doesn't work<span class="sec-s">Most of these produce a perfectly normal-looking bot with no skills.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary><table><thead><tr><th>What you see</th><th>What it usually is</th></tr></thead><tbody>
+<tr><td>The bot lists no skills in production, but the folder is right there in the repo</td><td><code>includeFiles</code> missing, or its glob written relative to the wrong root. The bundle never had the folder</td></tr>
+<tr><td>Skills work locally, never in Slack</td><td>The same cause. Local runs read the folder from disk, so they can never reproduce it</td></tr>
+<tr><td>One skill out of several is missing</td><td>Its directory has no <code>SKILL.md</code>, or the file is named <code>skill.md</code>. Look for the skip warning in the function logs</td></tr>
+<tr><td>Every skill vanished at once after a large addition</td><td>The 2 MiB cap tripped and the loader fell back to persona-only. It is logged, not thrown</td></tr>
+<tr><td>A write failure mentioning a type rather than a path</td><td>A <code>Buffer</code> reached e2b's write entry without being wrapped in a <code>Blob</code></td></tr>
+<tr><td>The bot knows the skill exists but does not follow it</td><td>The body is prose rather than steps, or the <code>description</code> does not describe the job you actually asked for</td></tr>
+<tr><td>A skill name is reported as conflicting with a built-in</td><td>Rename it. Ray saw this warning and later found no evidence it was true — either way, a unique name costs nothing</td></tr>
+<tr><td>The request to build all of this times out with nothing pushed</td><td>Too much in one message. Split it, and base the second branch on <code>main</code></td></tr></tbody></table></details>
+<details class="sec" id="verified-vs-untested" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">What this page checked, and what it did not<span class="sec-s">Read this before trusting any sentence above.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary><table><thead><tr><th>Claim</th><th>Status</th></tr></thead><tbody>
+<tr><td>The skill files reach <code>~/.claude/skills/</code> in a deployed run</td><td><strong>Verified</strong> 2026-09-17, live in <code>#joestar-test</code>: the bot listed <code>task-lifecycle</code> and gave its step count as 8</td></tr>
+<tr><td><code>includeFiles: "toolkit/**"</code> puts the folder into the deployed bundle</td><td><strong>Verified</strong> 2026-09-17 by that same answer — it is the only available proof, and it is unavailable before deploying</td></tr>
+<tr><td>The loader degrades to persona-only on a missing toolkit directory, a skill without <code>SKILL.md</code>, and an over-cap payload</td><td><strong>Verified</strong> by reading <code>api/_lib/sandbox-files.js</code></td></tr>
+<tr><td>Skills are written on every run, in the same batched call as the persona</td><td><strong>Verified</strong> by reading the call site in <code>api/_lib/claude.js</code></td></tr>
+<tr><td>The two candidate <code>toolkit/</code> roots are tried module-relative first</td><td><strong>Verified</strong> — and it was the other way round in the first draft, caught in review</td></tr>
+<tr><td>Claude Code detects skill-name conflicts with its built-ins</td><td><strong>Unverified.</strong> Ray was warned that <code>code-review</code> conflicted, moved it to <code>toolkit-disabled/</code>, then said on camera that the warning looked wrong. Nothing here tested it</td></tr>
+<tr><td>A skill's <code>description</code> makes it fire on its own in a headless <code>claude -p</code> run</td><td><strong>Untested.</strong> The model was asked about the files and found them. No skill has been seen triggering itself from a task that merely matched it</td></tr>
+<tr><td>2 MiB is the right cap</td><td><strong>Unverified as a limit</strong> — it is our number, chosen to bound the payload, not a platform constraint</td></tr></tbody></table></details>
+<details class="sec" id="where-everything-lives" open style="--sc:var(--ref); --sc2:var(--ref)"><summary><div class="sec-head"><h2 class="sec-t">Where everything lives<span class="sec-s">What this lesson adds to the map.</span></h2><span class="badge b-ref">REFERENCE</span></div></summary><table><thead><tr><th>Thing</th><th>Where</th></tr></thead><tbody>
+<tr><td>The skills themselves</td><td><code>joestar-agent/toolkit/skills/&lt;name&gt;/SKILL.md</code></td></tr>
+<tr><td>The loader, and the persona text it ships with</td><td><code>joestar-agent/api/_lib/sandbox-files.js</code></td></tr>
+<tr><td>Where it is called, and where the two roots are resolved</td><td><code>joestar-agent/api/_lib/claude.js</code></td></tr>
+<tr><td>The line that gets the folder into production</td><td><code>joestar-agent/vercel.json</code> — <code>functions → includeFiles</code></td></tr>
+<tr><td>Where the files land in the sandbox</td><td><code>/home/user/.claude/skills/</code>, beside <code>CLAUDE.md</code></td></tr>
+<tr><td>The first two skills shipped</td><td><code>task-lifecycle</code> (PR #14) and <code>codex</code> (PR #15)</td></tr>
+<tr><td>Ray's prompt, verbatim</td><td><code>course/transcripts/14-0-to-1--skills.md</code></td></tr>
+<tr><td>Traps already paid for</td><td><code>TRAPS.md</code></td></tr></tbody></table>
+<p>Ray's prompt, for comparison with the two used above:</p><pre><code>So, I made a brand new folder which is toolkit, and that contains skills that I
+want loaded into the sandbox every time. And these should be copied over to the
+.claude folder/slash skills inside of the home directory. Can you basically make
+that happen?</code></pre></details></main>
+<script>
+
+(function () {
+  /* ---------- §7 · turn every h3/h4 into an accordion, in the DOM ----------
+     Done at load rather than in the markup: the file's content stays untouched,
+     and there is no way to mis-nest a tag. Skips phase headings (they label a
+     step whose section is already the accordion) and h4s inside a + box, which
+     would make a fourth level of collapsing.                                   */
+  document.querySelectorAll('.sec').forEach(sec => {
+    ['h3', 'h4'].forEach(tag => {
+      [...sec.querySelectorAll(tag)].forEach(h => {
+        if (h.closest('.phase') || h.closest('details.sub') || h.closest('summary')) return;
+        const d = document.createElement('details');
+        d.className = 'hacc';
+        d.open = true;
+        const s = document.createElement('summary');
+        h.replaceWith(d);
+        s.appendChild(h);
+        d.appendChild(s);
+        // absorb siblings up to the next heading of the same or higher level
+        const stop = tag === 'h3' ? ['H3'] : ['H3', 'H4'];
+        let n = d.nextSibling;
+        while (n && !(n.nodeType === 1 && stop.includes(n.tagName))) {
+          const next = n.nextSibling;
+          d.appendChild(n);
+          n = next;
+        }
+      });
+    });
+  });
+
+  /* ---------- ids for everything the menu can point at ---------- */
+  const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  document.querySelectorAll('.sec').forEach(sec => {
+    sec.querySelectorAll('h3, h4, details.sub > summary').forEach((el, k) => {
+      const host = el.tagName === 'SUMMARY' ? el.parentElement : (el.closest('details.hacc') || el);
+      if (!host.id) host.id = `${sec.id}--${slug(el.textContent)}-${k}`;
+    });
+  });
+
+  /* ---------- §6 · build the menu from the document ---------- */
+  const tree = document.getElementById('tree');
+  const rows = [];
+  const HUE = { part1: 'var(--understand)', part2: 'var(--do)', part3: 'var(--ref)' };
+
+  function mkRow(text, lvl, hue, host, secId) {
+    const el = document.createElement('div');
+    el.className = `row l${lvl}`;
+    el.dataset.lvl = lvl;
+    if (secId) el.dataset.sec = secId;
+    el.style.setProperty('--rc', hue);
+    const tw = document.createElement('span');
+    tw.className = 'tw leaf';
+    tw.textContent = '▾';
+    const rt = document.createElement('span');
+    rt.className = 'rt';
+    rt.textContent = text;
+    el.append(tw, rt);
+    if (host) el.onclick = () => jump(host);
+    rows.push(el);
+    return { el, tw };
+  }
+
+
+  /* the front matter is not inside a .part, so add it as its own group —
+     otherwise the menu starts at Part 1 and the whole introduction is invisible */
+  (function introGroup() {
+    const cards = [...document.querySelectorAll('main > .fm, main > .map')];
+    if (!cards.length) return;
+    const hue = 'var(--ink)';
+    const { el: gEl, tw: gTw } = mkRow('Start here', 1, hue, document.querySelector('main > h1'));
+    gTw.classList.remove('leaf');
+    const gKids = document.createElement('div');
+    gKids.className = 'kids';
+    tree.append(gEl, gKids);
+    gEl.onclick = e => {
+      if (e.target === gTw) { gKids.classList.toggle('closed'); gTw.textContent = gKids.classList.contains('closed') ? '\u25b8' : '\u25be'; }
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    cards.forEach((card, i) => {
+      const h = card.querySelector('h2');
+      if (!h) return;
+      if (!card.id) card.id = 'intro-' + i;
+      const { el } = mkRow(h.textContent.trim(), 2, hue, card, card.id);
+      gKids.appendChild(el);
+    });
+  })();
+
+  document.querySelectorAll('.part').forEach(part => {
+    const hue = HUE[part.id] || 'var(--accent)';
+    const { el: pEl, tw: pTw } = mkRow(part.querySelector('h2').textContent, 1, hue, part);
+    pTw.classList.remove('leaf');
+    const pKids = document.createElement('div');
+    pKids.className = 'kids';
+    tree.append(pEl, pKids);
+    pEl.onclick = e => {
+      if (e.target === pTw) { pKids.classList.toggle('closed'); pTw.textContent = pKids.classList.contains('closed') ? '▸' : '▾'; }
+      else jump(part);
+    };
+
+    // sections between this part header and the next
+    let n = part.nextElementSibling;
+    while (n && !n.classList.contains('part')) {
+      if (n.classList.contains('sec')) {
+        const sec = n;
+        const title = sec.querySelector('h2.sec-t').firstChild.textContent.trim();
+        const { el: sEl } = mkRow(title, 2, hue, sec, sec.id);
+        pKids.appendChild(sEl);
+        sec.querySelectorAll('h3, h4, details.sub > summary').forEach(el => {
+          if (el.closest('.phase')) return;
+          const isBox = el.tagName === 'SUMMARY';
+          const host = isBox ? el.parentElement : (el.closest('details.hacc') || el);
+          const { el: kEl } = mkRow(el.textContent.trim(), isBox ? 4 : 3, hue, host, sec.id);
+          pKids.appendChild(kEl);
+        });
+      }
+      n = n.nextElementSibling;
+    }
+  });
+
+  /* ---------- auto depth: deep rows only inside the section being read ---------- */
+  let activeSec = null;
+  function applyAuto() {
+    rows.forEach(r => {
+      const lvl = +r.dataset.lvl;
+      r.style.display = (lvl <= 2 || r.dataset.sec === activeSec) ? '' : 'none';
+    });
+  }
+
+  /* ---------- open ancestors, then scroll ---------- */
+  function jump(el) {
+    let p = el;
+    while (p && p !== document.body) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------- you are here ---------- */
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      const hit = rows.find(r => r.onclick && (r.dataset.sec === id ||
+        (r.dataset.sec && id.startsWith(r.dataset.sec + '--') && r.textContent.trim() === e.target.textContent.trim().slice(0, r.textContent.trim().length))));
+      rows.forEach(r => r.classList.remove('active'));
+      const row = rows.find(r => r.dataset.sec === id && +r.dataset.lvl === 2) || hit;
+      if (row) {
+        row.classList.add('active');
+        if (row.dataset.sec !== activeSec) { activeSec = row.dataset.sec; applyAuto(); }
+      }
+    });
+  }, { rootMargin: '-6% 0px -78% 0px' });
+  document.querySelectorAll('.sec, .sec [id]').forEach(el => spy.observe(el));
+
+  /* ---------- hide / reveal, with swipe ---------- */
+  const setHidden = h => { document.body.classList.toggle('nav-hidden', h); localStorage.setItem('l14-nav-hidden', h ? '1' : ''); };
+  document.getElementById('nav-hide').onclick = () => setHidden(true);
+  document.getElementById('reveal').onclick   = () => setHidden(false);
+  if (localStorage.getItem('l14-nav-hidden')) setHidden(true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setHidden(true); });
+  let x0 = null;
+  const nav = document.getElementById('nav');
+  nav.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  nav.addEventListener('touchmove', e => {
+    if (x0 !== null && e.touches[0].clientX - x0 < -45) { setHidden(true); x0 = null; }
+  }, { passive: true });
+  document.addEventListener('touchstart', e => {
+    if (document.body.classList.contains('nav-hidden') && e.touches[0].clientX < 24) setHidden(false);
+  }, { passive: true });
+
+  /* ---------- progress checkboxes, remembered per step ---------- */
+  const KEY = 'l14-progress';
+  const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  const allSteps = [];
+
+  document.querySelectorAll('.sec').forEach(sec => {
+    const items = sec.querySelectorAll('ol.steps > li');
+    if (!items.length) return;
+    items.forEach((li, i) => {
+      const id = `${sec.id}:${i}`;
+      li.style.position = 'relative';
+      const b = document.createElement('button');
+      b.className = 'stepbox';
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+      b.setAttribute('aria-label', `Mark step ${i + 1} done`);
+      b.innerHTML = `<span>${i + 1}</span>`;
+      li.classList.toggle('done', !!state[id]);
+      b.onclick = () => {
+        state[id] = !state[id];
+        b.setAttribute('aria-pressed', state[id] ? 'true' : 'false');
+        li.classList.toggle('done', !!state[id]);
+        localStorage.setItem(KEY, JSON.stringify(state));
+        paint();
+      };
+      li.prepend(b);
+      allSteps.push({ id, sec: sec.id });
+    });
+
+    // per-section counter, in the section heading
+    const tag = document.createElement('span');
+    tag.className = 'secprog';
+    tag.dataset.sec = sec.id;
+    sec.querySelector('.sec-head').appendChild(tag);
+  });
+
+  function paint() {
+    let done = 0;
+    document.querySelectorAll('.secprog').forEach(tag => {
+      const mine = allSteps.filter(s => s.sec === tag.dataset.sec);
+      const d = mine.filter(s => state[s.id]).length;
+      tag.textContent = `${d}/${mine.length}`;
+      tag.classList.toggle('all', d === mine.length && mine.length > 0);
+    });
+    done = allSteps.filter(s => state[s.id]).length;
+    const pct = allSteps.length ? Math.round(done / allSteps.length * 100) : 0;
+    const np = document.getElementById('nav-prog');
+    if (np) np.firstChild.textContent = `${done} of ${allSteps.length} steps done`;
+    const bar = document.querySelector('#nav-bar i');
+    if (bar) bar.style.width = pct + '%';
+    // tick finished sections in the menu
+    rows.forEach(r => {
+      if (+r.dataset.lvl !== 2) return;
+      const mine = allSteps.filter(s => s.sec === r.dataset.sec);
+      let t = r.querySelector('.rowtick');
+      const complete = mine.length > 0 && mine.every(s => state[s.id]);
+      if (complete && !t) { t = document.createElement('span'); t.className = 'rowtick'; t.textContent = '✓'; r.appendChild(t); }
+      if (!complete && t) t.remove();
+    });
+  }
+
+  document.getElementById('nav-reset').onclick = () => {
+    Object.keys(state).forEach(k => delete state[k]);
+    localStorage.setItem(KEY, '{}');
+    document.querySelectorAll('.stepbox').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('ol.steps > li').forEach(li => li.classList.remove('done'));
+    paint();
+  };
+
+  paint();
+
+
+  /* ---------- a checkbox on each section header: tick the whole section ---------- */
+  (function sectionTicks() {
+    const SKEY = 'l14-sections';
+    const sstate = JSON.parse(localStorage.getItem(SKEY) || '{}');
+
+    document.querySelectorAll('main .sec').forEach(sec => {
+      const head = sec.querySelector('.sec-head');
+      if (!head) return;
+      const steps = [...sec.querySelectorAll('ol.steps > li')];
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sectick';
+      b.title = 'Mark this section done';
+      b.setAttribute('aria-label', 'Mark this section done');
+
+      const sync = () => {
+        // a section counts as done when it is ticked, or when every step in it is
+        const allSteps = steps.length > 0 && steps.every(li => li.classList.contains('done'));
+        const done = !!sstate[sec.id] || allSteps;
+        b.setAttribute('aria-pressed', done ? 'true' : 'false');
+        sec.classList.toggle('sec-done', done);
+      };
+
+      b.onclick = e => {
+        e.stopPropagation();
+        e.preventDefault();
+        const now = !(b.getAttribute('aria-pressed') === 'true');
+        sstate[sec.id] = now;
+        localStorage.setItem(SKEY, JSON.stringify(sstate));
+        // ticking the header ticks every step inside it, and vice versa
+        steps.forEach(li => {
+          const box = li.querySelector('.stepbox');
+          if (box && (box.getAttribute('aria-pressed') === 'true') !== now) box.click();
+        });
+        sync();
+      };
+
+      head.appendChild(b);
+      sec.addEventListener('click', ev => { if (ev.target.classList?.contains('stepbox')) setTimeout(sync, 0); });
+      sync();
+    });
+
+    const r = document.getElementById('nav-reset');
+    if (r) {
+      const prev = r.onclick;
+      r.onclick = () => {
+        localStorage.setItem(SKEY, '{}');
+        document.querySelectorAll('.sectick').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        document.querySelectorAll('.sec-done').forEach(el => el.classList.remove('sec-done'));
+        if (prev) prev();
+      };
+    }
+  })();
+
+  applyAuto();
+})();
+
+
+</script>
+</body>
+</html>

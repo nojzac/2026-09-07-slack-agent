@@ -124,7 +124,7 @@ export function signAppJwt({ appId, privateKey, now = Math.floor(Date.now() / 10
  * minutes. The token is never logged and its format is never parsed; treat it
  * as an opaque string.
  */
-export async function mintInstallationToken({ fetchImpl = fetch, repo = null } = {}) {
+export async function mintInstallationToken({ fetchImpl = fetch, repo = null, repos = null } = {}) {
   const appId = process.env.GITHUB_APP_ID;
   const installationId = process.env.GITHUB_INSTALLATION_ID;
 
@@ -135,18 +135,39 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null } =
     'x-github-api-version': API_VERSION,
   };
 
-  // With no repo, the token reaches every repository the App is installed on
-  // (today's behaviour). With one, GitHub scopes the token down to just it —
-  // the channel's topic becomes an access boundary, not just a label.
-  let repoName = null;
-  if (repo && repo.includes('/')) {
-    const [owner, name] = repo.split('/');
+  // `repo` is the old single-name shape, kept for existing callers; `repos`
+  // is the list. Either way it collapses to a list below.
+  //
+  // Every entry must be exactly "owner/name" — one slash, both halves
+  // non-empty. Anything else throws here, before any network call. Silently
+  // filtering out a malformed entry (a memory repo typed without an owner,
+  // say) would leave the caller's non-empty list looking honoured while this
+  // function actually mints for zero repos, and zero repos means GitHub
+  // hands back a token for *every* repo the App is installed on — a filter
+  // that fails open. A "owner/repo/extra" entry is refused the same way: it
+  // does not match the pattern, so it can't silently truncate to "repo".
+  const rawList = repos ?? (repo ? [repo] : []);
+  const REPO_NAME_PATTERN = /^[\w.-]+\/[\w.-]+$/;
+  for (const entry of rawList) {
+    if (!entry || !REPO_NAME_PATTERN.test(entry)) {
+      throw new Error(`refusing to mint: invalid repo name "${entry}"`);
+    }
+  }
+  // Dedupe so a memory repo that happens to equal the topic repo doesn't get
+  // sent twice.
+  const repoList = [...new Set(rawList)];
 
-    // The owner half of the topic is part of that boundary too. Without this
-    // check, a topic naming "someone-else/joestar-sandbox" would still mint a
+  // With no repos, the token reaches every repository the App is installed on
+  // (today's behaviour). With any, GitHub scopes the token down to just them —
+  // the boundary becomes an access boundary, not just a label.
+  let repoNames = [];
+  if (repoList.length) {
+    // The owner half of every entry is part of that boundary too. Without this
+    // check, a name like "someone-else/joestar-sandbox" would still mint a
     // token for *our* installation's joestar-sandbox — the repo name matches,
     // but nobody asked us to reach into someone else's account. Confirm the
-    // installation's own account before trusting the repo name at all.
+    // installation's own account before trusting any repo name at all — one
+    // lookup, checked against every entry in the list.
     const installRes = await fetchImpl(
       `https://api.github.com/app/installations/${installationId}`,
       { method: 'GET', headers: authHeaders },
@@ -158,12 +179,16 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null } =
       );
     }
     const installOwner = installBody.account?.login;
-    if (!installOwner || installOwner.toLowerCase() !== owner.toLowerCase()) {
-      throw new Error(
-        `refusing to mint: topic names owner "${owner}", installation belongs to "${installOwner ?? 'unknown'}"`,
-      );
+
+    for (const entry of repoList) {
+      const [owner, name] = entry.split('/');
+      if (!installOwner || installOwner.toLowerCase() !== owner.toLowerCase()) {
+        throw new Error(
+          `refusing to mint: "${entry}" names owner "${owner}", installation belongs to "${installOwner ?? 'unknown'}"`,
+        );
+      }
+      repoNames.push(name);
     }
-    repoName = name;
   }
 
   const res = await fetchImpl(
@@ -171,7 +196,7 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null } =
     {
       method: 'POST',
       headers: { ...authHeaders, 'content-type': 'application/json' },
-      body: repoName ? JSON.stringify({ repositories: [repoName] }) : undefined,
+      body: repoNames.length ? JSON.stringify({ repositories: repoNames }) : undefined,
     },
   );
 
@@ -201,11 +226,12 @@ export async function mintInstallationToken({ fetchImpl = fetch, repo = null } =
  * because an unrelated credential expired is worse than one that answers and
  * says GitHub is unavailable.
  */
-export async function tryMintInstallationToken({ repo = null } = {}) {
+export async function tryMintInstallationToken({ repo = null, repos = null } = {}) {
   if (!isGitHubConfigured()) return { token: null, reason: null };
+  const repoList = repos ?? (repo ? [repo] : []);
   try {
-    const { token, expiresAt } = await mintInstallationToken({ repo });
-    console.log('[github] minted installation token, expires', expiresAt, repo ? `scoped to ${repo}` : '(all installed repos)');
+    const { token, expiresAt } = await mintInstallationToken({ repos: repoList });
+    console.log('[github] minted installation token, expires', expiresAt, repoList.length ? `scoped to ${repoList.join(', ')}` : '(all installed repos)');
     return { token, expiresAt };
   } catch (err) {
     // The message is safe to log: it is GitHub's status and message, never the
