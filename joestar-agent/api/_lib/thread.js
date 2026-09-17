@@ -93,7 +93,7 @@ export function browserCapabilities() {
     `You have a headless browser in this sandbox: Playwright, pinned at ${PLAYWRIGHT_VERSION}, Chromium only — no Firefox, no WebKit.`,
     'Chromium is already installed at /opt/ms-playwright, and PLAYWRIGHT_BROWSERS_PATH and NODE_PATH are already set in the environment — do not hunt for the browser or reinstall it.',
     'Video is only written once the browser context is closed. Call context.close() explicitly before the run ends, or nothing is saved.',
-    `To send a file to Slack, write it into /tmp/outputs, same as any other output. Cap is ${maxOutputMiB} MiB per file, ${MAX_OUTPUT_FILES} files per run.`,
+    `Cap is ${maxOutputMiB} MiB per file, ${MAX_OUTPUT_FILES} files per run.`,
     'Playwright dispatches events rather than moving a pointer, so recordings show no cursor. That is expected, not broken.',
   ].join('\n');
 }

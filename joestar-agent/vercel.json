@@ -4,5 +4,10 @@
     "deploymentEnabled": {
       "main": false
     }
+  },
+  "functions": {
+    "api/slack/events.js": {
+      "includeFiles": "toolkit/**"
+    }
   }
 }
