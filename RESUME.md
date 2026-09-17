@@ -324,12 +324,148 @@ session stops sleeping guesses and polling. Run it through `bin/with-secrets`.
 grow** — the bot posts `_thinking…_` immediately and edits it in place, so the
 count rises when a run starts and never again.
 
+## How lessons 12–17 were built (2026-09-17)
+
+Noj asked for the remaining "0 to 1" lessons with minimal interaction, and the
+work was split by who holds what. Claude orchestrated; **Joestar itself wrote
+every product PR**, in `#joestar-dev` (`C0C2FES3UGJ`); subagents reviewed each PR
+with mutation tests and wrote the lesson pages; Noj merged with
+`gh pr merge N --squash --admin` and ran the two template builds, because
+`E2B_API_KEY` still never enters a sandbox. `bin/wait-for-reply` carried every
+Joestar round trip — no sleeping guesses.
+
+## Lesson 12, as built
+
+Joestar's sandbox has a database. Postgres 15 and Redis are in the E2B image and
+**neither starts on boot**; the bot starts what it needs. Verified live in
+`#joestar-test` on 2026-09-17: Postgres, Redis, a Node server and a Playwright
+recording in one run — 4 rows back, hits 4 (the favicon), Postgres up in 0.72s.
+
+- **PRs #11 and #19; the template was rebuilt twice.** The cluster is initialised
+  at build time as `user` in `/home/user/pgdata`, `POSTGRES_MAJOR` joins
+  `api/_lib/versions.js`, and `PGDATA` / `PGHOST=/tmp` / `PGUSER` / `PGDATABASE`
+  are runtime envs. The briefed start commands are
+  `pg_ctl -l /home/user/pgdata/server.log -o "-k /tmp -c listen_addresses=127.0.0.1" -w start`
+  and `redis-server --daemonize yes --save "" --appendonly no --bind 127.0.0.1`.
+- **The sandbox boots `/sbin/init`**, which honours Debian's rc/systemd links, so
+  Redis autostarted in every sandbox until PR #19 removed them. Only a boot shows
+  this — the build log looks perfect. TRAPS.md.
+- **`pg_ctl -w start` without `-l` holds the SDK call open until timeout.** The
+  server inherits the command's stdout and the call never returns. TRAPS.md.
+- Measured: create median 543ms (baseline 519), first command 150ms (696),
+  Postgres start 1.3s, Redis 0.5s. The database costs the run almost nothing.
+- **The first template build was a no-op** because the checkout sat on a docs
+  branch: the build ships whatever branch is checked out. Check before building.
+
+## Lesson 13, as built
+
+Joestar has a persona. `api/_lib/sandbox-files.js` writes `~/.claude/CLAUDE.md`
+— persona plus machine facts — into **every** sandbox, in one batched
+`files.write`, before `claude` runs. Verified live: asked for it, the bot quoted
+the first line back exactly.
+
+- **PR #13.** Ray writes his file once, by hand, because his sandbox is paused
+  and persists. Ours is destroyed every run, so "write it once" would write it to
+  a machine that no longer exists — it has to be part of every boot.
+- The review fixed the toolkit-directory candidate order, added a test that the
+  writer never throws (a persona failure must not take the run down), and wrapped
+  the `Buffer` in a `Blob` for the E2B files API.
+- This is the first thing in the system that shapes *how* the bot answers rather
+  than what it can reach, and it costs one batched call per run.
+
+## Lesson 14, as built
+
+Joestar has skills. `toolkit/skills/<name>/` lives in the `joestar-agent` repo,
+ships to Vercel through `vercel.json`'s
+`functions.api/slack/events.js.includeFiles: "toolkit/**"`, and is written into
+`~/.claude/skills/` on every run. Verified live: the bot listed the skill and all
+8 of its steps — which also proved `includeFiles` was working.
+
+- **PRs #14 and #15.** Two skills so far: `task-lifecycle` and `codex`.
+- **Changing a skill is a PR and a deploy, not an image rebuild.** That is the
+  point of shipping them from the repo rather than baking them into the template:
+  the slow path (rebuild, ~minutes, needs `E2B_API_KEY`) is reserved for binaries.
+- `includeFiles` is easy to get wrong silently — the function deploys fine and the
+  directory is simply absent. Listing a skill from inside the sandbox is the
+  cheapest proof that it shipped.
+
+## Lesson 15, as built — and not finished
+
+Joestar is growing a memory: a git repo, `nojzac/joestar-memory`, cloned into the
+sandbox before `claude` and pushed after it. **PR #18 is merged; PR #20 is open
+with fixes in progress**, so this is the one lesson in the chapter that is not
+done.
+
+- **The memory repo is private, and is the one deliberate exception** to "no
+  private repo gets App write access". Recorded as an exception on purpose: it
+  holds only the bot's own notes, and the bot writing its `main` is the design,
+  not a risk to be protected against. The App is installed on it and
+  `AGENT_MEMORY_REPO` is set in Vercel Production — unset means memory is off.
+- **Token minting now takes a repo *list*** — topic repo plus memory repo — and
+  every entry is owner-checked, with malformed entries refused before any network
+  call. A review found the first version **failed open**: a typo'd env var minted
+  an unscoped token. That is exactly the lesson-09 bug class, caught earlier.
+- Runtime: shallow clone to `/home/user/memory`, `autoMemoryEnabled` and
+  `autoMemoryDirectory` merged into `settings.json`, a briefing appended, push
+  after `claude`. `MEMORY_BUDGET_MS` is carved out of `claude`'s time, the same
+  split `UPLOAD_BUDGET_MS` introduced in lesson 11.
+- **Unverified until PR #20 lands and a live test runs:** that Claude Code honours
+  auto-memory at all in `-p` mode. Everything else here is code that runs; this is
+  the assumption the feature rests on.
+
+## Lesson 16, as built
+
+Joestar can call a second model. Codex CLI 0.154.0 is in the image (339 MB) and
+`setUpCodex` writes `~/.codex/auth.json` and `config.toml` from `CODEX_AUTH_JSON`
+**as files only, never as environment variables**. Verified live on 2026-09-17: a
+bug was planted, `codex review` returned FAIL with the `[P1]` at the right line,
+in 45s.
+
+- **PRs #12 and #15.** The credential is Noj's ChatGPT login, pasted into Vercel
+  and stored in 1Password as `codex_auth_json`.
+- **The review caught a `console.warn(err.message)` that leaked the credential's
+  prefix into the logs**, and a test that missed `SANDBOX_RUNTIME_ENVS`. Both are
+  the ordinary shape of this failure: a credential escaping through an error path
+  nobody reads until it has already run a hundred times.
+- The `.env.op` line **had to ship commented out**, because `op run` refuses to
+  start at all when any reference in the file is unresolvable — one absent secret
+  otherwise breaks every local command.
+- Files-not-envs is the rule that matters here: envs are visible to every command
+  in the sandbox and to anything that dumps the environment.
+
+## Lesson 17, as built
+
+Joestar can take a voice note. A `voice-notes` skill plus `transcribe.mjs`
+(ElevenLabs Scribe v2, zero dependencies, one retry on 429/5xx, exit codes
+0/1/2), with `ELEVENLABS_API_KEY` passed **per command**, the same way `EXA_API_KEY`
+has been since lesson 10.
+
+- **PRs #16 and #17.**
+- **Not verified live.** No key is set, and a genuine test needs a human to record
+  an actual voice note — which is the first thing in the course that Claude cannot
+  test for itself.
+- **Ray's tag also contains a Slack read proxy, deliberately not built.** It gives
+  the bot cross-channel search on behalf of whoever is talking to it, which under
+  this project's MCP rule means handing cross-channel search to every workspace
+  member. Same reasoning as the production databases declined in lesson 10.
+
+### What working this way taught us
+
+- **PR #10 fixed the bolded-URL bug** (`*<url>*`), verified live — the
+  known-and-unfixed item from lesson 11 is closed. While fixing it, `mrkdwn.js`'s
+  NUL sentinel turned out to make the file **binary to git**, so diffs and reviews
+  were useless; it is now a space.
+- **Squash-merging a PR that a later PR was stacked on makes the later one
+  CONFLICTING.** The fix is to merge `main` in — **never rebase**, because the push
+  guard blocks the force-push a rebase needs. Later requests were all based on
+  `main` instead of stacked.
+
 ## Known and unfixed
 
-- **Bolded URLs come out broken.** `toMrkdwn` turns `**https://…**` into
-  `*https://…*` and Slack swallows the asterisk into the link, so PR links the
-  bot posts do not open. Ray hits the same bug in his video. It is our
-  `api/_lib/mrkdwn.js`, and a good dogfooding request.
+- ~~**Bolded URLs come out broken.**~~ **Fixed 2026-09-17 by PR #10**, written by
+  the bot and verified live: `toMrkdwn` no longer collapses `**https://…**` into
+  an asterisk Slack swallows, so the PR links it posts now open. Left here so the
+  fix is findable from where the bug was recorded.
 - **`#joestar-test` has no topic, so the bot now has no GitHub access there.**
   Intended, and stricter than before, but any GitHub test must happen in a
   channel whose topic names a repo.
@@ -391,18 +527,33 @@ count rises when a run starts and never again.
   key that lives in both places too, so the cost grows.
 ## Next step
 
-Lesson 12, "Adding Database" — transcript at
-`course/transcripts/12-0-to-1--adding-database.md`. Build `sops/lesson-12/index.html`
-from it following `docs/lessons.md`, show it, get a yes, then do the lesson.
-Ray's framing follows directly from lesson 11: the bot can now drive your app and
-record it, but it cannot verify a change that touches the database, because there
-is no Postgres on the container. Same shape as lesson 11 — a template change, so
-expect the same build-deploys-immediately asymmetry.
+**Lessons 18–21, the "Using your agent" chapter.** The "0 to 1" chapter is
+finished as of 2026-09-17 — lessons 04–17 are built, and every page but 15’s is
+written. What remains is a different kind of work: `course/LESSON-PAGE-RULES.md`
+calls 18 and 21 short orientation lessons, and the whole chapter gets **a short
+page rather than the full treatment** — no code walk, no template rebuild, no
+deploy. Only the grounding section, Steps and Done are mandatory; omit the empty
+sections rather than render shells. Nothing in 18–21 changes the image or the
+Vercel function, so for the first time since lesson 05 there is no slow path in
+the way.
 
-**Ray dogfoods 12, 16 and 17, and does 13, 14 and 15 by hand.** The split is
-deliberate: he delegates anything that changes the *machine* (template, tooling,
-integrations) and hand-writes anything that is the agent's own *instructions*
-(CLAUDE.md, skills, memory).
+**Open items, roughly in the order they will bite:**
+
+- **Lesson 15 is not done.** PR #20 is open with fixes in progress, and the
+  premise — that Claude Code honours auto-memory in `-p` mode — is still
+  unverified. Land #20, run a live test, then write `sops/lesson-15/index.html`;
+  it is the one gap in the chapter.
+- **Set `ELEVENLABS_API_KEY`** if voice notes are actually wanted. Until then
+  lesson 17 ships code that has never run, and verifying it needs Noj to record a
+  real voice note — Claude cannot test this one for him.
+- **Codex token expiry.** Ray says the ChatGPT credential lasts about 10 days;
+  unverified here. When `codex` starts failing, this is the first thing to check,
+  and the fix is a fresh paste into both Vercel and 1Password.
+- **Pages for 18–21** still to build, per the short-page rules above.
+- **The placeholder/timeout pattern, now consistent enough to plan around.** A
+  Joestar request that asks it to *research* something times out at 255s; one that
+  spells out the design finishes in 60–120s. Do the thinking before the request,
+  not inside it — the sandbox clock is not a place to think.
 
 **Settled 2026-09-16: stay on the GitHub free plan until the end of the course.**
 Not an open question — don't re-raise it each lesson. What follows from it, and
@@ -420,9 +571,10 @@ must be respected for the rest of the course:
   likely one and did not need it — it wrote to this repo, which is public for
   the duration of the course.)
 
-Ten lessons remain: 12–17 finish the "0 to 1" chapter, and 18–21 are the
-"Using your agent" chapter, which `course/LESSON-PAGE-RULES.md` says get a short
-page rather than the full treatment.
+**One exception exists, added 2026-09-17:** the private memory repo
+`nojzac/joestar-memory` (lesson 15). It was taken deliberately and recorded as an
+exception rather than a revision — it holds only the bot's own notes, and the bot
+writing its `main` is the design. The rule above still stands for everything else.
 
 Open, neither blocking: rotate `claude_code_oauth_token` (about 19 characters
 of it reached a transcript on 2026-09-15; it cannot be revoked, so replacing it
