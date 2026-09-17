@@ -11,8 +11,9 @@ process.env.E2B_API_KEY = 'e2b-test';
 process.env.CLAUDE_CODE_OAUTH_TOKEN = 'oauth-test';
 
 const CLAUDE_JS_PATH = fileURLToPath(new URL('../api/_lib/claude.js', import.meta.url));
-const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex } = await import('../api/_lib/claude.js');
+const { SANDBOX_RUNTIME_ENVS, collectOutputs, setUpCodex, runClaude } = await import('../api/_lib/claude.js');
 const { sandboxFiles } = await import('../api/_lib/sandbox-files.js');
+const { Sandbox } = await import('e2b/dist/index.mjs');
 
 /** A fresh toolkit dir with one skill (SKILL.md + a nested file) and one skill missing SKILL.md. */
 function makeToolkitDir() {
@@ -290,9 +291,53 @@ test('over-cap payload returns CLAUDE.md only', () => {
 
 test('the sandboxFiles write happens before the claude command runs', () => {
   const source = readFileSync(CLAUDE_JS_PATH, 'utf8');
-  const writeIdx = source.indexOf('sandbox.files.write(sandboxFiles(');
+  const writeIdx = source.indexOf('sandboxFiles({ toolkitDir: resolveToolkitDir() })');
   const claudeCmdIdx = source.indexOf('sandbox.commands.run(\n      `claude -p');
-  assert.ok(writeIdx > -1, 'sandboxFiles write call should exist');
+  assert.ok(writeIdx > -1, 'sandboxFiles call should exist');
   assert.ok(claudeCmdIdx > -1, 'claude command should exist');
   assert.ok(writeIdx < claudeCmdIdx, 'sandboxFiles write must precede the claude command');
+});
+
+test('a rejected sandbox.files.write for persona/skills never throws and the run still reaches the claude command', async () => {
+  const calls = [];
+  const sandbox = {
+    files: {
+      makeDir: async () => {},
+      write: async (...args) => {
+        // Only the persona/skills call passes a single array argument; every
+        // other sandbox.files.write call in runClaude (MCP config, inputs)
+        // passes (path, data) and must keep succeeding.
+        if (args.length === 1 && Array.isArray(args[0])) throw new Error('write boom');
+      },
+      list: async () => [],
+    },
+    commands: {
+      run: async (cmd) => {
+        calls.push(cmd);
+        return { stdout: JSON.stringify({ result: 'ok' }), exitCode: 0 };
+      },
+    },
+    kill: async () => {},
+  };
+
+  const origCreate = Sandbox.create;
+  Sandbox.create = async () => sandbox;
+  const warnCalls = [];
+  const origWarn = console.warn;
+  console.warn = (...args) => warnCalls.push(args);
+  try {
+    const result = await runClaude({ prompt: 'hi' });
+    assert.equal(result.answer, 'ok');
+    assert.ok(
+      calls.some((cmd) => typeof cmd === 'string' && cmd.startsWith('claude -p')),
+      'the claude command should still run after the persona/skills write rejects',
+    );
+    assert.ok(
+      warnCalls.some((args) => String(args[0]).includes('[sandbox-files]')),
+      'the rejection should be warned, not swallowed silently',
+    );
+  } finally {
+    Sandbox.create = origCreate;
+    console.warn = origWarn;
+  }
 });

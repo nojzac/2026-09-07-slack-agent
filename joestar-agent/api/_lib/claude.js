@@ -22,7 +22,7 @@ const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 // necessarily process.cwd() either — so try both places a `toolkit/` next to
 // the deployed bundle could actually land.
 function resolveToolkitDir() {
-  const candidates = [path.join(process.cwd(), 'toolkit'), path.resolve(MODULE_DIR, '../../toolkit')];
+  const candidates = [path.resolve(MODULE_DIR, '../../toolkit'), path.join(process.cwd(), 'toolkit')];
   return candidates.find((p) => fs.existsSync(p));
 }
 
@@ -145,7 +145,11 @@ export async function runClaude({
     // time". Never a gate — a broken toolkit should degrade to "no persona
     // this run", not fail the whole request.
     try {
-      await sandbox.files.write(sandboxFiles({ toolkitDir: resolveToolkitDir() }));
+      const files = sandboxFiles({ toolkitDir: resolveToolkitDir() }).map(({ path: p, data }) => ({
+        path: p,
+        data: Buffer.isBuffer(data) ? new Blob([data]) : data,
+      }));
+      await sandbox.files.write(files);
     } catch (err) {
       console.warn('[sandbox-files] could not write persona/skills:', err.message);
     }
