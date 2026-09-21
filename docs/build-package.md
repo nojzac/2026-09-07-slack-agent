@@ -7,6 +7,8 @@ again. This document answers a different question: **if you have to stand up
 several of these agents, for yourself and for clients, what do you decide
 before you start, what do you build once and reuse, where does a human have to
 act, and what does the client need to know?**
+Section 9 adds the course's own answer to what the agent is *for* once it
+exists: ownership, not tasks.
 
 The car metaphor from the conversation that prompted this: Noj is the mechanic
 who builds and maintains the bot. A client is the driver. The driver needs to
@@ -103,6 +105,26 @@ capability to every workspace member who can message the bot is acceptable.**
 | Who reads the warning lights | Noj | "I can't reach Claude", a run that times out, a PR the bot could not open. The driver's guide names each and who to call. |
 | Rotation schedule | None | The OAuth token, bot token and E2B key should be replaced on a schedule you agree with the client. |
 | Exit plan | Not written | What happens to the memory repo, the GitHub App installation and the Vercel project when the engagement ends. Decide now. |
+
+### What it owns
+
+The course's last three lessons (on-call agents, task versus ownership
+delegation, feedback channels) say that a bot which only acts when mentioned
+is task delegation, and the value comes from ownership: a standing
+responsibility with an input stream and no end state. Section 9 explains the
+model. These rows capture what the client has to decide for it. None of this
+is built in Joestar yet; the rows are here so the conversation happens before
+the build, not after.
+
+| Decision | Default | Why it matters |
+|---|---|---|
+| Alert feeds the client already has | None listed | CI failures, deploy failures, uptime, security plugins, error trackers, form submissions, new leads. Each one that can post to Slack is an input stream an agent can own. List them all, even the ones nobody reads. |
+| First on-call channel | None | One alert feed, one channel, one fixed prompt run on every message. This is the first ownership to set up because it is the most verifiable. |
+| Ownership briefs | None | For each: territory, input stream, standing mandate, boundary. One channel per brief. Write them with the client in their words. |
+| Boundary line for autonomous fixes | Propose only | What the bot may change without a yes. Start at "open a PR, never merge" for code and "draft, never send" for anything outward-facing, and widen per brief as trust builds. |
+| When to wake a human | Tag in thread, always | The on-call rulebook: page now, or investigate and leave a report for the morning. Real paging is an integration to decide per client. |
+| Feedback channel | None | A channel where the bot posts what it needs to do its job better. The client decides who reads it and who says yes. |
+| Schedules | None | For briefs with no natural alert feed (a weekly dependency check, a monthly renewals pass). The bot may adjust its own interval within a range you set. |
 
 ## 3. Build order, with the human steps marked
 
@@ -331,5 +353,124 @@ human step or a class of mistake.
   thread-to-sandbox map, locking, and machines that outlive the request. It
   is the biggest architectural change on the list and the only one that
   changes what the driver can ask for.
-- **Bells.** Triggers other than a mention: a PR-opened webhook, an alert
-  feed, a schedule. Each is a new entry point into the same run function.
+- **Bells.** Triggers other than a mention: a channel listener, a schedule,
+  a feedback relay. Each is a new entry point into the same run function.
+  Section 9 says what they are for and in what order.
+
+## 9. The operating model: from tasks to ownership
+
+The three closing lessons of the course (19 on-call agents, 20 task versus
+ownership delegation, 21 feedback channels; transcripts under
+`course/transcripts/`) describe how the agent is used once it exists. This
+section is the summary, and the gap between that model and Joestar as built.
+Nothing here is implemented; the build is deliberately deferred until the
+uses are clear.
+
+### Task delegation is the floor
+
+Everything Joestar did in this project was task delegation: a person notices a
+problem, mentions the bot, the bot does the task, the thread goes quiet. The
+person is the trigger for every piece of work, and when they are away the bot
+does nothing. Ray's phrase for this is "a glorified Claude Code inside Slack".
+It is where every client starts and it is fine for the first two weeks.
+
+### Ownership delegation is the goal
+
+The bot is given a standing responsibility with no end state. Every ownership
+brief has four parts (Ray's own test-coverage brief left the boundary out and
+ran; the other three are not optional):
+
+1. **Territory.** What it owns: a module, a site, a dependency, a metric, a
+   customer segment.
+2. **Input stream.** What keeps arriving: an alert channel, a log, a schedule,
+   an inbox. Without a stream there is nothing to own.
+3. **Standing mandate.** What it does every time, without being asked:
+   investigate, reproduce, open a fix PR, post a summary, draft the email.
+4. **Boundary.** Where autonomy stops: propose first for billing, never
+   merge, never send.
+
+Ray's examples: own the P95 latency and fix regressions; own the Stripe
+integration and update it on breaking-change announcements; own test
+coverage and add tests when it drops below 80 percent; own churn signals and
+draft the outreach; own trial users and make sure they reach the product's
+magic moment. His selection rule: delegate ownership where the result is
+**easily verifiable** by the agent itself, with tests, logs or a browser.
+Put ownership in public channels so teammates can see and adjust it, and
+shrink the mandate if the agent overreaches.
+
+The brief ends with a question: "What do you need from me to take ownership
+of this properly? I will give you credentials or MCP servers if needed."
+
+### On-call is the simplest input stream
+
+Most alert services post to Slack. A bot that runs a fixed prompt on every
+message in a chosen channel, without a mention, turns any alert feed into an
+inbox. Anthropic's internal version, which the course summarises:
+
+- **Threshold tuning.** The bot reads alert history and proposes better
+  thresholds instead of a guessed 1 percent, and adjusts them over time.
+- **An on-call rulebook** (`on-call.md`): when to page a human now, when to
+  investigate and leave a report for the morning.
+- **Incident channels.** On a real incident, create a channel, post the
+  report, find the responsible people from git, invite them, page one.
+- **Parallel investigation.** Several subagents read different logs and
+  metrics at once.
+
+### Feedback channels are how the tool set grows
+
+A channel, `#agents-feedback`, where the bot posts whenever it lacked a tool,
+connection or permission to finish a job well, with the reason. The owner
+answers yes or no in the thread; on yes, the bot is told to add the ability
+to itself. Ray's bot asked for Google Tag Manager access and a way to
+download a Slack file by ID. This replaces guessing the integration list up
+front: the list comes from the bot's own blocked attempts, one at a time,
+each passed through the CLAUDE.md question before it is granted.
+
+### Multiple agents means multiple channels
+
+Ray runs one bot in many channels, one territory per channel. Joestar is
+already shaped for that: memory is per channel, the repo comes from the
+channel topic, and the channel is where teammates see the mandate. A new
+"agent" is a new channel with a pinned four-part brief. A second bot is only
+needed where trust differs, for example a client whose channel must never be
+able to read another client's memory.
+
+### The gap in Joestar as built
+
+| Ability the model needs | Joestar today |
+|---|---|
+| Reply in a thread without a mention | Built (lesson 07) |
+| Run a fixed prompt on every new message in a listed channel | Missing. The handler receives channel messages and acts only on mentions and replies in its own threads. One PR. |
+| Post to a feedback channel | Missing. No Slack token in the sandbox, so the bot writes a `feedback.md` in its output and the Vercel function relays it. One PR. |
+| Run on a schedule | Missing. A Vercel cron posting a standing prompt into a channel. One PR. |
+| Create a channel and invite people | Missing. Two Slack scopes and a reinstall; passes the CLAUDE.md test. |
+| Page a human | Tag in thread is enough to start. Real paging is per client. |
+| Read its data sources | Per feed. GitHub Actions, Vercel and most site plugins post to Slack natively, so the channel is the source. |
+| Write its own triage skill | The skills mechanism exists; the skill is a PR. |
+
+Build order when the time comes: the channel listener first, because it
+makes every other brief possible; the on-call rulebook as a skill plus the two
+scopes; the feedback relay, because it tells you what to build next; the
+scheduler last.
+
+### Briefs worth writing, extrapolated to this practice
+
+Verifiable ones first.
+
+- **A client's WordPress site.** Territory: the site. Stream: daily schedule
+  plus the site's security and uptime alerts. Mandate: uptime, broken links,
+  plugin security updates, SEO meta audit, report in channel. Boundary: no
+  plugin update or content change without a yes. Needs the site's read-only
+  MCP tools in a channel that only that client's people are in.
+- **This repo's own CI.** Stream: GitHub Actions failures posted to a
+  channel. Mandate: investigate, reproduce, open a fix PR. Boundary: nothing
+  touching credentials or the GitHub token path without sign-off. The
+  cheapest one to set up and the Anthropic pattern exactly.
+- **Test coverage** on any repo the GitHub App is installed on.
+- **Inbound leads.** Stream: a channel where a form or CRM posts new leads.
+  Mandate: research the company and person, post a brief and a suggested
+  first email. Boundary: never send. Needs Exa, already present.
+- **Renewals and costs** across client sites. Stream: monthly schedule.
+  Mandate: list what is due in 30 days, draft each client note. Drafts only.
+- **One dependency.** Stream: its release feed, weekly. Mandate: PR the
+  upgrade when a security release lands.
