@@ -1,5 +1,27 @@
 {
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "deny": [
+      "mcp__claude_ai_Slack__slack_send_message",
+      "mcp__claude_ai_Slack__slack_send_message_draft",
+      "mcp__claude_ai_Slack__slack_schedule_message",
+      "mcp__claude_ai_Slack__slack_add_reaction",
+      "mcp__claude_ai_Slack__slack_create_canvas",
+      "mcp__claude_ai_Slack__slack_update_canvas",
+      "mcp__claude_ai_Slack__slack_create_conversation",
+      "mcp__claude_ai_Slack__slack_create_list",
+      "mcp__claude_ai_Slack__slack_update_list",
+      "mcp__claude_ai_Slack__slack_add_list_record",
+      "mcp__claude_ai_Slack__slack_update_list_record",
+      "mcp__claude_ai_Slack__slack_get_file_upload_url",
+      "mcp__claude_ai_Slack__slack_complete_file_upload",
+      "Bash(bin/smoke:*)",
+      "Bash(*bin/smoke*)",
+      "Bash(*smoke.mjs*)",
+      "Bash(*e2b/build.mjs*)",
+      "Bash(*e2b/template.mjs*)"
+    ]
   }
 }
